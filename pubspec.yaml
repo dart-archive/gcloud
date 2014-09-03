@@ -1,0 +1,17 @@
+name: gcloud
+version: 0.0.1-dev
+description: Dart gcloud APIs
+environment:
+  sdk: '>=1.5.0 <2.0.0'
+dependencies:
+  crypto: '>=0.9.0 <0.10.0'
+  googleapis_auth: '>=0.1.0 <0.2.0'
+  googleapis_beta: '>=0.1.0 <0.2.0'
+dev_dependencies:
+  http:  '>=0.11.0 <0.12.0'
+  unittest: '>=0.11.0 <0.12.0'
+dependency_overrides:
+  googleapis_auth:
+    path: ../googleapis_auth
+  googleapis_beta:
+    path: ../googleapis/generated/googleapis_beta
