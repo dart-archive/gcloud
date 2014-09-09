@@ -5,7 +5,6 @@
 part of gcloud.pubsub;
 
 class _PubSubImpl implements PubSub {
-  static const int _DEFAULT_LIST_PAGE_SIZE = 50;
   final http.Client _client;
   final String project;
   final pubsub.PubsubApi _api;
@@ -176,54 +175,11 @@ class _PubSubImpl implements PubSub {
   }
 
   Stream<Topic> listTopics() {
-    bool pendingRequest = false;
-    bool paused = false;
-    bool cancelled = false;
-    Page currentPage;
-    StreamController controller;
-
-    handleError(e, s) {
-      controller.addError(e, s);
-      controller.close();
+    Future<Page<Topic>> firstPage(pageSize) {
+      return _listTopics(pageSize, null)
+        .then((response) => new _TopicPageImpl(this, pageSize, response));
     }
-
-    handlePage(Page<Topic> page) {
-      if (cancelled) return;
-      pendingRequest = false;
-      currentPage = page;
-      page.items.forEach(controller.add);
-      if (page.isLast) {
-        controller.close();
-      } else if (!paused && !cancelled) {
-        page.next().then(handlePage, onError: handleError);
-      }
-    }
-
-    onListen() {
-      int pageSize = _DEFAULT_LIST_PAGE_SIZE;
-      pendingRequest = true;
-      _listTopics(pageSize, null)
-          .then((response) {
-            handlePage(new _TopicPageImpl(this, pageSize, response));
-          },
-          onError: handleError);
-    }
-    onPause() => paused = true;
-    onResume() {
-      paused = false;
-      if (pendingRequest) return;
-      pendingRequest = true;
-      currentPage.next().then(handlePage, onError: handleError);
-    }
-    onCancel() {
-      cancelled = true;
-    }
-
-    controller = new StreamController(sync: true, onListen: onListen,
-                                      onPause: onPause, onResume: onResume,
-                                      onCancel: onCancel);
-
-    return controller.stream;
+    return new StreamFromPages<Topic>(firstPage).stream;
   }
 
   Future<Page<Topic>> pageTopics({int pageSize: 50}) {
@@ -254,55 +210,12 @@ class _PubSubImpl implements PubSub {
   }
 
   Stream<Subscription> listSubscriptions([String query]) {
-    bool pendingRequest = false;
-    bool paused = false;
-    bool cancelled = false;
-    Page currentPage;
-    StreamController controller;
-
-    handleError(e, s) {
-      controller.addError(e, s);
-      controller.close();
+    Future<Page<Subscription>> firstPage(pageSize) {
+      return _listSubscriptions(query, pageSize, null)
+        .then((response) =>
+            new _SubscriptionPageImpl(this, query, pageSize, response));
     }
-
-    handlePage(Page<Subscription> page) {
-      if (cancelled) return;
-      pendingRequest = false;
-      currentPage = page;
-      page.items.forEach(controller.add);
-      if (page.isLast) {
-        controller.close();
-      } else if (!paused && !cancelled) {
-        page.next().then(handlePage, onError: handleError);
-      }
-    }
-
-    onListen() {
-      int pageSize = _DEFAULT_LIST_PAGE_SIZE;
-      pendingRequest = true;
-      _listSubscriptions(query, pageSize, null)
-          .then((response) {
-            handlePage(new _SubscriptionPageImpl(
-                this, query, pageSize, response));
-          },
-          onError: handleError);
-    }
-    onPause() => paused = true;
-    onResume() {
-      paused = false;
-      if (pendingRequest) return;
-      pendingRequest = true;
-      currentPage.next().then(handlePage, onError: handleError);
-    }
-    onCancel() {
-      cancelled = true;
-    }
-
-    controller = new StreamController(sync: true, onListen: onListen,
-                                      onPause: onPause, onResume: onResume,
-                                      onCancel: onCancel);
-
-    return controller.stream;
+    return new StreamFromPages<Subscription>(firstPage).stream;
   }
 
   Future<Page<Subscription>> pageSubscriptions(
