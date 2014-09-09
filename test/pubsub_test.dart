@@ -303,9 +303,7 @@ main() {
 
           test('cancel', () {
             var mock = new MockClient();
-            // There will be two calls to the mock as the cancel happen after
-            // processing the first result which will trigger a second request.
-            registerQueryMock(mock, 170, 50, 2);
+            registerQueryMock(mock, 170, 50, 1);
 
             var api = new PubSub(mock, PROJECT);
             var subscription;
@@ -699,9 +697,7 @@ main() {
 
           test('cancel', () {
             var mock = new MockClient();
-            // There will be two calls to the mock as the cancel happen after
-            // processing the first result which will trigger a second request.
-            registerQueryMock(mock, 170, 50, totalCalls: 2);
+            registerQueryMock(mock, 170, 50, totalCalls: 1);
 
             var api = new PubSub(mock, PROJECT);
             var subscription;

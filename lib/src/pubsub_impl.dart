@@ -194,7 +194,7 @@ class _PubSubImpl implements PubSub {
       page.items.forEach(controller.add);
       if (page.isLast) {
         controller.close();
-      } else if (!paused) {
+      } else if (!paused && !cancelled) {
         page.next().then(handlePage, onError: handleError);
       }
     }
@@ -272,7 +272,7 @@ class _PubSubImpl implements PubSub {
       page.items.forEach(controller.add);
       if (page.isLast) {
         controller.close();
-      } else if (!paused) {
+      } else if (!paused && !cancelled) {
         page.next().then(handlePage, onError: handleError);
       }
     }
