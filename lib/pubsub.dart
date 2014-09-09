@@ -162,12 +162,24 @@ abstract class PubSub {
   /// Returns a `Future` which completes with the subscription.
   Future<Subscription> lookupSubscription(String name);
 
-  /// List all subscriptions.
+  /// List subscriptions.
+  ///
+  /// If [query] is passed this will list all subscriptions matching the query.
+  ///
+  /// Otherwise this will list all subscriptions.
+  ///
+  /// The only supported query string is the name of a topic. If a name of a
+  /// topic is passed as [query], this will list all subscriptions on that
+  /// topic.
   ///
   /// Returns a `Stream` of subscriptions.
-  Stream<Subscription> listSubscriptions();
+  Stream<Subscription> listSubscriptions([String query]);
 
-  /// Start paging through all subscriptions.
+  /// Start paging through subscriptions.
+  ///
+  /// If [topic] is passed this will list all subscriptions to that topic.
+  ///
+  /// Otherwise this will list all subscriptions.
   ///
   /// The maximum number of subscriptions in each page is specified in
   /// [pageSize]
@@ -175,7 +187,8 @@ abstract class PubSub {
   /// Returns a `Future` which completes with a `Page` object holding the
   /// first page. Use the `Page` object to move to the next page of
   /// subscriptions.
-  Future<Page<Subscription>> pageSubscriptions({int pageSize: 50});
+  Future<Page<Subscription>> pageSubscriptions(
+      {String topic, int pageSize: 50});
 }
 
 /// A Pub/Sub topic.

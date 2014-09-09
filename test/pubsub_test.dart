@@ -70,6 +70,13 @@ class MockClient extends http.BaseClient {
     return new Future.value(
         new http.Response('', 200, headers: RESPONSE_HEADERS));
   }
+
+  Future<http.Response> respondError(statusCode) {
+    var error = {'error' : {'code': statusCode, 'message': 'error'}};
+    return new Future.value(
+        new http.Response(
+            JSON.encode(error), statusCode, headers: RESPONSE_HEADERS));
+  }
 }
 
 main() {
@@ -193,10 +200,15 @@ main() {
 
         // Mock that expect/generates [n] topics in pages of page size
         // [pageSize].
-        registerQueryMock(mock, n, pageSize) {
+        registerQueryMock(mock, n, pageSize, [totalCalls]) {
           var totalPages = (n + pageSize - 1) ~/ pageSize;
           // No items still generate one request.
           if (totalPages == 0) totalPages = 1;
+          // Can pass in total calls if this mock is overwritten before all
+          // expected pages are done, e.g. when testing errors.
+          if (totalCalls == null) {
+            totalCalls = totalPages;
+          }
           var pageCount = 0;
           mock.register('GET', 'topics', expectAsync((request) {
             pageCount++;
@@ -216,38 +228,148 @@ main() {
               addTopics(response, first, n - (totalPages - 1) * pageSize);
             }
             return mock.respond(response);
-          }, count: totalPages));
+          }, count: totalCalls));
         }
 
         group('list', () {
-          test('empty', () {
+          Future q(count) {
             var mock = new MockClient();
-            registerQueryMock(mock, 0, 50);
+            registerQueryMock(mock, count, 50);
 
             var api = new PubSub(mock, PROJECT);
             return api.listTopics().listen(
-                ((_) => throw 'Unexpected'),
-                onDone: expectAsync(() => null));
+                expectAsync((_) => null, count: count)).asFuture();
+          }
+
+          test('simple', () {
+            return q(0)
+                .then((_) => q(1))
+                .then((_) => q(1))
+                .then((_) => q(49))
+                .then((_) => q(50))
+                .then((_) => q(51))
+                .then((_) => q(99))
+                .then((_) => q(100))
+                .then((_) => q(101))
+                .then((_) => q(170));
           });
 
-          test('single', () {
+          test('immediate-pause-resume', () {
             var mock = new MockClient();
-            registerQueryMock(mock, 10, 50);
+            registerQueryMock(mock, 70, 50);
 
             var api = new PubSub(mock, PROJECT);
-            return api.listTopics().listen(
-                expectAsync(((_) => null), count: 10),
-                onDone: expectAsync(() => null));
+            api.listTopics().listen(
+                expectAsync(((_) => null), count: 70),
+                onDone: expectAsync(() => null))
+                    ..pause()
+                    ..resume()
+                    ..pause()
+                    ..resume();
           });
 
-          test('multiple', () {
+          test('pause-resume', () {
             var mock = new MockClient();
-            registerQueryMock(mock, 170, 50);
+            registerQueryMock(mock, 70, 50);
 
             var api = new PubSub(mock, PROJECT);
-            return api.listTopics().listen(
-                expectAsync(((_) => null), count: 170),
-                onDone: expectAsync(() => null));
+            var count = 0;
+            var subscription;
+            subscription = api.listTopics().listen(
+                expectAsync(((_) {
+                  subscription..pause()..resume()..pause();
+                  if ((count % 2) == 0) {
+                    subscription.resume();
+                  } else {
+                    scheduleMicrotask(() => subscription.resume());
+                  }
+                  return null;
+                }), count: 70),
+                onDone: expectAsync(() => null))
+                    ..pause();
+            scheduleMicrotask(() => subscription.resume());
+          });
+
+          test('immediate-cancel', () {
+            var mock = new MockClient();
+            registerQueryMock(mock, 70, 50, 1);
+
+            var api = new PubSub(mock, PROJECT);
+            api.listTopics().listen(
+                (_) => throw 'Unexpected',
+                onDone: () => throw 'Unexpected')
+                    ..cancel();
+          });
+
+          test('cancel', () {
+            var mock = new MockClient();
+            // There will be two calls to the mock as the cancel happen after
+            // processing the first result which will trigger a second request.
+            registerQueryMock(mock, 170, 50, 2);
+
+            var api = new PubSub(mock, PROJECT);
+            var subscription;
+            subscription = api.listTopics().listen(
+                expectAsync((_) => subscription.cancel()),
+                onDone: () => throw 'Unexpected');
+          });
+
+          test('error', () {
+            runTest(bool withPause) {
+              // Test error on first GET request.
+              var mock = new MockClient();
+              mock.register('GET', 'topics', expectAsync((request) {
+                return mock.respondError(500);
+              }));
+              var api = new PubSub(mock, PROJECT);
+              var subscription;
+              subscription = api.listTopics().listen(
+                  (_) => throw 'Unexpected',
+                  onDone: expectAsync(() => null),
+                  onError: expectAsync(
+                      (e) => e is pubsub.DetailedApiRequestError));
+              if (withPause) {
+                subscription.pause();
+                scheduleMicrotask(() => subscription.resume());
+              }
+            }
+
+            runTest(false);
+            runTest(true);
+          });
+
+          test('error-2', () {
+            // Test error on second GET request.
+            void runTest(bool withPause) {
+              var mock = new MockClient();
+              registerQueryMock(mock, 51, 50, 1);
+
+              var api = new PubSub(mock, PROJECT);
+
+              int count = 0;
+              var subscription;
+              subscription = api.listTopics().listen(
+                  expectAsync(((_) {
+                    count++;
+                    if (count == 50) {
+                      if (withPause) {
+                        subscription.pause();
+                        scheduleMicrotask(() => subscription.resume());
+                      }
+                      mock.clear();
+                      mock.register('GET', 'topics', expectAsync((request) {
+                        return mock.respondError(500);
+                      }));
+                    }
+                    return null;
+                  }), count: 50),
+                  onDone: expectAsync(() => null),
+                  onError: expectAsync(
+                      (e) => e is pubsub.DetailedApiRequestError));
+            }
+
+            runTest(false);
+            runTest(true);
           });
         });
 
@@ -446,6 +568,8 @@ main() {
 
       group('query', () {
         var query = 'cloud.googleapis.com/project in (/projects/$PROJECT)';
+        var topicQuery =
+            'pubsub.googleapis.com/topic in (/topics/$PROJECT/topic)';
         var defaultPageSize = 50;
 
         addSubscriptions(
@@ -457,16 +581,23 @@ main() {
           }
         }
 
+
         // Mock that expect/generates [n] subscriptions in pages of page size
         // [pageSize].
-        registerQueryMock(mock, n, pageSize) {
+        registerQueryMock(mock, n, pageSize, {String topic, int totalCalls}) {
           var totalPages = (n + pageSize - 1) ~/ pageSize;
           // No items still generate one request.
           if (totalPages == 0) totalPages = 1;
+          // Can pass in total calls if this mock is overwritten before all
+          // expected pages are done, e.g. when testing errors.
+          if (totalCalls == null) {
+            totalCalls = totalPages;
+          }
           var pageCount = 0;
           mock.register('GET', 'subscriptions', expectAsync((request) {
             pageCount++;
-            expect(request.url.queryParameters['query'], query);
+            expect(request.url.queryParameters['query'],
+                   topic == null ? query : topicQuery);
             expect(request.url.queryParameters['maxResults'], '$pageSize');
             expect(request.body.length, 0);
             if (pageCount > 1) {
@@ -483,125 +614,267 @@ main() {
                   response, first, n - (totalPages - 1) * pageSize);
             }
             return mock.respond(response);
-          }, count: totalPages));
+          }, count: totalCalls));
         }
 
         group('list', () {
-          test('empty', () {
+          Future q(topic, count) {
             var mock = new MockClient();
-            registerQueryMock(mock, 0, 50);
+            registerQueryMock(mock, count, 50, topic: topic);
 
             var api = new PubSub(mock, PROJECT);
-            return api.listSubscriptions().listen(
-                ((_) => throw 'Unexpected'),
-                onDone: expectAsync(() => null));
+            return api.listSubscriptions(topic).listen(
+                expectAsync((_) => null, count: count)).asFuture();
+          }
+
+          test('simple', () {
+            return q(null, 0)
+                .then((_) => q('topic', 0))
+                .then((_) => q(null, 1))
+                .then((_) => q('topic', 1))
+                .then((_) => q(null, 10))
+                .then((_) => q('topic', 10))
+                .then((_) => q(null, 49))
+                .then((_) => q('topic', 49))
+                .then((_) => q(null, 50))
+                .then((_) => q('topic', 50))
+                .then((_) => q(null, 51))
+                .then((_) => q('topic', 51))
+                .then((_) => q(null, 99))
+                .then((_) => q('topic', 99))
+                .then((_) => q(null, 100))
+                .then((_) => q('topic', 100))
+                .then((_) => q(null, 101))
+                .then((_) => q('topic', 101))
+                .then((_) => q(null, 170))
+                .then((_) => q('topic', 170));
           });
 
-          test('single', () {
+          test('immediate-pause-resume', () {
             var mock = new MockClient();
-            registerQueryMock(mock, 10, 50);
+            registerQueryMock(mock, 70, 50);
 
             var api = new PubSub(mock, PROJECT);
-            return api.listSubscriptions().listen(
-                expectAsync(((_) => null), count: 10),
-                onDone: expectAsync(() => null));
+            api.listSubscriptions().listen(
+                expectAsync(((_) => null), count: 70),
+                onDone: expectAsync(() => null))
+                    ..pause()
+                    ..resume()
+                    ..pause()
+                    ..resume();
           });
 
-          test('multiple', () {
+          test('pause-resume', () {
             var mock = new MockClient();
-            registerQueryMock(mock, 170, 50);
+            registerQueryMock(mock, 70, 50);
 
             var api = new PubSub(mock, PROJECT);
-            return api.listSubscriptions().listen(
-                expectAsync(((_) => null), count: 170),
-                onDone: expectAsync(() => null));
+            var count = 0;
+            var subscription;
+            subscription = api.listSubscriptions().listen(
+                expectAsync(((_) {
+                  subscription..pause()..resume()..pause();
+                  if ((count % 2) == 0) {
+                    subscription.resume();
+                  } else {
+                    scheduleMicrotask(() => subscription.resume());
+                  }
+                  return null;
+                }), count: 70),
+                onDone: expectAsync(() => null))
+                    ..pause();
+            scheduleMicrotask(() => subscription.resume());
+          });
+
+          test('immediate-cancel', () {
+            var mock = new MockClient();
+            registerQueryMock(mock, 70, 50, totalCalls: 1);
+
+            var api = new PubSub(mock, PROJECT);
+            api.listSubscriptions().listen(
+                (_) => throw 'Unexpected',
+                onDone: () => throw 'Unexpected')
+                    ..cancel();
+          });
+
+          test('cancel', () {
+            var mock = new MockClient();
+            // There will be two calls to the mock as the cancel happen after
+            // processing the first result which will trigger a second request.
+            registerQueryMock(mock, 170, 50, totalCalls: 2);
+
+            var api = new PubSub(mock, PROJECT);
+            var subscription;
+            subscription = api.listSubscriptions().listen(
+                expectAsync((_) => subscription.cancel()),
+                onDone: () => throw 'Unexpected');
+          });
+
+          test('error', () {
+            runTest(bool withPause) {
+              // Test error on first GET request.
+              var mock = new MockClient();
+              mock.register('GET', 'subscriptions', expectAsync((request) {
+                return mock.respondError(500);
+              }));
+              var api = new PubSub(mock, PROJECT);
+              var subscription;
+              subscription = api.listSubscriptions().listen(
+                  (_) => throw 'Unexpected',
+                  onDone: expectAsync(() => null),
+                  onError: expectAsync(
+                      (e) => e is pubsub.DetailedApiRequestError));
+              if (withPause) {
+                subscription.pause();
+                scheduleMicrotask(() => subscription.resume());
+              }
+            }
+
+            runTest(false);
+            runTest(true);
+          });
+
+          test('error-2', () {
+            runTest(bool withPause) {
+              // Test error on second GET request.
+              var mock = new MockClient();
+              registerQueryMock(mock, 51, 50, totalCalls: 1);
+
+              var api = new PubSub(mock, PROJECT);
+
+              int count = 0;
+              var subscription;
+              subscription = api.listSubscriptions().listen(
+                  expectAsync(((_) {
+                    count++;
+                    if (count == 50) {
+                      if (withPause) {
+                        subscription.pause();
+                        scheduleMicrotask(() => subscription.resume());
+                      }
+                      mock.clear();
+                      mock.register(
+                          'GET', 'subscriptions', expectAsync((request) {
+                        return mock.respondError(500);
+                      }));
+                    }
+                    return null;
+                  }), count: 50),
+                  onDone: expectAsync(() => null),
+                  onError: expectAsync(
+                      (e) => e is pubsub.DetailedApiRequestError));
+            }
+
+            runTest(false);
+            runTest(true);
           });
         });
 
         group('page', () {
-          test('empty', () {
+          emptyTest(String topic) {
             var mock = new MockClient();
-            registerQueryMock(mock, 0, 50);
+            registerQueryMock(mock, 0, 50, topic: topic);
 
             var api = new PubSub(mock, PROJECT);
-            return api.pageSubscriptions().then(expectAsync((page) {
+            return api.pageSubscriptions(topic: topic).then(expectAsync((page) {
               expect(page.items.length, 0);
               expect(page.isLast, isTrue);
               expect(page.next(), completion(isNull));
 
               mock.clear();
-              registerQueryMock(mock, 0, 20);
-              return api.pageSubscriptions(pageSize: 20)
+              registerQueryMock(mock, 0, 20, topic: topic);
+              return api.pageSubscriptions(topic: topic, pageSize: 20)
                   .then(expectAsync((page) {
                     expect(page.items.length, 0);
                     expect(page.isLast, isTrue);
                     expect(page.next(), completion(isNull));
                   }));
             }));
+          }
+
+          test('empty', () {
+            emptyTest(null);
+            emptyTest('topic');
           });
 
-          test('single', () {
+          singleTest(String topic) {
             var mock = new MockClient();
-            registerQueryMock(mock, 10, 50);
+            registerQueryMock(mock, 10, 50, topic: topic);
 
             var api = new PubSub(mock, PROJECT);
-            return api.pageSubscriptions().then(expectAsync((page) {
+            return api.pageSubscriptions(topic: topic).then(expectAsync((page) {
               expect(page.items.length, 10);
               expect(page.isLast, isTrue);
               expect(page.next(), completion(isNull));
 
               mock.clear();
-              registerQueryMock(mock, 20, 20);
-              return api.pageSubscriptions(pageSize: 20)
+              registerQueryMock(mock, 20, 20, topic: topic);
+              return api.pageSubscriptions(topic: topic, pageSize: 20)
                   .then(expectAsync((page) {
                     expect(page.items.length, 20);
                     expect(page.isLast, isTrue);
                     expect(page.next(), completion(isNull));
                   }));
             }));
+          }
+
+          test('single', () {
+            singleTest(null);
+            singleTest('topic');
           });
 
-          test('multiple', () {
-            runTest(n, pageSize) {
-              var totalPages = (n + pageSize - 1) ~/ pageSize;
-              var pageCount = 0;
+          multipleTest(n, pageSize, topic) {
+            var totalPages = (n + pageSize - 1) ~/ pageSize;
+            var pageCount = 0;
 
-              var completer = new Completer();
-              var mock = new MockClient();
-              registerQueryMock(mock, n, pageSize);
+            var completer = new Completer();
+            var mock = new MockClient();
+            registerQueryMock(mock, n, pageSize, topic: topic);
 
-              handlingPage(page) {
-                pageCount++;
-                expect(page.isLast, pageCount == totalPages);
-                expect(page.items.length,
-                       page.isLast ? n - (totalPages - 1) * pageSize
-                                   : pageSize );
-                page.next().then((page) {
-                  if (page != null) {
-                    handlingPage(page);
-                  } else {
-                    expect(pageCount, totalPages);
-                    completer.complete();
-                  }
-                });
-              }
-
-              var api = new PubSub(mock, PROJECT);
-              api.pageSubscriptions(pageSize: pageSize).then(handlingPage);
-
-              return completer.future;
+            handlingPage(page) {
+              pageCount++;
+              expect(page.isLast, pageCount == totalPages);
+              expect(page.items.length,
+                     page.isLast ? n - (totalPages - 1) * pageSize
+                                 : pageSize );
+              page.next().then((page) {
+                if (page != null) {
+                  handlingPage(page);
+                } else {
+                  expect(pageCount, totalPages);
+                  completer.complete();
+                }
+              });
             }
 
-            return runTest(70, 50)
-                .then((_) => runTest(99, 1))
-                .then((_) => runTest(99, 50))
-                .then((_) => runTest(99, 98))
-                .then((_) => runTest(99, 99))
-                .then((_) => runTest(99, 100))
-                .then((_) => runTest(100, 1))
-                .then((_) => runTest(100, 50))
-                .then((_) => runTest(100, 100))
-                .then((_) => runTest(101, 50));
+            var api = new PubSub(mock, PROJECT);
+            api.pageSubscriptions(topic: topic, pageSize: pageSize)
+                .then(handlingPage);
+
+            return completer.future;
+          }
+
+          test('multiple', () {
+            return multipleTest(70, 50, null)
+                .then((_) => multipleTest(99, 1, null))
+                .then((_) => multipleTest(99, 50, null))
+                .then((_) => multipleTest(99, 98, null))
+                .then((_) => multipleTest(99, 99, null))
+                .then((_) => multipleTest(99, 100, null))
+                .then((_) => multipleTest(100, 1, null))
+                .then((_) => multipleTest(100, 50, null))
+                .then((_) => multipleTest(100, 100, null))
+                .then((_) => multipleTest(101, 50, null))
+                .then((_) => multipleTest(70, 50, 'topic'))
+                .then((_) => multipleTest(99, 1, 'topic'))
+                .then((_) => multipleTest(99, 50, 'topic'))
+                .then((_) => multipleTest(99, 98, 'topic'))
+                .then((_) => multipleTest(99, 99, 'topic'))
+                .then((_) => multipleTest(99, 100, 'topic'))
+                .then((_) => multipleTest(100, 1, 'topic'))
+                .then((_) => multipleTest(100, 50, 'topic'))
+                .then((_) => multipleTest(100, 100, 'topic'))
+                .then((_) => multipleTest(101, 50, 'topic'));
           });
         });
       });

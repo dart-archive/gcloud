@@ -5,6 +5,7 @@
 part of gcloud.pubsub;
 
 class _PubSubImpl implements PubSub {
+  static const int _DEFAULT_LIST_PAGE_SIZE = 50;
   final http.Client _client;
   final String project;
   final pubsub.PubsubApi _api;
@@ -49,14 +50,14 @@ class _PubSubImpl implements PubSub {
   }
 
   Future<pubsub.ListTopicsResponse> _listTopics(
-      int pageSize, [String nextPageToken]) {
+      int pageSize, String nextPageToken) {
     var query = 'cloud.googleapis.com/project in (/projects/$project)';
     return _api.topics.list(
         query: query, maxResults: pageSize, pageToken: nextPageToken);
   }
 
   Future<pubsub.Subscription> _createSubscription(
-      String name, String topic, {Uri endpoint}) {
+      String name, String topic, Uri endpoint) {
     var subscription = new pubsub.Subscription()
         ..name = name
         ..topic = topic;
@@ -77,8 +78,12 @@ class _PubSubImpl implements PubSub {
   }
 
   Future<pubsub.ListSubscriptionsResponse> _listSubscriptions(
-      int pageSize, [String nextPageToken]) {
-    var query = 'cloud.googleapis.com/project in (/projects/$project)';
+      String topic, int pageSize, String nextPageToken) {
+    // See https://developers.google.com/pubsub/v1beta1/subscriptions/list for
+    // the specification of the query format.
+    var query = topic == null
+        ? 'cloud.googleapis.com/project in (/projects/$project)'
+        : 'pubsub.googleapis.com/topic in (/topics/$project/$topic)';
     return _api.subscriptions.list(
         query: query, maxResults: pageSize, pageToken: nextPageToken);
   }
@@ -171,40 +176,58 @@ class _PubSubImpl implements PubSub {
   }
 
   Stream<Topic> listTopics() {
+    bool pendingRequest = false;
     bool paused = false;
+    bool cancelled = false;
     Page currentPage;
     StreamController controller;
 
+    handleError(e, s) {
+      controller.addError(e, s);
+      controller.close();
+    }
+
     handlePage(Page<Topic> page) {
+      if (cancelled) return;
+      pendingRequest = false;
       currentPage = page;
       page.items.forEach(controller.add);
       if (page.isLast) {
         controller.close();
       } else if (!paused) {
-        page.next().then(handlePage);
+        page.next().then(handlePage, onError: handleError);
       }
     }
 
+    onListen() {
+      int pageSize = _DEFAULT_LIST_PAGE_SIZE;
+      pendingRequest = true;
+      _listTopics(pageSize, null)
+          .then((response) {
+            handlePage(new _TopicPageImpl(this, pageSize, response));
+          },
+          onError: handleError);
+    }
     onPause() => paused = true;
     onResume() {
-      print('res');
       paused = false;
-      currentPage.next().then(handlePage);
+      if (pendingRequest) return;
+      pendingRequest = true;
+      currentPage.next().then(handlePage, onError: handleError);
+    }
+    onCancel() {
+      cancelled = true;
     }
 
-    controller = new StreamController(
-        sync: true, onPause: onPause, onResume: onResume);
-
-    int pageSize = 50;
-    _listTopics(pageSize).then((response) {
-      handlePage(new _TopicPageImpl(this, pageSize, response));
-    });
+    controller = new StreamController(sync: true, onListen: onListen,
+                                      onPause: onPause, onResume: onResume,
+                                      onCancel: onCancel);
 
     return controller.stream;
   }
 
   Future<Page<Topic>> pageTopics({int pageSize: 50}) {
-    return _listTopics(pageSize).then((response) {
+    return _listTopics(pageSize, null).then((response) {
       return new _TopicPageImpl(this, pageSize, response);
     });
   }
@@ -215,7 +238,7 @@ class _PubSubImpl implements PubSub {
     _checkTopicName(topic);
     return _createSubscription(_fullSubscriptionName(name),
                                _fullTopicName(topic),
-                               endpoint: endpoint)
+                               endpoint)
         .then((sub) => new _SubscriptionImpl(this, sub));
   }
 
@@ -230,37 +253,62 @@ class _PubSubImpl implements PubSub {
         .then((sub) => new _SubscriptionImpl(this, sub));
   }
 
-  Stream<Subscription> listSubscriptions() {
+  Stream<Subscription> listSubscriptions([String query]) {
+    bool pendingRequest = false;
     bool paused = false;
+    bool cancelled = false;
     Page currentPage;
     StreamController controller;
 
+    handleError(e, s) {
+      controller.addError(e, s);
+      controller.close();
+    }
+
     handlePage(Page<Subscription> page) {
+      if (cancelled) return;
+      pendingRequest = false;
       currentPage = page;
       page.items.forEach(controller.add);
       if (page.isLast) {
         controller.close();
       } else if (!paused) {
-        page.next().then(handlePage);
+        page.next().then(handlePage, onError: handleError);
       }
     }
 
+    onListen() {
+      int pageSize = _DEFAULT_LIST_PAGE_SIZE;
+      pendingRequest = true;
+      _listSubscriptions(query, pageSize, null)
+          .then((response) {
+            handlePage(new _SubscriptionPageImpl(
+                this, query, pageSize, response));
+          },
+          onError: handleError);
+    }
     onPause() => paused = true;
     onResume() {
       paused = false;
-      currentPage.next().then(handlePage);
+      if (pendingRequest) return;
+      pendingRequest = true;
+      currentPage.next().then(handlePage, onError: handleError);
+    }
+    onCancel() {
+      cancelled = true;
     }
 
-    controller = new StreamController(onPause: onPause, onResume: onResume);
-
-    pageSubscriptions().then(handlePage);
+    controller = new StreamController(sync: true, onListen: onListen,
+                                      onPause: onPause, onResume: onResume,
+                                      onCancel: onCancel);
 
     return controller.stream;
   }
 
-  Future<Page<Subscription>> pageSubscriptions({int pageSize: 50}) {
-    return _listSubscriptions(pageSize).then((response) {
-      return new _SubscriptionPageImpl(this, pageSize, response);
+  Future<Page<Subscription>> pageSubscriptions(
+      {String topic, int pageSize: 50}) {
+    return _listSubscriptions(topic, pageSize, null).then((response) {
+      return new _SubscriptionPageImpl(this, topic, pageSize, response);
     });
   }
 }
@@ -503,11 +551,13 @@ class _TopicPageImpl implements Page<Topic> {
 
 class _SubscriptionPageImpl implements Page<Subscription> {
   final _PubSubImpl _api;
+  final String _topic;
   final int _pageSize;
   final String _nextPageToken;
   final List<Subscription> items;
 
   _SubscriptionPageImpl(this._api,
+                        this._topic,
                         this._pageSize,
                         pubsub.ListSubscriptionsResponse response)
       : items = new List(response.subscription != null
@@ -527,8 +577,9 @@ class _SubscriptionPageImpl implements Page<Subscription> {
     if (_nextPageToken == null) return new Future.value(null);
     if (pageSize == null) pageSize = this._pageSize;
 
-    return _api._listSubscriptions(pageSize, _nextPageToken).then((response) {
-      return new _SubscriptionPageImpl(_api, pageSize, response);
+    return _api._listSubscriptions(
+        _topic, pageSize, _nextPageToken).then((response) {
+      return new _SubscriptionPageImpl(_api, _topic, pageSize, response);
     });
   }
 }
