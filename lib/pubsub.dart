@@ -5,6 +5,7 @@
 library gcloud.pubsub;
 
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
@@ -351,7 +352,7 @@ abstract class Message {
   /// The labels for this message. The values in the Map are either
   /// Strings or integers.
   ///
-  /// TODO: Values can be 64-bit integers. Deal with this for dart2js?
+  /// Values can be 64-bit integers.
   Map<String, dynamic> get labels;
 }
 

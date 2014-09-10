@@ -331,6 +331,7 @@ class _PullEventImpl implements PullEvent {
 ///
 /// decoded from JSON encoded push HTTP request body.
 class _PushEventImpl implements PushEvent {
+  static const PREFIX = '/subscriptions/';
   final Message _message;
   final String _subscriptionName;
 
@@ -341,18 +342,22 @@ class _PushEventImpl implements PushEvent {
   _PushEventImpl(this._message, this._subscriptionName);
 
   factory _PushEventImpl.fromJson(String json) {
-    var body = JSON.decode(json);
-    var data = body['message']['data'];
-    var labels = {};
+    Map body = JSON.decode(json);
+    String data = body['message']['data'];
+    Map labels = new HashMap();
     body['message']['labels'].forEach((label) {
       var key = label['key'];
       var value = label['strValue'];
       if (value == null) value = label['numValue'];
       labels[key] = value;
     });
-    return new _PushEventImpl(
-        new _PushMessage(data, labels),
-        '/subscriptions/' + body['subscription']);
+    String subscription = body['subscription'];
+    // TODO(#1): Remove this when the push event subscription name is prefixed
+    // with '/subscriptions/'.
+    if (!subscription.startsWith(PREFIX)) {
+      subscription = PREFIX + subscription;
+    }
+    return new _PushEventImpl(new _PushMessage(data, labels), subscription);
   }
 }
 

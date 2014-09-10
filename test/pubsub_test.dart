@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart' as crypto;
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart' as http_testing;
 import 'package:unittest/unittest.dart';
@@ -880,6 +881,105 @@ main() {
   group('topic', () {
     var name = 'test-topic';
     var absoluteName = '/topics/$PROJECT/test-topic';
+    var message = 'Hello, world!';
+    var messageBytes = UTF8.encode(message);
+    var messageBase64 = crypto.CryptoUtils.bytesToBase64(messageBytes);
+    var labels = {'a': 1, 'b': 'text'};
+
+    registerLookup(mock) {
+      mock.register(
+          'GET', new RegExp(r'topics/[a-z/-]*$'), expectAsync((request) {
+        expect(request.url.path, '${ROOT_PATH}topics/$absoluteName');
+        expect(request.body.length, 0);
+        return mock.respond(new pubsub.Topic()..name = absoluteName);
+      }));
+    }
+
+    registerPublish(mock, count, fn) {
+      mock.register('POST', 'topics/publish', expectAsync((request) {
+        var publishRequest =
+            new pubsub.PublishRequest.fromJson(JSON.decode(request.body));
+        return fn(publishRequest);
+      }, count: count));
+    }
+
+    test('publish', () {
+      var mock = new MockClient();
+      registerLookup(mock);
+
+      var api = new PubSub(mock, PROJECT);
+      return api.lookupTopic(name).then(expectAsync((topic) {
+        mock.clear();
+        registerPublish(mock, 4, ((request) {
+          expect(request.topic, absoluteName);
+          expect(request.message.data, messageBase64);
+          expect(request.message.label, isNull);
+          return mock.respondEmpty();
+        }));
+
+        return topic.publishString(message).then(expectAsync((result) {
+          expect(result, isNull);
+          return topic.publishBytes(messageBytes).then(expectAsync((result) {
+            expect(result, isNull);
+            return topic.publish(
+                new Message.withString(message)).then(expectAsync((result) {
+              expect(result, isNull);
+              return topic.publish(
+                  new Message.withBytes(
+                      messageBytes)).then(expectAsync((result) {
+                expect(result, isNull);
+              }));
+            }));
+          }));
+        }));
+      }));
+    });
+
+    test('publish-with-labels', () {
+      var mock = new MockClient();
+      registerLookup(mock);
+
+      var api = new PubSub(mock, PROJECT);
+      return api.lookupTopic(name).then(expectAsync((topic) {
+        mock.clear();
+        registerPublish(mock, 4, ((request) {
+          expect(request.topic, absoluteName);
+          expect(request.message.data, messageBase64);
+          expect(request.message.label, isNotNull);
+          expect(request.message.label.length, labels.length);
+          request.message.label.forEach((label) {
+            expect(labels.containsKey(label.key), isTrue);
+            if (label.numValue != null) {
+              expect(label.strValue, isNull);
+              expect(labels[label.key], int.parse(label.numValue));
+            } else {
+              expect(label.strValue, isNotNull);
+              expect(labels[label.key], label.strValue);
+            }
+          });
+          return mock.respondEmpty();
+        }));
+
+        return topic.publishString(message, labels: labels)
+            .then(expectAsync((result) {
+          expect(result, isNull);
+          return topic.publishBytes(messageBytes, labels: labels)
+              .then(expectAsync((result) {
+            expect(result, isNull);
+            return topic.publish(
+                new Message.withString(message, labels: labels))
+                .then(expectAsync((result) {
+              expect(result, isNull);
+              return topic.publish(
+                  new Message.withBytes(messageBytes, labels: labels))
+                  .then(expectAsync((result) {
+                expect(result, isNull);
+              }));
+            }));
+          }));
+        }));
+      }));
+    });
 
     test('delete', () {
       var mock = new MockClient();
@@ -945,14 +1045,61 @@ main() {
   });
 
   group('push', () {
-    var requestBody =
-        '{"message":{"data":"SGVsbG8sIHdvcmxkIDMwIG9mIDUwIQ==",'
-        '"labels":[{"key":"messageNo","numValue":30},'
-                  '{"key":"test","strValue":"hello"}]},'
-        '"subscription":"sgjesse-managed-vm/test-push-subscription"}';
-    var event = new PushEvent.fromJson(requestBody);
-    expect(event.message.asString, "Hello, world 30 of 50!");
-    expect(event.message.labels['messageNo'], 30);
-    expect(event.message.labels['test'], 'hello');
+    var relativeSubscriptionName = 'sgjesse-managed-vm/test-push-subscription';
+    var absoluteSubscriptionName = '/subscriptions/$relativeSubscriptionName';
+
+    test('event', () {
+      var requestBody =
+'''
+{
+  "message": {
+    "data":"SGVsbG8sIHdvcmxkIDMwIG9mIDUwIQ==",
+    "labels": [
+      {
+        "key":"messageNo",
+        "numValue":30
+      },
+      {
+        "key":"test",
+        "strValue":"hello"
+      }
+    ]
+  },
+  "subscription":"$absoluteSubscriptionName"
+}
+''';
+      var event = new PushEvent.fromJson(requestBody);
+      expect(event.message.asString, "Hello, world 30 of 50!");
+      expect(event.message.labels['messageNo'], 30);
+      expect(event.message.labels['test'], 'hello');
+      expect(event.subscriptionName, absoluteSubscriptionName);
+    });
+
+    test('event-short-subscription-name', () {
+      var requestBody =
+          '''
+{
+  "message": {
+    "data":"SGVsbG8sIHdvcmxkIDMwIG9mIDUwIQ==",
+    "labels": [
+      {
+        "key":"messageNo",
+        "numValue":30
+      },
+      {
+        "key":"test",
+        "strValue":"hello"
+      }
+    ]
+  },
+  "subscription":"$relativeSubscriptionName"
+}
+''';
+      var event = new PushEvent.fromJson(requestBody);
+      expect(event.message.asString, "Hello, world 30 of 50!");
+      expect(event.message.labels['messageNo'], 30);
+      expect(event.message.labels['test'], 'hello');
+      expect(event.subscriptionName, absoluteSubscriptionName);
+    });
   });
 }
