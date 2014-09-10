@@ -266,7 +266,7 @@ class DatastoreDB {
    */
   Future<Transaction> beginTransaction({bool crossEntityGroup: false}) {
     return datastore.beginTransaction(crossEntityGroup: crossEntityGroup)
-        .then((datastore.Transaction transaction) {
+        .then((transaction) {
       return new Transaction(this, transaction);
     });
   }

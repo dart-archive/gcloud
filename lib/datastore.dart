@@ -6,11 +6,21 @@ library gcloud.datastore;
 
 import 'dart:async';
 
+class ApplicationError implements Exception {
+  final String message;
+  ApplicationError(this.message);
+
+  String toString() => "ApplicationError: $message";
+}
+
+
 class DatastoreError implements Exception {
   final String message;
 
   DatastoreError([String message]) : message =
       (message != null ?message : 'DatastoreError: An unknown error occured');
+
+  String toString() => '$message';
 }
 
 class UnknownDatastoreError extends DatastoreError {
@@ -145,7 +155,10 @@ class FilterRelation {
   static const FilterRelation In = const FilterRelation._('IN');
 
   final String name;
+
   const FilterRelation._(this.name);
+
+  String toString() => name;
 }
 
 class Filter {
@@ -209,6 +222,8 @@ abstract class Datastore {
   Future rollback(Transaction transaction);
 
   Future<List<Entity>> lookup(List<Key> keys, {Transaction transaction});
+
+  // TODO: Make this pageable.
   Future<List<Entity>> query(
       Query query, {Partition partition, Transaction transaction});
 }

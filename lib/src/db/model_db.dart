@@ -69,6 +69,7 @@ class ModelDB {
     Key key = namespace.emptyKey;
     for (var element in datastoreKey.elements) {
       var type = _typeByModelDescription[_modelDescriptionByKind[element.kind]];
+      assert (type != null);
       key = key.append(type, id: element.id);
     }
     return key;
