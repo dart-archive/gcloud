@@ -1,0 +1,12 @@
+*/packages/*: Skip
+*/*/packages/*: Skip
+*/*/*/packages/*: Skip
+
+build/test/datastore/e2e/*: Skip
+build/test/db/e2e/*: Skip
+
+test/datastore/e2e/*: Skip
+test/db/e2e/*: Skip
+
+[ $compiler == dart2js ]
+*: Skip
