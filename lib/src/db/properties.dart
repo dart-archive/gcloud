@@ -4,10 +4,26 @@
 
 part of gcloud.db;
 
+/// Describes a property of an Entity.
+///
+/// Please see [ModelMetadata] for an example on how to use them.
 abstract class Property {
-  // The name in the ModelClass is used if [propertyName] is null!
+  /// The name of the property.
+  ///
+  /// If it is `null`, the name will be the same as used in the
+  /// [ModelDescription].
   final String propertyName;
+
+  /// Specifies whether this property is required or not.
+  ///
+  /// If required is `true`, it will be enforced when saving model objects to
+  /// the datastore and when retrieving them.
   final bool required;
+
+  /// Specifies whether this property should be indexed or not.
+  ///
+  /// When running queries no this property, it is necessary to set [indexed] to
+  /// `true`.
   final bool indexed;
 
   const Property({this.propertyName, this.required: false, this.indexed: true});

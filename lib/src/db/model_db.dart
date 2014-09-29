@@ -11,6 +11,8 @@ part of gcloud.db;
 /**
  * Represents an in-memory database of all model classes and it's corresponding
  * [ModelDescriptions]s.
+ *
+ * NOTE: This is an internal class and should not be used by normal users.
  */
 class ModelDB {
   // Map of properties for a given [ModelDescription]

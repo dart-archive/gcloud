@@ -4,6 +4,10 @@
 
 part of gcloud.db;
 
+/// Subclasses of [ModelDescription] describe how to map a dart model object
+/// to a Datastore Entity.
+///
+/// Please see [ModelMetadata] for an example on how to use them.
 abstract class ModelDescription {
   static String ID_FIELDNAME = 'id';
 
