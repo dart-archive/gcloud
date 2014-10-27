@@ -116,14 +116,6 @@ abstract class Model {
 }
 
 /**
- * Superclass for all polymorphic model classes.
- *
- * The direct subclass of this model must have a [ModelMetadata] annotation
- * containing a [PolyModelDescription].
- */
-abstract class PolyModel extends Model { }
-
-/**
  * Superclass for all expanded model classes.
  *
  * The subclasses of this model must have a [ModelMetadata] annotation

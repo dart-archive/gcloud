@@ -40,30 +40,6 @@ library db_test;
 ///   - name: name
 ///     direction: asc
 ///
-/// - kind: PolyPerson
-///   ancestor: no
-///   properties:
-///   - name: class
-///     direction: asc
-///   - name: unIndexedName
-///     direction: asc
-///
-/// - kind: PolyPerson
-///   ancestor: no
-///   properties:
-///   - name: class
-///     direction: asc
-///   - name: indexedName
-///     direction: asc
-///
-/// - kind: PolyPerson
-///   ancestor: no
-///   properties:
-///   - name: class
-///     direction: asc
-///   - name: name
-///     direction: asc
-///
 /// $ gcloud preview datastore create-indexes .
 /// 02:19 PM Host: appengine.google.com
 /// 02:19 PM Uploading index definitions.
@@ -133,54 +109,6 @@ class UserDesc extends PersonDesc {
   final languages =
       const db.StringListProperty(propertyName: 'language');
   const UserDesc({String kind: 'User'}) : super(kind: kind);
-}
-
-
-@db.ModelMetadata(const PolyPersonDesc())
-class PolyPerson extends db.PolyModel {
-  String name;
-
-  // NOTE: There is no need to store these values, we make these two an alias
-  // for [name]. They are only used for querying.
-  String get indexedName => name;
-  String get unIndexedName => name;
-  set indexedName(String newName) => name = newName;
-  set unIndexedName(String newName) => name = newName;
-
-  operator==(Object other) => isSame(other);
-
-  isSame(Object other) {
-    return
-        other is PolyPerson &&
-        id == other.id &&
-        name == other.name;
-  }
-}
-
-@db.ModelMetadata(const PolyUserDesc())
-class PolyUser extends PolyPerson {
-  String nickname;
-
-  isSame(Object other) =>
-      super.isSame(other) && other is PolyUser && nickname == other.nickname;
-}
-
-class PolyPersonDesc extends db.PolyModelDescription {
-  static String PolyModelName = 'PolyPerson';
-
-  final id = const db.IntProperty();
-  final name = const db.StringProperty();
-  final indexedName = const db.StringProperty(indexed: true);
-  final unIndexedName = const db.StringProperty(indexed: false);
-
-  const PolyPersonDesc() : super();
-}
-
-class PolyUserDesc extends PolyPersonDesc {
-  static String PolyModelName = 'PolyUser';
-
-  final nickname = const db.StringProperty();
-  const PolyUserDesc();
 }
 
 
@@ -317,24 +245,6 @@ runTests(db.DatastoreDB store) {
         }
         return testInsertLookupDelete(users);
       });
-      test('poly_insert', () {
-        var root = store.emptyKey;
-        var persons = [];
-        for (var i = 1; i <= 10; i++) {
-          persons.add(new PolyPerson()
-              ..id = i
-              ..parentKey = root
-              ..name = 'user$i');
-        }
-        for (var i = 11; i <= 20; i++) {
-          persons.add(new PolyUser()
-              ..id = i
-              ..parentKey = root
-              ..name = 'user$i'
-              ..nickname = 'nickname${i%3}');
-        }
-        return testInsertLookupDelete(persons);
-      });
       test('expando_insert', () {
         var root = store.emptyKey;
         var expandoPersons = [];
@@ -366,15 +276,6 @@ runTests(db.DatastoreDB store) {
             ..age = 2
             ..name = 'user2'
             ..nickname = 'nickname2');
-        models.add(new PolyPerson()
-            ..id = 3
-            ..parentKey = root
-            ..name = 'user3');
-        models.add(new PolyUser()
-            ..id = 4
-            ..parentKey = root
-            ..name = 'user4'
-            ..nickname = 'nickname4');
         var expandoPerson = new ExpandoPerson()
             ..parentKey = root
             ..id = 3
@@ -512,26 +413,6 @@ runTests(db.DatastoreDB store) {
             ..languages = languages);
       }
 
-      var polyPersons = [];
-      var polyUsers = [];
-      for (var i = 1; i <= 10; i++) {
-        polyPersons.add(new PolyPerson()
-            ..id = i
-            ..parentKey = root
-            ..name = 'person$i');
-      }
-      for (var i = 11; i <= 20; i++) {
-        polyPersons.add(new PolyUser()
-            ..id = i
-            ..parentKey = root
-            ..name = 'user$i'
-            ..nickname = 'nickname${i%3}');
-        polyUsers.add(polyPersons.last);
-      }
-      var sortedPolyPersons = []
-          ..addAll(polyPersons)
-          ..sort((a, b) => a.name.compareTo(b.name));
-
       var expandoPersons = [];
       for (var i = 1; i <= 3; i++) {
         var expandoPerson = new ExpandoPerson()
@@ -587,7 +468,6 @@ runTests(db.DatastoreDB store) {
 
       var allInserts = []
           ..addAll(users)
-          ..addAll(polyPersons)
           ..addAll(expandoPersons);
       var allKeys = allInserts.map((db.Model model) => model.key).toList();
       return store.commit(inserts: allInserts).then((_) {
@@ -668,48 +548,16 @@ runTests(db.DatastoreDB store) {
                 compareModels(barUsers, models, anyOrder: true);
               });
             },
-            // PolyModel queries
-            () {
-              return store.query(PolyPerson)
-                  ..run().then((List<db.Model> models) {
-                // We compare here the query result in [models] to
-                // *all* persons (i.e. [polyPersons] contains all Person and
-                // User model objects)
-                compareModels(polyPersons, models, anyOrder: true);
-              });
-            },
-            () {
-              return store.query(PolyUser)
-                  ..run().then((List<db.Model> models) {
-                // Here we ensure that [models] contains only Users.
-                compareModels(polyUsers, models, anyOrder: true);
-              });
-            },
-
-            // PolyModel indexed/unindexed queries
-            () {
-              return store.query(PolyPerson)
-                  ..filter('indexedName =', 'person1')
-                  ..run().then((List<db.Model> models) {
-                compareModels([polyPersons[0]], models, anyOrder: true);
-              });
-            },
-            () {
-              return store.query(PolyPerson)
-                  ..filter('unIndexedName =', 'person1')
-                  ..run().then((List<db.Model> models) {
-                compareModels([], models, anyOrder: true);
-              });
-            },
 
             // Simple limit/offset test.
             () {
-              return store.query(PolyPerson)
-                  ..order('name')
+              return store.query(User)
+                  ..order('nickname')
                   ..offset(3)
-                  ..limit(10)
+                  ..limit(5)
                   ..run().then((List<db.Model> models) {
-                var expectedModels = sortedPolyPersons.sublist(3, 13);
+                var expectedModels =
+                    usersSortedAndFilteredNameDescNicknameAsc.sublist(3, 7);
                 compareModels(expectedModels, models, anyOrder: true);
               });
             },
@@ -768,4 +616,3 @@ runTests(db.DatastoreDB store) {
     });
   });
 }
-
