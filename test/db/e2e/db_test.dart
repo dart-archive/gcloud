@@ -66,6 +66,8 @@ class Person extends db.Model {
         age == other.age &&
         wife == other.wife;
   }
+
+  String toString() => 'Person(id: $id, name: $name, age: $age)';
 }
 
 @db.ModelMetadata(const UserDesc())
@@ -93,6 +95,9 @@ class User extends Person {
     }
     return true;
   }
+
+  String toString() =>
+      'User(${super.toString()}, nickname: $nickname, languages: $languages';
 }
 
 class PersonDesc extends db.ModelDescription {
@@ -399,7 +404,7 @@ runTests(db.DatastoreDB store) {
       var users = [];
       for (var i = 1; i <= 10; i++) {
         var languages = [];
-        if (i == 10) {
+        if (i == 9) {
           languages = ['foo'];
         } else if (i == 10) {
           languages = ['foo', 'bar'];
@@ -431,14 +436,14 @@ runTests(db.DatastoreDB store) {
 
       var usersSortedNameDescNicknameAsc = new List.from(users);
       usersSortedNameDescNicknameAsc.sort((User a, User b) {
-        var result = b.name.compareTo(b.name);
+        var result = b.name.compareTo(a.name);
         if (result == 0) return a.nickname.compareTo(b.nickname);
         return result;
       });
 
       var usersSortedNameDescNicknameDesc = new List.from(users);
       usersSortedNameDescNicknameDesc.sort((User a, User b) {
-        var result = b.name.compareTo(b.name);
+        var result = b.name.compareTo(a.name);
         if (result == 0) return b.nickname.compareTo(a.nickname);
         return result;
       });
@@ -495,7 +500,7 @@ runTests(db.DatastoreDB store) {
                   ..order('nickname')
                   ..run().then((List<db.Model> models) {
                 compareModels(
-                    usersSortedNameDescNicknameAsc, models, anyOrder: true);
+                    usersSortedNameDescNicknameAsc, models);
               });
             },
             () {
@@ -504,7 +509,7 @@ runTests(db.DatastoreDB store) {
                   ..order('-nickname')
                   ..run().then((List<db.Model> models) {
                 compareModels(
-                    usersSortedNameDescNicknameDesc, models, anyOrder: true);
+                    usersSortedNameDescNicknameDesc, models);
               });
             },
 
@@ -513,20 +518,20 @@ runTests(db.DatastoreDB store) {
               return store.query(User)
                   ..filter('name >=', LOWER_BOUND)
                   ..order('-name')
-                  ..order('-nickname')
+                  ..order('nickname')
                   ..run().then((List<db.Model> models) {
                 compareModels(usersSortedAndFilteredNameDescNicknameAsc,
-                    models, anyOrder: true);
+                    models);
               });
             },
             () {
               return store.query(User)
                   ..filter('name >=', LOWER_BOUND)
-                  ..order('name')
+                  ..order('-name')
                   ..order('-nickname')
                   ..run().then((List<db.Model> models) {
                 compareModels(usersSortedAndFilteredNameDescNicknameDesc,
-                    models, anyOrder: true);
+                    models);
               });
             },
 
@@ -552,13 +557,14 @@ runTests(db.DatastoreDB store) {
             // Simple limit/offset test.
             () {
               return store.query(User)
+                  ..order('-name')
                   ..order('nickname')
                   ..offset(3)
-                  ..limit(5)
+                  ..limit(4)
                   ..run().then((List<db.Model> models) {
                 var expectedModels =
                     usersSortedAndFilteredNameDescNicknameAsc.sublist(3, 7);
-                compareModels(expectedModels, models, anyOrder: true);
+                compareModels(expectedModels, models);
               });
             },
 

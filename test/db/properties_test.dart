@@ -174,4 +174,6 @@ class ModelDBMock implements ModelDB {
   Model fromDatastoreEntity(datastore.Entity entity) => null;
   ModelDescription modelDescriptionForType(Type type) => null;
   datastore.Entity toDatastoreEntity(Model model) => null;
+  String fieldNameToPropertyName(String kind, String fieldName) => null;
+  String kindName(Type type) => null;
 }

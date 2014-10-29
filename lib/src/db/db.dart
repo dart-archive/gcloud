@@ -47,13 +47,11 @@ class Transaction {
    */
   Query query(Type kind, Key ancestorKey, {Partition partition}) {
     _checkSealed();
-    var modelDescription = db.modelDB.modelDescriptionForType(kind);
-    var query = new Query(db,
-                     modelDescription,
+    return new Query(db,
+                     kind,
                      partition: partition,
                      ancestorKey: ancestorKey,
                      datastoreTransaction: _datastoreTransaction);
-    return modelDescription.finishQuery(db.modelDB, query);
   }
 
   /**
@@ -102,7 +100,6 @@ class Query {
   final DatastoreDB _db;
   final datastore.Transaction _transaction;
   final String _kind;
-  final ModelDescription _modelDescription;
 
   final Partition _partition;
   final Key _ancestorKey;
@@ -112,11 +109,12 @@ class Query {
   int _offset;
   int _limit;
 
-  Query(DatastoreDB dbImpl, ModelDescription modelDescription,
+  Query(DatastoreDB dbImpl, Type kind,
         {Partition partition, Key ancestorKey,
          datastore.Transaction datastoreTransaction})
-      : _db = dbImpl, _kind = modelDescription.kindName(dbImpl.modelDB),
-        _modelDescription = modelDescription, _partition = partition,
+      : _db = dbImpl,
+        _kind = dbImpl.modelDB.kindName(kind),
+        _partition = partition,
         _ancestorKey = ancestorKey, _transaction = datastoreTransaction;
 
   /**
@@ -209,10 +207,10 @@ class Query {
 
   String _convertToDatastoreName(String name) {
     var propertyName =
-        _modelDescription.fieldNameToPropertyName(_db.modelDB, name);
+        _db.modelDB.fieldNameToPropertyName(_kind, name);
     if (propertyName == null) {
       throw new ArgumentError(
-          "Field $name is not available for kind $_modelDescription");
+          "Field $name is not available for kind $_kind");
     }
     return propertyName;
   }
@@ -224,7 +222,7 @@ class DatastoreDB {
   Partition _defaultPartition;
 
   DatastoreDB(this.datastore, {ModelDB modelDB})
-      : _modelDB = modelDB != null ? modelDB : new ModelDB() {
+      : _modelDB = modelDB != null ? modelDB : new ModelDBImpl() {
     _defaultPartition = new Partition(null);
   }
 
@@ -275,13 +273,10 @@ class DatastoreDB {
    * Build a query for [kind] models.
    */
   Query query(Type kind, {Partition partition, Key ancestorKey}) {
-    var modelDescription = modelDB.modelDescriptionForType(kind);
-
-    var q = new Query(this,
-                      modelDescription,
+    return  new Query(this,
+                      kind,
                       partition: partition,
                       ancestorKey: ancestorKey);
-    return modelDescription.finishQuery(modelDB, q);
   }
 
   /**
