@@ -178,21 +178,19 @@ runTests(db.DatastoreDB store) {
   }
 
   Future testInsertLookupDelete(
-      List<db.Model> objects, {bool transactional: false, bool xg: false}) {
+      List<db.Model> objects, {bool transactional: false}) {
     var keys = objects.map((db.Model obj) => obj.key).toList();
 
     if (transactional) {
-      return store.beginTransaction(crossEntityGroup: xg)
-          .then((db.Transaction commitTransaction) {
+      return store.withTransaction((db.Transaction commitTransaction) {
         commitTransaction.queueMutations(inserts: objects);
-        return commitTransaction.commit().then((_) {
-          return store.beginTransaction(crossEntityGroup: xg)
-              .then((db.Transaction deleteTransaction) {
-            return deleteTransaction.lookup(keys).then((List<db.Model> models) {
-              compareModels(objects, models);
-              deleteTransaction.queueMutations(deletes: keys);
-              return deleteTransaction.commit();
-            });
+        return commitTransaction.commit();
+      }).then((_) {
+        return store.withTransaction((db.Transaction deleteTransaction) {
+          return deleteTransaction.lookup(keys).then((List<db.Model> models) {
+            compareModels(objects, models);
+            deleteTransaction.queueMutations(deletes: keys);
+            return deleteTransaction.commit();
           });
         });
       });
@@ -288,7 +286,7 @@ runTests(db.DatastoreDB store) {
         expandoPerson.foo = 'foo1';
         expandoPerson.bar = 2;
 
-        return testInsertLookupDelete(models, transactional: true, xg: true);
+        return testInsertLookupDelete(models, transactional: true);
       });
 
       test('parent_key', () {

@@ -4,6 +4,21 @@
 
 part of gcloud.db;
 
+/**
+ * A function definition for transactional functions.
+ *
+ * The function will be given a [Transaction] object which can be used to make
+ * lookups/queries and queue modifications (inserts/updates/deletes).
+ */
+typedef Future TransactionHandler(Transaction transaction);
+
+/**
+ * A datastore transaction.
+ *
+ * It can be used for making lookups/queries and queue modifcations
+ * (inserts/updates/deletes). Finally the transaction can be either committed
+ * or rolled back.
+ */
 class Transaction {
   static const int _TRANSACTION_STARTED = 0;
   static const int _TRANSACTION_ROLLED_BACK = 1;
@@ -254,18 +269,15 @@ class DatastoreDB {
   /**
    * Begins a new a new transaction.
    *
-   * A normal transaction can only touch entities inside one entity group. By
-   * setting [crossEntityGroup] to `true` it is possible to touch up to
-   * five entity groups.
-   *
-   * Cross entity group transactions come with a cost, due to the fact that
-   * a two-phase commit protocol will be used. So it will result in higher
-   * latency.
+   * A transaction can touch only a limited number of entity groups. This limit
+   * is currently 5.
    */
-  Future<Transaction> beginTransaction({bool crossEntityGroup: false}) {
-    return datastore.beginTransaction(crossEntityGroup: crossEntityGroup)
-        .then((transaction) {
-      return new Transaction(this, transaction);
+  // TODO: Add retries and/or auto commit/rollback.
+  Future withTransaction(TransactionHandler transactionHandler) {
+    return datastore.beginTransaction(crossEntityGroup: true)
+        .then((datastoreTransaction) {
+      var transaction = new Transaction(this, datastoreTransaction);
+      return transactionHandler(transaction);
     });
   }
 
