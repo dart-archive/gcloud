@@ -41,6 +41,19 @@ main() {
       expect(prop.decodePrimitiveValue(null, 99), equals(99));
     });
 
+    test('double_property', () {
+      var prop = const DoubleProperty(required: true);
+      expect(prop.validate(null, null), isFalse);
+
+      prop = const DoubleProperty(required: false);
+      expect(prop.validate(null, null), isTrue);
+      expect(prop.validate(null, 33.0), isTrue);
+      expect(prop.encodeValue(null, null), equals(null));
+      expect(prop.encodeValue(null, 42.3), equals(42.3));
+      expect(prop.decodePrimitiveValue(null, null), equals(null));
+      expect(prop.decodePrimitiveValue(null, 99.1), equals(99.1));
+    });
+
     test('string_property', () {
       var prop = const StringProperty(required: true);
       expect(prop.validate(null, null), isFalse);

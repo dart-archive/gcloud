@@ -38,7 +38,8 @@ abstract class Property {
   Object decodePrimitiveValue(ModelDB db, Object value);
 }
 
-
+/// An abstract base class for primitive properties which can e.g. be used
+/// within a composed `ListProperty`.
 abstract class PrimitiveProperty extends Property {
   const PrimitiveProperty(
       {String propertyName, bool required: false, bool indexed: true})
@@ -49,7 +50,10 @@ abstract class PrimitiveProperty extends Property {
   Object decodePrimitiveValue(ModelDB db, Object value) => value;
 }
 
-
+/// A boolean [Property].
+///
+/// It will validate that values are booleans before writing them to the
+/// datastore and when reading them back.
 class BoolProperty extends PrimitiveProperty {
   const BoolProperty(
       {String propertyName, bool required: false, bool indexed: true})
@@ -59,6 +63,10 @@ class BoolProperty extends PrimitiveProperty {
       => super.validate(db, value) && (value == null || value is bool);
 }
 
+/// A integer [Property].
+///
+/// It will validate that values are integers before writing them to the
+/// datastore and when reading them back.
 class IntProperty extends PrimitiveProperty {
   const IntProperty(
       {String propertyName, bool required: false, bool indexed: true})
@@ -68,6 +76,23 @@ class IntProperty extends PrimitiveProperty {
       => super.validate(db, value) && (value == null || value is int);
 }
 
+/// A double [Property].
+///
+/// It will validate that values are doubles before writing them to the
+/// datastore and when reading them back.
+class DoubleProperty extends PrimitiveProperty {
+  const DoubleProperty(
+      {String propertyName, bool required: false, bool indexed: true})
+      : super(propertyName: propertyName, required: required, indexed: indexed);
+
+  bool validate(ModelDB db, Object value)
+      => super.validate(db, value) && (value == null || value is double);
+}
+
+/// A string [Property].
+///
+/// It will validate that values are strings before writing them to the
+/// datastore and when reading them back.
 class StringProperty extends PrimitiveProperty {
   const StringProperty(
       {String propertyName, bool required: false, bool indexed: true})
@@ -77,6 +102,10 @@ class StringProperty extends PrimitiveProperty {
       => super.validate(db, value) && (value == null || value is String);
 }
 
+/// A key [Property].
+///
+/// It will validate that values are keys before writing them to the
+/// datastore and when reading them back.
 class ModelKeyProperty extends PrimitiveProperty {
   const ModelKeyProperty(
       {String propertyName, bool required: false, bool indexed: true})
@@ -96,6 +125,11 @@ class ModelKeyProperty extends PrimitiveProperty {
   }
 }
 
+/// A binary blob [Property].
+///
+/// It will validate that values are blobs before writing them to the
+/// datastore and when reading them back. Blob values will be represented by
+/// List<int>.
 class BlobProperty extends PrimitiveProperty {
   const BlobProperty({String propertyName, bool required: false})
      : super(propertyName: propertyName, required: required, indexed: false);
@@ -120,6 +154,10 @@ class BlobProperty extends PrimitiveProperty {
   }
 }
 
+/// A datetime [Property].
+///
+/// It will validate that values are DateTime objects before writing them to the
+/// datastore and when reading them back.
 class DateTimeProperty extends PrimitiveProperty {
   const DateTimeProperty(
       {String propertyName, bool required: false, bool indexed: true})
@@ -138,6 +176,11 @@ class DateTimeProperty extends PrimitiveProperty {
 }
 
 
+/// A composed list [Property], with a `subProperty` for the list elements.
+///
+/// It will validate that values are List objects before writing them to the
+/// datastore and when reading them back. It will also validate the elements
+/// of the list itself.
 class ListProperty extends Property {
   final PrimitiveProperty subProperty;
 
@@ -174,6 +217,7 @@ class ListProperty extends Property {
   }
 }
 
+/// A convenience [Property] for list of strings.
 class StringListProperty extends ListProperty {
   const StringListProperty({String propertyName, bool indexed: true})
       : super(const StringProperty(),
