@@ -40,16 +40,16 @@ class _StorageImpl implements Storage {
   _StorageImpl(client, this.project)
       : _api = new storage.StorageApi(client);
 
-  Future createBucket(String bucketName, {BucketAcl acl}) {
+  Future createBucket(String bucketName,
+                      {PredefinedAcl predefinedAcl, Acl acl}) {
     var bucket = new storage.Bucket()..name = bucketName;
-    var predefinedAcl;
+    var predefinedName = predefinedAcl != null ? predefinedAcl._name : null;
     if (acl != null) {
-      assert(acl.isPredefined);
-      predefinedAcl = acl._predefined;
+      bucket.acl = acl._toBucketAccessControlList();
     }
     return _api.buckets.insert(bucket,
                                project,
-                               predefinedAcl: predefinedAcl)
+                               predefinedAcl: predefinedName)
         .then((bucket) => null);
   }
 
@@ -57,8 +57,11 @@ class _StorageImpl implements Storage {
     return _api.buckets.delete(bucketName);
   }
 
-  Bucket bucket(String bucketName, {ObjectAcl defaultObjectAcl}) {
-    return new _BucketImpl(this, bucketName, defaultObjectAcl);
+  Bucket bucket(String bucketName,
+                {PredefinedAcl defaultPredefinedObjectAcl,
+                 Acl defaultObjectAcl}) {
+    return new _BucketImpl(
+        this, bucketName, defaultPredefinedObjectAcl, defaultObjectAcl);
   }
 
   Future<bool> bucketExists(String bucketName) {
@@ -118,10 +121,14 @@ class _BucketInformationImpl implements BucketInfo {
 /// Bucket API implementation providing access to objects.
 class _BucketImpl implements Bucket {
   final storage.StorageApi _api;
-  ObjectAcl _defaultObjectAcl;
+  PredefinedAcl _defaultPredefinedObjectAcl;
+  Acl _defaultObjectAcl;
   final String bucketName;
 
-  _BucketImpl(_StorageImpl storage, this.bucketName, this._defaultObjectAcl) :
+  _BucketImpl(_StorageImpl storage,
+              this.bucketName,
+              this._defaultPredefinedObjectAcl,
+              this._defaultObjectAcl) :
     this._api = storage._api;
 
   String absoluteObjectName(String objectName) {
@@ -130,28 +137,50 @@ class _BucketImpl implements Bucket {
 
   StreamSink<List<int>> write(
       String objectName,
-      {int length, ObjectMetadata metadata, String contentType}) {
+      {int length, ObjectMetadata metadata,
+       Acl acl, PredefinedAcl predefinedAcl, String contentType}) {
     storage.Object object;
     if (metadata == null) {
-      metadata = new _ObjectMetadata(contentType: contentType);
-    } else if (contentType != null) {
-      metadata = metadata.replace(contentType: contentType);
+      metadata = new _ObjectMetadata(acl: acl, contentType: contentType);
+    } else {
+      if (acl != null) {
+        metadata = metadata.replace(acl: acl);
+      }
+      if (contentType != null) {
+         metadata = metadata.replace(contentType: contentType);
+      }
     }
-    object = (metadata as _ObjectMetadata)._object;
+    _ObjectMetadata objectMetadata = metadata;
+    object = objectMetadata._object;
+
+    // If no predefined ACL is passed use the default (if any).
+    var predefinedName;
+    if (predefinedAcl != null || _defaultPredefinedObjectAcl != null) {
+      var predefined =
+          predefinedAcl != null ? predefinedAcl : _defaultPredefinedObjectAcl;
+      predefinedName = predefined._name;
+    }
+
+    // If no ACL is passed use the default (if any).
+    if (object.acl == null && _defaultObjectAcl != null) {
+      object.acl = _defaultObjectAcl._toObjectAccessControlList();
+    }
 
     // Fill properties not passed in metadata.
     object.name = objectName;
 
     var sink = new _MediaUploadStreamSink(
-        _api, bucketName, objectName, object, length);
+        _api, bucketName, objectName, object, predefinedName, length);
     return sink;
   }
 
   Future writeBytes(
       String objectName, List<int> bytes,
-      {ObjectMetadata metadata, String contentType}) {
+      {ObjectMetadata metadata,
+       Acl acl, PredefinedAcl predefinedAcl, String contentType}) {
     var sink = write(objectName, length: bytes.length,
-                     metadata: metadata, contentType: contentType);
+                     metadata: metadata, acl: acl, predefinedAcl: predefinedAcl,
+                     contentType: contentType);
     sink.add(bytes);
     return sink.close();
   }
@@ -192,16 +221,21 @@ class _BucketImpl implements Bucket {
     // TODO: support other ObjectMetadata implementations?
     _ObjectMetadata md = metadata;
     var object = md._object;
-    if (md._predefined == null && _defaultObjectAcl == null) {
+    if (md._acl == null && _defaultObjectAcl == null) {
       throw new ArgumentError('ACL is required for update');
     }
     if (md.contentType == null) {
       throw new ArgumentError('Content-Type is required for update');
     }
-    var acl = md._predefined != null ? md._predefined._predefined
-                                     : _defaultObjectAcl._predefined;
+    var acl = md._acl != null ? md._acl : _defaultObjectAcl;
+
+    var predefinedAcl;
+    if (acl != null) {
+      object.acl = acl._toObjectAccessControlList();
+    }
+
     return _api.objects.update(
-        object, bucketName, objectName, predefinedAcl: acl);
+        object, bucketName, objectName, predefinedAcl: predefinedAcl);
   }
 
   Future<storage.Objects> _listObjects(
@@ -336,9 +370,8 @@ class _ObjectStatImpl implements ObjectInfo {
 
 class _ObjectMetadata implements ObjectMetadata {
   storage.Object _object;
-  ObjectAcl _predefined;
 
-  _ObjectMetadata({ObjectAcl acl,
+  _ObjectMetadata({Acl acl,
                    String contentType,
                    String contentEncoding,
                    String cacheControl,
@@ -346,7 +379,7 @@ class _ObjectMetadata implements ObjectMetadata {
                    String contentLanguage,
                    Map<String, String> custom}) {
     _object = new storage.Object();
-    _predefined = acl;  // Only canned ACLs supported.
+    _object.acl = acl != null ? acl._toObjectAccessControlList() : null;
     _object.contentType = contentType;
     _object.contentEncoding = contentEncoding;
     _object.cacheControl = cacheControl;
@@ -357,7 +390,7 @@ class _ObjectMetadata implements ObjectMetadata {
 
   _ObjectMetadata._(this._object);
 
-  set acl(ObjectAcl value) => _predefined = value;
+  set acl(Acl value) => _object.acl = value._toObjectAccessControlList();
 
   String get contentType => _object.contentType;
   set contentType(String value) => _object.contentType = value;
@@ -377,7 +410,7 @@ class _ObjectMetadata implements ObjectMetadata {
   Map<String, String> get custom => _object.metadata;
   set custom(Map<String, String> value) => _object.metadata = value;
 
-  ObjectMetadata replace({ObjectAcl acl,
+  ObjectMetadata replace({Acl acl,
                           String contentType,
                           String contentEncoding,
                           String cacheControl,
@@ -385,7 +418,7 @@ class _ObjectMetadata implements ObjectMetadata {
                           String contentLanguage,
                           Map<String, String> custom}) {
     return new _ObjectMetadata(
-        acl: acl != null ? acl : _predefined,
+        acl: acl != null ? acl : _acl,
         contentType: contentType != null ? contentType : this.contentType,
         contentEncoding: contentEncoding != null ? contentEncoding
                                                  : this.contentEncoding,
@@ -407,6 +440,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
   final String _bucketName;
   final String _objectName;
   final storage.Object _object;
+  final String _predefinedAcl;
   final int _length;
   final int _maxNormalUploadLength;
   int _bufferLength = 0;
@@ -422,7 +456,8 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
   int _state;
 
   _MediaUploadStreamSink(
-      this._api, this._bucketName, this._objectName, this._object, this._length,
+      this._api, this._bucketName, this._objectName, this._object,
+      this._predefinedAcl, this._length,
       [this._maxNormalUploadLength = _DEFAULT_MAX_NORMAL_UPLOAD_LENGTH]) {
     if (_length != null) {
       // If the length is known in advance decide on the upload strategy
@@ -517,6 +552,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
     _api.objects.insert(_object,
                         _bucketName,
                         name: _objectName,
+                        predefinedAcl: _predefinedAcl,
                         uploadMedia: media,
                         uploadOptions: common.UploadOptions.Default)
         .then((response) {
@@ -529,6 +565,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
     _api.objects.insert(_object,
                         _bucketName,
                         name: _objectName,
+                        predefinedAcl: _predefinedAcl,
                         uploadMedia: media,
                         uploadOptions: common.UploadOptions.Resumable)
         .then((response) {

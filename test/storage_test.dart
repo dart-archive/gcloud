@@ -46,13 +46,13 @@ main() {
       });
     });
 
-    test('create-with-acl', () {
+    test('create-with-predefined-acl', () {
       var predefined =
-          [[BucketAcl.AUTHENTICATED_READ, 'authenticatedRead'],
-           [BucketAcl.PRIVATE,  'private'],
-           [BucketAcl.PROJECT_PRIVATE, 'projectPrivate'],
-           [BucketAcl.PUBLIC_READ, 'publicRead'],
-           [BucketAcl.PUBLIC_READ_WRITE, 'publicReadWrite']];
+          [[PredefinedAcl.authenticatedRead, 'authenticatedRead'],
+           [PredefinedAcl.private,  'private'],
+           [PredefinedAcl.projectPrivate, 'projectPrivate'],
+           [PredefinedAcl.publicRead, 'publicRead'],
+           [PredefinedAcl.publicReadWrite, 'publicReadWrite']];
 
       withMockClient((mock, api) {
         int count = 0;
@@ -61,6 +61,7 @@ main() {
           var requestBucket =
               new storage.Bucket.fromJson(JSON.decode(request.body));
           expect(requestBucket.name, bucketName);
+          expect(requestBucket.acl, isNull);
           expect(request.url.queryParameters['predefinedAcl'],
                  predefined[count++][1]);
           return mock.respond(new storage.Bucket()..name = bucketName);
@@ -68,7 +69,129 @@ main() {
 
         var futures = [];
         for (int i = 0; i < predefined.length; i++) {
-          futures.add(api.createBucket(bucketName, acl: predefined[i][0]));
+          futures.add(api.createBucket(bucketName,
+                                       predefinedAcl: predefined[i][0]));
+        }
+        return Future.wait(futures);
+      });
+    });
+
+    test('create-with-acl', () {
+      var acl1 = new Acl([
+          new AclEntry(new AccountScope('user@example.com'),
+                       AclPermission.FULL_CONTROL),
+          ]);
+      var acl2 = new Acl([
+          new AclEntry(new AccountScope('user@example.com'),
+                       AclPermission.FULL_CONTROL),
+          new AclEntry(new GroupScope('group@example.com'),
+                       AclPermission.WRITE),
+          ]);
+      var acl3 = new Acl([
+          new AclEntry(new AccountScope('user@example.com'),
+                       AclPermission.FULL_CONTROL),
+          new AclEntry(new GroupScope('group@example.com'),
+                       AclPermission.WRITE),
+          new AclEntry(new DomainScope('example.com'),
+                       AclPermission.READ),
+          ]);
+
+      var acls = [acl1, acl2, acl3];
+
+      withMockClient((mock, api) {
+        int count = 0;
+
+        mock.register('POST', 'b', expectAsync((request) {
+          var requestBucket =
+              new storage.Bucket.fromJson(JSON.decode(request.body));
+          expect(requestBucket.name, bucketName);
+          expect(request.url.queryParameters['predefinedAcl'], isNull);
+          expect(requestBucket.acl, isNotNull);
+          expect(requestBucket.acl.length, count + 1);
+          expect(requestBucket.acl[0].entity, 'user-user@example.com');
+          expect(requestBucket.acl[0].role, 'OWNER');
+          if (count > 0) {
+            expect(requestBucket.acl[1].entity, 'group-group@example.com');
+            expect(requestBucket.acl[1].role, 'WRITER');
+          }
+          if (count > 2) {
+            expect(requestBucket.acl[2].entity, 'domain-example.com');
+            expect(requestBucket.acl[2].role, 'READER');
+          }
+          count++;
+          return mock.respond(new storage.Bucket()..name = bucketName);
+        }, count: acls.length));
+
+        var futures = [];
+        for (int i = 0; i < acls.length; i++) {
+          futures.add(api.createBucket(bucketName, acl: acls[i]));
+        }
+        return Future.wait(futures);
+      });
+    });
+
+    test('create-with-acl-and-predefined-acl', () {
+      var predefined =
+          [[PredefinedAcl.authenticatedRead, 'authenticatedRead'],
+           [PredefinedAcl.private,  'private'],
+           [PredefinedAcl.projectPrivate, 'projectPrivate'],
+           [PredefinedAcl.publicRead, 'publicRead'],
+           [PredefinedAcl.publicReadWrite, 'publicReadWrite']];
+
+      var acl1 = new Acl([
+          new AclEntry(new AccountScope('user@example.com'),
+                       AclPermission.FULL_CONTROL),
+          ]);
+      var acl2 = new Acl([
+          new AclEntry(new AccountScope('user@example.com'),
+                       AclPermission.FULL_CONTROL),
+          new AclEntry(new GroupScope('group@example.com'),
+                       AclPermission.WRITE),
+          ]);
+      var acl3 = new Acl([
+          new AclEntry(new AccountScope('user@example.com'),
+                       AclPermission.FULL_CONTROL),
+          new AclEntry(new GroupScope('group@example.com'),
+                       AclPermission.WRITE),
+          new AclEntry(new DomainScope('example.com'),
+                       AclPermission.READ),
+          ]);
+
+      var acls = [acl1, acl2, acl3];
+
+      withMockClient((mock, api) {
+        int count = 0;
+
+        mock.register('POST', 'b', expectAsync((request) {
+          var requestBucket =
+              new storage.Bucket.fromJson(JSON.decode(request.body));
+          int predefinedIndex = count ~/ acls.length;
+          int aclIndex = count % acls.length;
+          expect(requestBucket.name, bucketName);
+          expect(request.url.queryParameters['predefinedAcl'],
+                 predefined[predefinedIndex][1]);
+          expect(requestBucket.acl, isNotNull);
+          expect(requestBucket.acl.length, aclIndex + 1);
+          expect(requestBucket.acl[0].entity, 'user-user@example.com');
+          expect(requestBucket.acl[0].role, 'OWNER');
+          if (aclIndex > 0) {
+            expect(requestBucket.acl[1].entity, 'group-group@example.com');
+            expect(requestBucket.acl[1].role, 'WRITER');
+          }
+          if (aclIndex > 2) {
+            expect(requestBucket.acl[2].entity, 'domain-example.com');
+            expect(requestBucket.acl[2].role, 'READER');
+          }
+          count++;
+          return mock.respond(new storage.Bucket()..name = bucketName);
+        }, count: predefined.length * acls.length));
+
+        var futures = [];
+        for (int i = 0; i < predefined.length; i++) {
+          for (int j = 0; j < acls.length; j++) {
+            futures.add(api.createBucket(
+                bucketName, predefinedAcl: predefined[i][0], acl: acls[j]));
+          }
         }
         return Future.wait(futures);
       });
@@ -471,6 +594,183 @@ main() {
         });
       });
     });
+
+    test('write-with-predefined-acl', () {
+      var predefined =
+          [[PredefinedAcl.authenticatedRead, 'authenticatedRead'],
+           [PredefinedAcl.private,  'private'],
+           [PredefinedAcl.projectPrivate, 'projectPrivate'],
+           [PredefinedAcl.publicRead, 'publicRead'],
+           [PredefinedAcl.bucketOwnerFullControl, 'bucketOwnerFullControl'],
+           [PredefinedAcl.bucketOwnerRead, 'bucketOwnerRead']];
+
+      withMockClient((mock, api) {
+        int count = 0;
+        var bytes = [1,2,3];
+
+        mock.registerUpload(
+            'POST', 'b/$bucketName/o', expectAsync((request) {
+          return mock.processNormalMediaUpload(request)
+              .then(expectAsync((mediaUpload) {
+                var object =
+                    new storage.Object.fromJson(JSON.decode(mediaUpload.json));
+                expect(object.name, objectName);
+                expect(mediaUpload.bytes, bytes);
+                expect(request.url.queryParameters['predefinedAcl'],
+                       predefined[count++][1]);
+                expect(object.acl, isNull);
+                return mock.respond(new storage.Object()..name = objectName);
+              }));
+        }, count: predefined.length));
+
+        var bucket = api.bucket(bucketName);
+        var futures = [];
+        for (int i = 0; i < predefined.length; i++) {
+          futures.add(bucket.writeBytes(objectName, bytes,
+                                        predefinedAcl: predefined[i][0]));
+        }
+        return Future.wait(futures);
+      });
+    });
+
+    test('write-with-acl', () {
+      var acl1 = new Acl([
+          new AclEntry(new AccountScope('user@example.com'),
+                       AclPermission.FULL_CONTROL),
+          ]);
+      var acl2 = new Acl([
+          new AclEntry(new AccountScope('user@example.com'),
+                       AclPermission.FULL_CONTROL),
+          new AclEntry(new GroupScope('group@example.com'),
+                       AclPermission.WRITE),
+          ]);
+      var acl3 = new Acl([
+          new AclEntry(new AccountScope('user@example.com'),
+                       AclPermission.FULL_CONTROL),
+          new AclEntry(new GroupScope('group@example.com'),
+                       AclPermission.WRITE),
+          new AclEntry(new DomainScope('example.com'),
+                       AclPermission.READ),
+          ]);
+
+      var acls = [acl1, acl2, acl3];
+
+      withMockClient((mock, api) {
+        int count = 0;
+        var bytes = [1,2,3];
+
+        mock.registerUpload(
+            'POST', 'b/$bucketName/o', expectAsync((request) {
+          return mock.processNormalMediaUpload(request)
+              .then(expectAsync((mediaUpload) {
+                var object =
+                    new storage.Object.fromJson(JSON.decode(mediaUpload.json));
+                expect(object.name, objectName);
+                expect(mediaUpload.bytes, bytes);
+                expect(request.url.queryParameters['predefinedAcl'], isNull);
+                expect(object.acl, isNotNull);
+                expect(object.acl.length, count + 1);
+                expect(object.acl[0].entity, 'user-user@example.com');
+                expect(object.acl[0].role, 'OWNER');
+                if (count > 0) {
+                  expect(object.acl[1].entity, 'group-group@example.com');
+                  expect(object.acl[1].role, 'OWNER');
+                }
+                if (count > 2) {
+                  expect(object.acl[2].entity, 'domain-example.com');
+                  expect(object.acl[2].role, 'READER');
+                }
+                count++;
+                return mock.respond(new storage.Object()..name = objectName);
+              }));
+        }, count: acls.length));
+
+        var bucket = api.bucket(bucketName);
+        var futures = [];
+        for (int i = 0; i < acls.length; i++) {
+          futures.add(bucket.writeBytes(objectName, bytes, acl: acls[i]));
+        }
+        return Future.wait(futures);
+      });
+    });
+
+    test('write-with-acl-and-predefined-acl', () {
+      var predefined =
+          [[PredefinedAcl.authenticatedRead, 'authenticatedRead'],
+           [PredefinedAcl.private,  'private'],
+           [PredefinedAcl.projectPrivate, 'projectPrivate'],
+           [PredefinedAcl.publicRead, 'publicRead'],
+           [PredefinedAcl.bucketOwnerFullControl, 'bucketOwnerFullControl'],
+           [PredefinedAcl.bucketOwnerRead, 'bucketOwnerRead']];
+
+      var acl1 = new Acl([
+          new AclEntry(new AccountScope('user@example.com'),
+                       AclPermission.FULL_CONTROL),
+          ]);
+      var acl2 = new Acl([
+          new AclEntry(new AccountScope('user@example.com'),
+                       AclPermission.FULL_CONTROL),
+          new AclEntry(new GroupScope('group@example.com'),
+                       AclPermission.WRITE),
+          ]);
+      var acl3 = new Acl([
+          new AclEntry(new AccountScope('user@example.com'),
+                       AclPermission.FULL_CONTROL),
+          new AclEntry(new GroupScope('group@example.com'),
+                       AclPermission.WRITE),
+          new AclEntry(new DomainScope('example.com'),
+                       AclPermission.READ),
+          ]);
+
+      var acls = [acl1, acl2, acl3];
+
+      withMockClient((mock, api) {
+        int count = 0;
+        var bytes = [1,2,3];
+
+        mock.registerUpload(
+            'POST', 'b/$bucketName/o', expectAsync((request) {
+          return mock.processNormalMediaUpload(request)
+              .then(expectAsync((mediaUpload) {
+                int predefinedIndex = count ~/ acls.length;
+                int aclIndex = count % acls.length;
+                var object =
+                    new storage.Object.fromJson(JSON.decode(mediaUpload.json));
+                expect(object.name, objectName);
+                expect(mediaUpload.bytes, bytes);
+                expect(request.url.queryParameters['predefinedAcl'],
+                       predefined[predefinedIndex][1]);
+                expect(object.acl, isNotNull);
+                expect(object.acl.length, aclIndex + 1);
+                expect(object.acl[0].entity, 'user-user@example.com');
+                expect(object.acl[0].role, 'OWNER');
+                if (aclIndex > 0) {
+                  expect(object.acl[1].entity, 'group-group@example.com');
+                  expect(object.acl[1].role, 'OWNER');
+                }
+                if (aclIndex > 2) {
+                  expect(object.acl[2].entity, 'domain-example.com');
+                  expect(object.acl[2].role, 'READER');
+                }
+                count++;
+                return mock.respond(new storage.Object()..name = objectName);
+              }));
+        }, count: predefined.length * acls.length));
+
+        var bucket = api.bucket(bucketName);
+        var futures = [];
+        for (int i = 0; i < predefined.length; i++) {
+          for (int j = 0; j < acls.length; j++) {
+            futures.add(bucket.writeBytes(
+                objectName, bytes,
+                acl: acls[j], predefinedAcl: predefined[i][0]));
+          }
+        }
+        return Future.wait(futures);
+      });
+    });
+
+
 
     test('read', () {
       var bytes = [1, 2, 3];

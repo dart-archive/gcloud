@@ -42,9 +42,14 @@
 ///
 /// In most cases relative names are used. Absolute names are typically
 /// only used for operations involving objects in different buckets.
+///
+/// For most of the APIs in ths library which take instances of other classes
+/// from this library it is the assumption that the actual implementations
+/// provided here are used.
 library gcloud.storage;
 
 import 'dart:async';
+import 'dart:collection' show UnmodifiableListView;
 
 import 'package:http/http.dart' as http;
 
@@ -57,54 +62,233 @@ export 'common.dart';
 
 part 'src/storage_impl.dart';
 
-/// Bucket Access Control List
-///
-/// Describe an access control list for a bucket. The access control list
-/// defines the level of access for different entities.
-///
-/// Currently only supports pre-defined ACLs.
-///
-/// TODO: Support for building custom ACLs.
-class BucketAcl {
-  static const AUTHENTICATED_READ = const BucketAcl._('authenticatedRead');
-  static const PRIVATE = const BucketAcl._('private');
-  static const PROJECT_PRIVATE = const BucketAcl._('projectPrivate');
-  static const PUBLIC_READ = const BucketAcl._('publicRead');
-  static const PUBLIC_READ_WRITE = const BucketAcl._('publicReadWrite');
 
-  // Enum value for a predefined bucket ACL.
-  final String _predefined;
+/// An ACL (Access Control List) describes access rights to buckets and
+/// objects.
+///
+/// An ACL is a prioritized sequence of access control specifications,
+/// which individually prevent or grant access.
+/// The access controls are described by [AclEntry] objects.
+class Acl {
+  final _entries;
 
-  /// Whether this ACL is one of the predefined ones.
-  bool get isPredefined => true;
+  /// The entries in the ACL.
+  List<AclEntry> get entries => new UnmodifiableListView<AclEntry>(_entries);
 
-  const BucketAcl._(String this._predefined);
+  /// Create a new ACL with a list of ACL entries.
+  Acl(Iterable<AclEntry> entries) : _entries = new List.from(entries);
+
+  List<storage.BucketAccessControl> _toBucketAccessControlList() {
+    return _entries.map((entry) => entry._toBucketAccessControl()).toList();
+  }
+
+  List<storage.ObjectAccessControl> _toObjectAccessControlList() {
+    return _entries.map((entry) => entry._toObjectAccessControl()).toList();
+  }
 }
 
-/// Object Access Control List
+/// An ACL entry specifies that an entity has a specific access permission.
 ///
-/// Currently only supports pre-defined ACLs.
+/// A permission grants a specific permission to the entity.
+class AclEntry {
+  final AclScope scope;
+  final AclPermission permission;
+
+  AclEntry(this.scope, this.permission);
+
+  storage.BucketAccessControl _toBucketAccessControl() {
+    var acl = new storage.BucketAccessControl();
+    acl.entity = scope._storageEntity;
+    acl.role = permission._storageBucketRole;
+    return acl;
+  }
+
+  storage.ObjectAccessControl _toObjectAccessControl() {
+    var acl = new storage.ObjectAccessControl();
+    acl.entity = scope._storageEntity;
+    acl.role = permission._storageObjectRole;
+    return acl;
+  }
+}
+
+/// An ACL scope specifies an entity for which a permission applies.
 ///
-/// Describe an access control list for an object. The access control list
-/// define the level of access for different entities.
+/// A scope can be one of:
 ///
-/// TODO: Support for building custom ACLs.
-class ObjectAcl {
-  static const AUTHENTICATED_READ = const ObjectAcl._('authenticatedRead');
-  static const BUCKET_OWNER_FULL_CONTROL =
-      const ObjectAcl._('bucketOwnerFullControl');
-  static const BUCKET_OWNER_READ = const ObjectAcl._('bucketOwnerRead');
-  static const PRIVATE = const ObjectAcl._('private');
-  static const PROJECT_PRIVATE = const ObjectAcl._('projectPrivate');
-  static const PUBLIC_READ = const ObjectAcl._('publicRead');
+///   * Google Storage ID
+///   * Google account email address
+///   * Google group email address
+///   * Google Apps domain
+///   * Special identifier for all Google account holders
+///   * Special identifier for all users
+///
+/// See https://cloud.google.com/storage/docs/accesscontrol for more details.
+abstract class AclScope {
+  /// ACL type for scope representing a Google Storage id.
+  static const int _TYPE_STORAGE_ID = 0;
 
-  // Enum value for a predefined bucket ACL.
-  final String _predefined;
+  /// ACL type for scope representing an account holder.
+  static const int _TYPE_ACCOUNT = 1;
 
-  /// Whether this ACL is one of the predefined ones.
-  bool get isPredefined => true;
+  /// ACL type for scope representing a group.
+  static const int _TYPE_GROUP = 2;
 
-  const ObjectAcl._(String this._predefined);
+  /// ACL type for scope representing a domain.
+  static const int _TYPE_DOMAIN = 3;
+
+  /// ACL type for scope representing all authenticated users.
+  static const int _TYPE_ALL_AUTHENTICATED = 4;
+
+  /// ACL type for scope representing all users.
+  static const int _TYPE_ALL_USERS = 5;
+
+  /// The id of the actual entity this ACL scope represents. The actual values
+  /// are set in the different subclasses.
+  final String _id;
+
+  /// The type of this acope this ACL scope represents.
+  final int _type;
+
+  /// ACL scope for all authenticated users.
+  static const allAuthenticated = const AllAuthenticatedScope();
+
+  /// ACL scope for all users.
+  static const allUsers = const AllUsersScope();
+
+  const AclScope._(this._type, this._id);
+
+  String get _storageEntity {
+    switch (_type) {
+      case _TYPE_STORAGE_ID:
+        return 'user-$_id';
+      case _TYPE_ACCOUNT:
+        return 'user-$_id';
+      case _TYPE_GROUP:
+        return 'group-$_id';
+      case _TYPE_DOMAIN:
+        return 'domain-$_id';
+      case _TYPE_ALL_AUTHENTICATED:
+        return 'allAuthenticatedUsers';
+      case _TYPE_ALL_USERS:
+        return 'allUsers';
+      default:
+        throw new UnsupportedError('Unexpected ACL scope');
+    }
+  }
+}
+
+/// An ACL scope for an entity identified by a 'Google Storage ID'.
+///
+/// The [storageId] is a string of 64 hexadecimal digits that identifies a
+/// specific Google account holder or a specific Google group.
+class StorageIdScope extends AclScope {
+  StorageIdScope(String storageId)
+      : super._(AclScope._TYPE_STORAGE_ID, storageId);
+
+  /// Google Storage ID.
+  String get storageId => _id;
+}
+
+/// An ACL scope for an entity identified by an individual email address.
+class AccountScope extends AclScope {
+  AccountScope(String email): super._(AclScope._TYPE_ACCOUNT, email);
+
+  /// Email address.
+  String get email => _id;
+}
+
+/// An ACL scope for an entity identified by an Google Groups email.
+class GroupScope extends AclScope {
+  GroupScope(String group): super._(AclScope._TYPE_GROUP, group);
+
+  /// Group name.
+  String get group => _id;
+}
+
+/// An ACL scope for an entity identified by a domain name.
+class DomainScope extends AclScope {
+  DomainScope(String domain): super._(AclScope._TYPE_DOMAIN, domain);
+
+  /// Domain name.
+  String get domain => _id;
+}
+
+/// ACL scope for a all authenticated users.
+class AllAuthenticatedScope extends AclScope {
+  const AllAuthenticatedScope()
+      : super._(AclScope._TYPE_ALL_AUTHENTICATED, null);
+}
+
+/// ACL scope for a all users.
+class AllUsersScope extends AclScope {
+  const AllUsersScope(): super._(AclScope._TYPE_ALL_USERS, null);
+}
+
+/// Permissions for individual scopes in an ACL.
+class AclPermission {
+  /// Provide read access.
+  static const READ = const AclPermission._('READER');
+
+  /// Provide write access.
+  ///
+  /// For objects this permission is the same as [FULL_CONTROL].
+  static const WRITE = const AclPermission._('WRITER');
+
+  /// Provide full control.
+  ///
+  /// For objects this permission is the same as [WRITE].
+  static const FULL_CONTROL = const AclPermission._('OWNER');
+
+  final String _id;
+
+  const AclPermission._(this._id);
+
+  String get _storageBucketRole => _id;
+
+  String get _storageObjectRole => this == WRITE ? FULL_CONTROL._id : _id;
+}
+
+/// Definition of predefined ACLs.
+///
+/// There is a convenient way of referring to number of _predefined_ ACLs. These
+/// predefined ACLs have explicit names, and can _only_ be used to set an ACL,
+/// when either creating or updating a bucket or object. This set of predefined
+/// ACLs are expanded on the server to their actual list of [AclEntry] objects.
+/// When information is retreived on a bucket or object, this expanded list will
+/// be present. For a description of these predefined ACLs see:
+/// https://cloud.google.com/storage/docs/accesscontrol#extension.
+class PredefinedAcl {
+  String _name;
+  PredefinedAcl._(this._name);
+
+  /// Predefined ACL for the 'authenticated-read' ACL. Applies to both buckets
+  /// and objects.
+  static PredefinedAcl authenticatedRead =
+      new PredefinedAcl._('authenticatedRead');
+
+  /// Predefined ACL for the 'private' ACL. Applies to both buckets
+  /// and objects.
+  static PredefinedAcl private = new PredefinedAcl._('private');
+
+  /// Predefined ACL for the 'project-private' ACL. Applies to both buckets
+  /// and objects.
+  static PredefinedAcl projectPrivate = new PredefinedAcl._('projectPrivate');
+
+  /// Predefined ACL for the 'public-read' ACL. Applies to both buckets
+  /// and objects.
+  static PredefinedAcl publicRead = new PredefinedAcl._('publicRead');
+
+  /// Predefined ACL for the 'public-read-write' ACL. Applies only to buckets.
+  static PredefinedAcl publicReadWrite = new PredefinedAcl._('publicReadWrite');
+
+  /// Predefined ACL for the 'bucket-owner-full-control' ACL. Applies only to
+  /// objects.
+  static PredefinedAcl bucketOwnerFullControl =
+      new PredefinedAcl._('bucketOwnerFullControl');
+
+  /// Predefined ACL for the 'bucket-owner-read' ACL. Applies only to
+  /// objects.
+  static PredefinedAcl bucketOwnerRead = new PredefinedAcl._('bucketOwnerRead');
 }
 
 /// Information on a bucket.
@@ -119,7 +303,7 @@ abstract class BucketInfo {
 /// Access to Cloud Storage
 abstract class Storage {
   /// List of required OAuth2 scopes for Cloud Storage operation.
-  static const Scopes = const [ storage.StorageApi.DevstorageFullControlScope ];
+  static const Scopes = const [storage.StorageApi.DevstorageFullControlScope];
 
   /// Initializes access to cloud storage.
   factory Storage(http.Client client, String project) = _StorageImpl;
@@ -128,8 +312,13 @@ abstract class Storage {
   ///
   /// Creates a cloud storage bucket named [bucketName].
   ///
+  /// The bucket ACL can be set by passing [predefinedAcl] or [acl]. If both
+  /// are passed the entries from [acl] with be followed by the expansion of
+  /// [predefinedAcl].
+  ///
   /// Returns a [Future] which completes when the bucket has been created.
-  Future createBucket(String bucketName, {BucketAcl acl});
+  Future createBucket(String bucketName,
+                      {PredefinedAcl predefinedAcl, Acl acl});
 
   /// Delete a cloud storage bucket.
   ///
@@ -144,13 +333,21 @@ abstract class Storage {
   ///
   /// Instantiates a `Bucket` object refering to the bucket named [bucketName].
   ///
-  /// If the [defaultObjectAcl] argument is passed the resulting `Bucket` will
-  /// attach this ACL to all objects created using this `Bucket` object.
+  /// When an object is created using the resulting `Bucket` an ACL will always
+  /// be set. If the object creation does not pass any explicit ACL information
+  /// a default ACL will be used.
+  ///
+  /// If the arguments [defaultPredefinedObjectAcl] or [defaultObjectAcl] are
+  /// passed they define the default ACL. If both are passed the entries from
+  /// [defaultObjectAcl] with be followed by the expansion of
+  /// [defaultPredefinedObjectAcl] when an object is created.
   ///
   /// Otherwise the default object ACL attached to the bucket will be used.
   ///
   /// Returns a `Bucket` instance.
-  Bucket bucket(String bucketName, {ObjectAcl defaultObjectAcl});
+  Bucket bucket(String bucketName,
+                {PredefinedAcl defaultPredefinedObjectAcl,
+                 Acl defaultObjectAcl});
 
   /// Check whether a cloud storage bucket exists.
   ///
@@ -234,18 +431,11 @@ abstract class ObjectGeneration {
 
 /// Access to object metadata
 abstract class ObjectMetadata {
-  factory ObjectMetadata({ObjectAcl acl,
-                          String contentType,
-                          String contentEncoding,
-                          String cacheControl,
-                          String contentDisposition,
-                          String contentLanguage,
-                          Map<String, String> custom}) = _ObjectMetadata;
+  factory ObjectMetadata({Acl acl, String contentType, String contentEncoding,
+      String cacheControl, String contentDisposition, String contentLanguage,
+      Map<String, String> custom}) = _ObjectMetadata;
   /// ACL
-  ///
-  /// Currently it is only possible to set the ACL on one of the predefined
-  /// values from the class `ObjectAcl`.
-  void set acl(ObjectAcl value);
+  void set acl(Acl value);
 
   /// `Content-Type` for this object.
   String contentType;
@@ -270,13 +460,9 @@ abstract class ObjectMetadata {
   /// Create a copy of this object with some values replaces.
   ///
   /// TODO: This cannot be used to set values to null.
-  ObjectMetadata replace({ObjectAcl acl,
-                          String contentType,
-                          String contentEncoding,
-                          String cacheControl,
-                          String contentDisposition,
-                          String contentLanguage,
-                          Map<String, String> custom});
+  ObjectMetadata replace({Acl acl, String contentType, String contentEncoding,
+      String cacheControl, String contentDisposition, String contentLanguage,
+      Map<String, String> custom});
 }
 
 /// Result from List objects in a bucket.
@@ -327,12 +513,17 @@ abstract class Bucket {
   /// If [contentType] is not passed the default value of
   /// `application/octet-stream` will be used.
   ///
+  /// It is possible to at one of the predefined ACLs on the created object
+  /// using the [predefinedAcl] argument. If the [metadata] argument contain a
+  /// ACL as well, this ACL with be followed by the expansion of
+  /// [predefinedAcl].
+  ///
   /// Returns a `StreamSink` where the object content can be written. When
   /// The object content has been written the `StreamSink` completes with
-  /// an `ObjectStat` instance with the information on the object created.
-  StreamSink<List<int>> write(
-      String objectName,
-      {int length, ObjectMetadata metadata, String contentType});
+  /// an `ObjectInfo` instance with the information on the object created.
+  StreamSink<List<int>> write(String objectName,
+      {int length, ObjectMetadata metadata,
+       Acl acl, PredefinedAcl predefinedAcl, String contentType});
 
   /// Create an new object in the bucket with specified content.
   ///
@@ -340,9 +531,11 @@ abstract class Bucket {
   ///
   /// See [write] for more information on the additional arguments.
   ///
-  /// Returns a `Future` which completes when the object is written.
-  Future writeBytes(String name, List<int> bytes,
-                    {String contentType, ObjectMetadata metadata});
+  /// Returns a `Future` which completes with an `ObjectInfo` instance when
+  /// the object is written.
+  Future<ObjectInfo> writeBytes(String name, List<int> bytes,
+      {ObjectMetadata metadata,
+        Acl acl, PredefinedAcl predefinedAcl, String contentType});
 
   /// Read object content.
   ///
