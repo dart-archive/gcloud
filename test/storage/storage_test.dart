@@ -15,7 +15,7 @@ import 'package:gcloud/storage.dart';
 import 'package:googleapis/storage/v1.dart' as storage;
 import 'package:googleapis/common/common.dart' as common;
 
-import 'common.dart';
+import '../common.dart';
 
 
 const String ROOT_PATH = '/storage/v1/';

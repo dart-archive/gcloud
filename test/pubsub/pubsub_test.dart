@@ -13,7 +13,7 @@ import 'package:gcloud/pubsub.dart';
 
 import 'package:googleapis_beta/pubsub/v1beta1.dart' as pubsub;
 
-import 'common.dart';
+import '../common.dart';
 
 const String ROOT_PATH = '/pubsub/v1beta1/';
 
