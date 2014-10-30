@@ -8,5 +8,9 @@ build/test/db/e2e/*: Skip
 test/datastore/e2e/*: Skip
 test/db/e2e/*: Skip
 
+[ $browser ]
+build/test/storage/e2e_test: Skip
+test/storage/e2e_test: Skip
+
 [ $compiler == dart2js ]
 *: Skip
