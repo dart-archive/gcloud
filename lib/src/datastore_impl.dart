@@ -186,6 +186,7 @@ class DatastoreImpl implements datastore.Datastore {
     var apiProperty = new api.Property()
         ..indexed = indexed;
     if (value == null) {
+      return null;
     } else if (value is bool) {
       return apiProperty
           ..booleanValue = value;

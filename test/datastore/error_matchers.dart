@@ -6,7 +6,6 @@ library error_matchers;
 
 import 'package:unittest/unittest.dart';
 import 'package:gcloud/datastore.dart';
-import 'package:gcloud/db.dart';
 
 class _ApplicationError extends TypeMatcher {
   const _ApplicationError() : super("ApplicationError");

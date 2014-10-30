@@ -390,6 +390,7 @@ class _ObjectMetadata implements ObjectMetadata {
 
   _ObjectMetadata._(this._object);
 
+  List<storage.ObjectAccessControl> get _acl => _object.acl;
   set acl(Acl value) => _object.acl = value._toObjectAccessControlList();
 
   String get contentType => _object.contentType;

@@ -203,7 +203,7 @@ main() {
             'DELETE', new RegExp(r'b/[a-z/-]*$'), expectAsync((request) {
           expect(request.url.path, '${ROOT_PATH}b/$bucketName');
           expect(request.body.length, 0);
-          return mock.respond(new storage.Bucket()..name = bucketName);;
+          return mock.respond(new storage.Bucket()..name = bucketName);
         }));
 
         expect(api.deleteBucket(bucketName), completion(isNull));
