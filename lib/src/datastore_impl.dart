@@ -5,10 +5,13 @@
 library gcloud.datastore_impl;
 
 import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
 
 import 'package:http/http.dart' as http;
 
 import '../datastore.dart' as datastore;
+import '../common.dart' show Page;
 import 'package:googleapis_beta/datastore/v1beta2.dart' as api;
 
 class TransactionImpl implements datastore.Transaction {
@@ -44,7 +47,7 @@ class DatastoreImpl implements datastore.Datastore {
     return apiKey;
   }
 
-  datastore.Key _convertApi2DatastoreKey(api.Key key) {
+  static datastore.Key _convertApi2DatastoreKey(api.Key key) {
     var elements = key.path.map((api.KeyPathElement element) {
       if (element.id != null) {
         return new datastore.KeyElement(element.kind, int.parse(element.id));
@@ -84,7 +87,7 @@ class DatastoreImpl implements datastore.Datastore {
     return true;
   }
 
-  _convertApi2DatastorePropertyValue(api.Value value) {
+  static _convertApi2DatastorePropertyValue(api.Value value) {
     if (value.booleanValue != null)
       return value.booleanValue;
     else if (value.integerValue != null)
@@ -153,7 +156,7 @@ class DatastoreImpl implements datastore.Datastore {
     }
   }
 
-  _convertApi2DatastoreProperty(api.Property property) {
+  static _convertApi2DatastoreProperty(api.Property property) {
     if (property.booleanValue != null)
       return property.booleanValue;
     else if (property.integerValue != null)
@@ -218,7 +221,7 @@ class DatastoreImpl implements datastore.Datastore {
     }
   }
 
-  datastore.Entity _convertApi2DatastoreEntity(api.Entity entity) {
+  static datastore.Entity _convertApi2DatastoreEntity(api.Entity entity) {
     var unindexedProperties = new Set();
     var properties = {};
 
@@ -354,7 +357,7 @@ class DatastoreImpl implements datastore.Datastore {
     return orders.map(_convertDatastore2ApiOrder).toList();
   }
 
-  Future _handleError(error, stack) {
+  static Future _handleError(error, stack) {
     if (error is api.DetailedApiRequestError) {
       if (error.status == 400) {
         return new Future.error(
@@ -504,14 +507,15 @@ class DatastoreImpl implements datastore.Datastore {
     }, onError: _handleError);
   }
 
-  Future<List<datastore.Entity>> query(datastore.Query query,
-                                       {datastore.Partition partition,
-                                        datastore.Transaction transaction}) {
+  Future<Page<datastore.Entity>> query(
+      datastore.Query query, {datastore.Partition partition,
+                              datastore.Transaction transaction}) {
+    // NOTE: We explicitly do not set 'limit' here, since this is handled by
+    // QueryPageImpl.runQuery.
     var apiQuery = new api.Query()
         ..filter = _convertDatastore2ApiFilters(query.filters,
                                                 query.ancestorKey)
         ..order = _convertDatastore2ApiOrders(query.orders)
-        ..limit = query.limit
         ..offset = query.offset;
 
     if (query.kind != null) {
@@ -530,30 +534,8 @@ class DatastoreImpl implements datastore.Datastore {
           ..namespace = partition.namespace;
     }
 
-    var results = <datastore.Entity>[];
-    Future next({String lastEndCursor}) {
-      apiQuery.startCursor = lastEndCursor;
-      return _api.datasets.runQuery(request, _project).then((result) {
-        var batch = result.batch;
-        if (batch.entityResults != null) {
-          for (var result in batch.entityResults) {
-            results.add(_convertApi2DatastoreEntity(result.entity));
-          }
-        }
-        if (result.batch.moreResults == 'NOT_FINISHED') {
-          if (result.batch.endCursor == null) {
-            throw new datastore.DatastoreError(
-                'Server did not supply an end cursor, even though the query '
-                'is not done.');
-          }
-          return next(lastEndCursor: result.batch.endCursor);
-        } else {
-          return results;
-        }
-      });
-    }
-
-    return next().catchError(_handleError);
+    return QueryPageImpl.runQuery(_api, _project, request, query.limit)
+        .catchError(_handleError);
   }
 
   Future rollback(datastore.Transaction transaction) {
@@ -561,5 +543,128 @@ class DatastoreImpl implements datastore.Datastore {
     var request = new api.RollbackRequest()
         ..transaction = (transaction as TransactionImpl).data;
     return _api.datasets.rollback(request, _project).catchError(_handleError);
+  }
+}
+
+class QueryPageImpl implements Page<datastore.Entity> {
+  static const int MAX_ENTITIES_PER_RESPONSE = 2000;
+
+  final api.DatastoreApi _api;
+  final String _project;
+  final api.RunQueryRequest _nextRequest;
+  final List<datastore.Entity> _entities;
+  final bool _isLast;
+
+  // This might be `null` in which case we request as many as we can get.
+  final int _remainingNumberOfEntities;
+
+  QueryPageImpl(this._api, this._project,
+                this._nextRequest, this._entities,
+                this._isLast, this._remainingNumberOfEntities);
+
+  static Future<QueryPageImpl> runQuery(api.DatastoreApi api,
+                                        String project,
+                                        api.RunQueryRequest request,
+                                        int limit,
+                                        {int batchSize}) {
+    int batchLimit = batchSize;
+    if (batchLimit == null) {
+      batchLimit = MAX_ENTITIES_PER_RESPONSE;
+    }
+    if (limit != null && limit < batchLimit) {
+      batchLimit = limit;
+    }
+
+    request.query.limit = batchLimit;
+
+    return api.datasets.runQuery(request, project).then((response) {
+      var returnedEntities = const [];
+
+      var batch = response.batch;
+      if (batch.entityResults != null) {
+        returnedEntities = batch.entityResults
+            .map((result) => result.entity)
+            .map(DatastoreImpl._convertApi2DatastoreEntity)
+            .toList();
+      }
+
+      // This check is only necessary for the first request/response pair
+      // (if offset was supplied).
+      if (request.query.offset != null &&
+          request.query.offset > 0 &&
+          request.query.offset != response.batch.skippedResults) {
+        throw new datastore.DatastoreError(
+            'Server did not skip over the specified ${request.query.offset} '
+            'entities.');
+      }
+
+      if (limit != null && returnedEntities.length > limit) {
+        throw new datastore.DatastoreError(
+            'Server returned more entities then the limit for the request'
+            '(${request.query.limit}) was.');
+      }
+
+      if (limit != null &&
+          returnedEntities.length < batchLimit &&
+          response.batch.moreResults == 'MORE_RESULTS_AFTER_LIMIT') {
+        throw new datastore.DatastoreError(
+            'Server returned response with less entities then the limit was, '
+            'but signals there are more results after the limit.');
+      }
+
+      // In case a limit was specified, we need to subtraction the number of
+      // entities we already got.
+      // (the checks above guarantee that this subraction is >= 0).
+      int remainingEntities;
+      if (limit != null) {
+        remainingEntities = limit - returnedEntities.length;
+      }
+
+      bool isLast = ((limit != null && remainingEntities == 0) ||
+                     response.batch.moreResults == 'NO_MORE_RESULTS');
+
+      if (!isLast && response.batch.endCursor == null) {
+        throw new datastore.DatastoreError(
+            'Server did not supply an end cursor, even though the query '
+            'is not done.');
+      }
+
+      if (isLast) {
+        return new QueryPageImpl(
+            api, project, request, returnedEntities, true, null);
+      } else {
+        // NOTE: We reuse the old RunQueryRequest object here .
+
+        // The offset will be 0 from now on, since the first request will have
+        // skipped over the first `offset` results.
+        request.query.offset = 0;
+
+        // Furthermore we set the startCursor to the endCursor of the previous
+        // result batch, so we can continue where we left off.
+        request.query.startCursor = batch.endCursor;
+
+        return new QueryPageImpl(
+            api, project, request, returnedEntities, false, remainingEntities);
+      }
+    });
+  }
+
+  bool get isLast => _isLast;
+
+  List<datastore.Entity> get items => _entities;
+
+  Future<Page<datastore.Entity>> next({int pageSize}) {
+    // NOTE: We do not respect [pageSize] here, the only mechanism we can
+    // really use is `query.limit`, but this is user-specified when making
+    // the query.
+    if (isLast) {
+      return new Future.sync(() {
+        throw new ArgumentError('Cannot call next() on last page.');
+      });
+    }
+
+    return QueryPageImpl.runQuery(
+        _api, _project, _nextRequest, _remainingNumberOfEntities)
+        .catchError(DatastoreImpl._handleError);
   }
 }

@@ -30,6 +30,7 @@ library datastore_test;
 import 'dart:async';
 
 import 'package:gcloud/datastore.dart';
+import 'package:gcloud/common.dart';
 import 'package:unittest/unittest.dart';
 
 import '../error_matchers.dart';
@@ -39,6 +40,10 @@ Future sleep(Duration duration) {
   var completer = new Completer();
   new Timer(duration, completer.complete);
   return completer.future;
+}
+
+Future<List<Entity>> consumePages(FirstPageProvider provider) {
+  return new StreamFromPages(provider).stream.toList();
 }
 
 runTests(Datastore datastore) {
@@ -592,7 +597,8 @@ runTests(Datastore datastore) {
           var query = new Query(
               kind: kind, filters: filters, orders: orders,
               offset: offset, limit: limit);
-          return datastore.query(query).then((List<Entity> entities) {
+          return consumePages((_) => datastore.query(query))
+              .then((List<Entity> entities) {
             if (transaction != null) {
               return datastore.commit(transaction: transaction)
                   .then((_) => entities);
@@ -900,7 +906,8 @@ runTests(Datastore datastore) {
             () {
               var ancestorQuery =
                   new Query(ancestorKey: rootKey, orders: orders);
-              return datastore.query(ancestorQuery).then((results) {
+              return consumePages((_) => datastore.query(ancestorQuery))
+                  .then((results) {
                 expect(results.length, 2);
                 expect(compareEntity(entity, results[0]), isTrue);
                 expect(compareEntity(entity2, results[1]), isTrue);
@@ -910,7 +917,8 @@ runTests(Datastore datastore) {
             () {
               var ancestorQuery =
                   new Query(ancestorKey: subKey, orders: orders);
-              return datastore.query(ancestorQuery).then((results) {
+              return consumePages((_) => datastore.query(ancestorQuery))
+                  .then((results) {
                 expect(results.length, 2);
                 expect(compareEntity(entity, results[0]), isTrue);
                 expect(compareEntity(entity2, results[1]), isTrue);
@@ -919,7 +927,8 @@ runTests(Datastore datastore) {
             // - by [subSubKey]
             () {
               var ancestorQuery = new Query(ancestorKey: subSubKey);
-              return datastore.query(ancestorQuery).then((results) {
+              return consumePages((_) => datastore.query(ancestorQuery))
+                  .then((results) {
                 expect(results.length, 1);
                 expect(compareEntity(entity, results[0]), isTrue);
               });
@@ -927,7 +936,8 @@ runTests(Datastore datastore) {
             // - by [subSubKey2]
             () {
               var ancestorQuery = new Query(ancestorKey: subSubKey2);
-              return datastore.query(ancestorQuery).then((results) {
+              return consumePages((_) => datastore.query(ancestorQuery))
+                  .then((results) {
                 expect(results.length, 1);
                 expect(compareEntity(entity2, results[0]), isTrue);
               });
@@ -937,7 +947,8 @@ runTests(Datastore datastore) {
             // - by [rootKey] + 'SubSubKind'
             () {
               var query = new Query(ancestorKey: rootKey, kind: 'SubSubKind');
-              return datastore.query(query).then((List<Entity> results) {
+              return consumePages((_) => datastore.query(query))
+                  .then((List<Entity> results) {
                 expect(results.length, 1);
                 expect(compareEntity(entity, results[0]), isTrue);
               });
@@ -945,7 +956,8 @@ runTests(Datastore datastore) {
             // - by [rootKey] + 'SubSubKind2'
             () {
               var query = new Query(ancestorKey: rootKey, kind: 'SubSubKind2');
-              return datastore.query(query).then((List<Entity> results) {
+              return consumePages((_) => datastore.query(query))
+                  .then((List<Entity> results) {
                 expect(results.length, 1);
                 expect(compareEntity(entity2, results[0]), isTrue);
               });
@@ -953,7 +965,8 @@ runTests(Datastore datastore) {
             // - by [subSubKey] + 'SubSubKind'
             () {
               var query = new Query(ancestorKey: subSubKey, kind: 'SubSubKind');
-              return datastore.query(query).then((List<Entity> results) {
+              return consumePages((_) => datastore.query(query))
+                  .then((List<Entity> results) {
                 expect(results.length, 1);
                 expect(compareEntity(entity, results[0]), isTrue);
               });
@@ -962,7 +975,8 @@ runTests(Datastore datastore) {
             () {
               var query =
                   new Query(ancestorKey: subSubKey2, kind: 'SubSubKind2');
-              return datastore.query(query).then((List<Entity> results) {
+              return consumePages((_) => datastore.query(query))
+                  .then((List<Entity> results) {
                 expect(results.length, 1);
                 expect(compareEntity(entity2, results[0]), isTrue);
               });
@@ -971,7 +985,8 @@ runTests(Datastore datastore) {
             () {
               var query =
                   new Query(ancestorKey: subSubKey, kind: 'SubSubKind2');
-              return datastore.query(query).then((List<Entity> results) {
+              return consumePages((_) => datastore.query(query))
+                  .then((List<Entity> results) {
                 expect(results.length, 0);
               });
             },
@@ -979,7 +994,8 @@ runTests(Datastore datastore) {
             () {
               var query =
                   new Query(ancestorKey: subSubKey2, kind: 'SubSubKind');
-              return datastore.query(query).then((List<Entity> results) {
+              return consumePages((_) => datastore.query(query))
+                  .then((List<Entity> results) {
                 expect(results.length, 0);
               });
             },
@@ -992,8 +1008,6 @@ runTests(Datastore datastore) {
           return Future.forEach(futures, (f) => f()).then(expectAsync((_) {}));
         });
       });
-
     });
-
   });
 }

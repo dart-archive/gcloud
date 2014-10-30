@@ -9,6 +9,8 @@ import 'dart:collection';
 import 'dart:mirrors' as mirrors;
 import 'datastore.dart' as datastore;
 
+import 'common.dart' show Page, StreamFromPages;
+
 part 'src/db/annotations.dart';
 part 'src/db/db.dart';
 part 'src/db/models.dart';

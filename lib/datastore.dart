@@ -11,6 +11,8 @@ library gcloud.datastore;
 
 import 'dart:async';
 
+import 'common.dart' show Page;
+
 class ApplicationError implements Exception {
   final String message;
   ApplicationError(this.message);
@@ -369,7 +371,13 @@ abstract class Datastore {
   /// If a [transaction] is given, the lookup will be within this transaction.
   Future<List<Entity>> lookup(List<Key> keys, {Transaction transaction});
 
-  /// Runs a query on the dataset and returns matching [Entity]s.
+  /// Runs a query on the dataset and returns a [Page] of matching [Entity]s.
+  ///
+  /// The [Page] instance returned might not contain all matching [Entity]s -
+  /// in which case `isLast` is set to `false`. The page's `next` method can
+  /// be used to page through the whole result set.
+  /// The maximum number of [Entity]s returned within a single page is
+  /// implementation specific.
   ///
   ///  - `query` is used to restrict the number of returned [Entity]s and may
   ///    may specify an order.
@@ -383,7 +391,6 @@ abstract class Datastore {
   ///
   /// Outside of transactions, the result set might be stale. Queries are by
   /// default eventually consistent.
-  /// TODO(Issue #6): Make this pageable.
-  Future<List<Entity>> query(
+  Future<Page<Entity>> query(
       Query query, {Partition partition, Transaction transaction});
 }

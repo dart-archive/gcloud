@@ -198,7 +198,7 @@ class Query {
    * return the newest updates performed on the datastore since updates
    * will be reflected in the indices in an eventual consistent way.
    */
-  Future<List<Model>> run() {
+  Stream<Model> run() {
     var ancestorKey;
     if (_ancestorKey != null) {
       ancestorKey = _db.modelDB.toDatastoreKey(_ancestorKey);
@@ -213,12 +213,16 @@ class Query {
       partition = new datastore.Partition(_partition.namespace);
     }
 
-    return _db.datastore.query(
-        query, transaction: _transaction, partition: partition)
-        .then((List<datastore.Entity> entities) {
-      return entities.map(_db.modelDB.fromDatastoreEntity).toList();
-    });
+    return new StreamFromPages((int pageSize) {
+      return _db.datastore.query(
+          query, transaction: _transaction, partition: partition);
+    }).stream.map(_db.modelDB.fromDatastoreEntity);
   }
+
+  // TODO:
+  // - add runPaged() returning Page<Model>
+  // - add run*() method once we have EntityResult{Entity,Cursor} in low-level
+  //   API.
 
   String _convertToDatastoreName(String name) {
     var propertyName =

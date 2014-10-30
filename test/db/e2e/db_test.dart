@@ -479,14 +479,16 @@ runTests(db.DatastoreDB store) {
             // Queries for [Person] return no results, we only have [User]
             // objects.
             () {
-              return store.query(Person).run().then((List<db.Model> models) {
+              return store.query(Person).run().toList()
+                  .then((List<db.Model> models) {
                 compareModels([], models);
               });
             },
 
             // All users query
             () {
-              return store.query(User).run().then((List<db.Model> models) {
+              return store.query(User).run().toList()
+                  .then((List<db.Model> models) {
                 compareModels(users, models, anyOrder: true);
               });
             },
@@ -496,7 +498,7 @@ runTests(db.DatastoreDB store) {
               return store.query(User)
                   ..order('-name')
                   ..order('nickname')
-                  ..run().then((List<db.Model> models) {
+                  ..run().toList().then((List<db.Model> models) {
                 compareModels(
                     usersSortedNameDescNicknameAsc, models);
               });
@@ -505,7 +507,7 @@ runTests(db.DatastoreDB store) {
               return store.query(User)
                   ..order('-name')
                   ..order('-nickname')
-                  ..run().then((List<db.Model> models) {
+                  ..run().toList().then((List<db.Model> models) {
                 compareModels(
                     usersSortedNameDescNicknameDesc, models);
               });
@@ -517,7 +519,7 @@ runTests(db.DatastoreDB store) {
                   ..filter('name >=', LOWER_BOUND)
                   ..order('-name')
                   ..order('nickname')
-                  ..run().then((List<db.Model> models) {
+                  ..run().toList().then((List<db.Model> models) {
                 compareModels(usersSortedAndFilteredNameDescNicknameAsc,
                     models);
               });
@@ -527,7 +529,7 @@ runTests(db.DatastoreDB store) {
                   ..filter('name >=', LOWER_BOUND)
                   ..order('-name')
                   ..order('-nickname')
-                  ..run().then((List<db.Model> models) {
+                  ..run().toList().then((List<db.Model> models) {
                 compareModels(usersSortedAndFilteredNameDescNicknameDesc,
                     models);
               });
@@ -539,7 +541,7 @@ runTests(db.DatastoreDB store) {
               return store.query(User)
                   ..filter('languages IN', ['foo'])
                   ..order('name')
-                  ..run().then((List<db.Model> models) {
+                  ..run().toList().then((List<db.Model> models) {
                 compareModels(fooUsers, models, anyOrder: true);
               });
             },
@@ -547,7 +549,7 @@ runTests(db.DatastoreDB store) {
               return store.query(User)
                   ..filter('languages IN', ['bar'])
                   ..order('name')
-                  ..run().then((List<db.Model> models) {
+                  ..run().toList().then((List<db.Model> models) {
                 compareModels(barUsers, models, anyOrder: true);
               });
             },
@@ -559,7 +561,7 @@ runTests(db.DatastoreDB store) {
                   ..order('nickname')
                   ..offset(3)
                   ..limit(4)
-                  ..run().then((List<db.Model> models) {
+                  ..run().toList().then((List<db.Model> models) {
                 var expectedModels =
                     usersSortedAndFilteredNameDescNicknameAsc.sublist(3, 7);
                 compareModels(expectedModels, models);
@@ -570,7 +572,7 @@ runTests(db.DatastoreDB store) {
             () {
               return store.query(ExpandoPerson)
                   ..filter('name =', expandoPersons.last.name)
-                  ..run().then((List<db.Model> models) {
+                  ..run().toList().then((List<db.Model> models) {
                 compareModels([expandoPersons.last], models);
               });
             },
@@ -578,7 +580,7 @@ runTests(db.DatastoreDB store) {
             () {
               return store.query(ExpandoPerson)
                   ..filter('foo =', expandoPersons.last.foo)
-                  ..run().then((List<db.Model> models) {
+                  ..run().toList().then((List<db.Model> models) {
                 compareModels([expandoPersons.last], models);
               });
             },
@@ -586,7 +588,7 @@ runTests(db.DatastoreDB store) {
             () {
               return store.query(ExpandoPerson)
                   ..filter('bar =', expandoPersons.last.bar)
-                  ..run().then((List<db.Model> models) {
+                  ..run().toList().then((List<db.Model> models) {
                 compareModels([expandoPersons.last], models);
               });
             },
@@ -595,7 +597,7 @@ runTests(db.DatastoreDB store) {
             () {
               return store.query(ExpandoPerson)
                   ..filter('nickname =', expandoPersons.last.nickname)
-                  ..run().then((List<db.Model> models) {
+                  ..run().toList().then((List<db.Model> models) {
                 compareModels([expandoPersons.last], models);
               });
             },
