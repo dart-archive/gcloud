@@ -459,7 +459,7 @@ abstract class ObjectMetadata {
 
   /// Create a copy of this object with some values replaces.
   ///
-  /// TODO: This cannot be used to set values to null.
+  // TODO: This cannot be used to set values to null.
   ObjectMetadata replace({Acl acl, String contentType, String contentEncoding,
       String cacheControl, String contentDisposition, String contentLanguage,
       Map<String, String> custom});
@@ -539,17 +539,17 @@ abstract class Bucket {
 
   /// Read object content.
   ///
-  /// TODO: More documentation
+  // TODO: More documentation
   Stream<List<int>> read(String objectName, {int offset: 0, int length});
 
   /// Lookup object metadata.
   ///
-  /// TODO: More documentation
+  // TODO: More documentation
   Future<ObjectInfo> info(String name);
 
   /// Update object metadata.
   ///
-  /// TODO: More documentation
+  // TODO: More documentation
   Future updateMetadata(String objectName, ObjectMetadata metadata);
 
   /// List objects in the bucket.

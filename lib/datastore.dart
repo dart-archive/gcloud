@@ -156,7 +156,7 @@ class Key {
 /// The default namespace is `null`. Using empty Strings as namespaces is
 /// invalid.
 ///
-/// TODO(Issue #6): Add dataset-id here.
+// TODO(Issue #6): Add dataset-id here.
 class Partition {
   static const Partition DEFAULT = const Partition._default();
 
@@ -241,7 +241,7 @@ class Filter {
 
 /// The direction of a order.
 ///
-/// TODO(Issue #6): Make this class Private and add the two statics to the
+// TODO(Issue #6): Make this class Private and add the two statics to the
 /// 'Order' class.
 /// [i.e. so one can write Order.Ascending, Order.Descending].
 class OrderDirection {
@@ -261,7 +261,7 @@ class Order {
   /// The name of the property used for the order.
   final String propertyName;
 
-  /// TODO(Issue #6): Make [direction] the second argument and make it optional.
+  // TODO(Issue #6): Make [direction] the second argument and make it optional.
   Order(this.direction, this.propertyName);
 }
 
@@ -355,7 +355,7 @@ abstract class Datastore {
   ///
   /// This method might complete with a [TransactionAbortedError] error.
   /// Users must take care of retrying transactions.
-  /// TODO(Issue #6): Consider splitting `inserts` into insert/update/upsert.
+  // TODO(Issue #6): Consider splitting `inserts` into insert/update/upsert.
   Future<CommitResult> commit({List<Entity> inserts,
                                List<Entity> autoIdInserts,
                                List<Key> deletes,
