@@ -20,6 +20,10 @@ class TransactionImpl implements datastore.Transaction {
 }
 
 class DatastoreImpl implements datastore.Datastore {
+  static const List<String> Scopes = const [
+      api.DatastoreApi.DatastoreScope
+  ];
+
   final api.DatastoreApi _api;
   final String _project;
 
@@ -605,6 +609,10 @@ class QueryPageImpl implements Page<datastore.Entity> {
             '(${request.query.limit}) was.');
       }
 
+
+      // FIXME: TODO: Big hack!
+      // It looks like Apiary/Atlas is currently broken.
+      /*
       if (limit != null &&
           returnedEntities.length < batchLimit &&
           response.batch.moreResults == 'MORE_RESULTS_AFTER_LIMIT') {
@@ -612,6 +620,7 @@ class QueryPageImpl implements Page<datastore.Entity> {
             'Server returned response with less entities then the limit was, '
             'but signals there are more results after the limit.');
       }
+      */
 
       // In case a limit was specified, we need to subtraction the number of
       // entities we already got.
@@ -621,8 +630,28 @@ class QueryPageImpl implements Page<datastore.Entity> {
         remainingEntities = limit - returnedEntities.length;
       }
 
-      bool isLast = ((limit != null && remainingEntities == 0) ||
-                     response.batch.moreResults == 'NO_MORE_RESULTS');
+      // If the server signals there are more entities and we either have no
+      // limit or our limit has not been reached, we set `moreBatches` to
+      // `true`.
+      bool moreBatches =
+          (remainingEntities == null || remainingEntities > 0) &&
+          response.batch.moreResults == 'MORE_RESULTS_AFTER_LIMIT';
+
+      bool gotAll = limit != null && remainingEntities == 0;
+      bool noMore = response.batch.moreResults == 'NO_MORE_RESULTS';
+      bool isLast = gotAll || noMore;
+
+      // As a sanity check, we assert that `moreBatches XOR isLast`.
+      assert (isLast != moreBatches);
+
+      // FIXME: TODO: Big hack!
+      // It looks like Apiary/Atlas is currently broken.
+      if (moreBatches && returnedEntities.length == 0) {
+        print('Warning: Api to Google Cloud Datastore returned bogus response. '
+              'Trying a workaround.');
+        isLast = true;
+        moreBatches = false;
+      }
 
       if (!isLast && response.batch.endCursor == null) {
         throw new datastore.DatastoreError(
