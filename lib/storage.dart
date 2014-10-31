@@ -85,6 +85,7 @@ int _jenkinsHash(List e) {
 /// The access controls are described by [AclEntry] objects.
 class Acl {
   final List<AclEntry> _entries;
+  int _cachedHashCode;
 
   /// The entries in the ACL.
   List<AclEntry> get entries => new UnmodifiableListView<AclEntry>(_entries);
@@ -156,7 +157,11 @@ class Acl {
     return _entries.map((entry) => entry._toObjectAccessControl()).toList();
   }
 
-  int get hashCode => _jenkinsHash(_entries);
+  int get hashCode {
+    return _cachedHashCode != null
+        ? _cachedHashCode
+        : _cachedHashCode = _jenkinsHash(_entries);
+  }
 
   bool operator==(Object other) {
     if (other is Acl) {
@@ -181,8 +186,9 @@ class Acl {
 class AclEntry {
   final AclScope scope;
   final AclPermission permission;
+  int _cachedHashCode;
 
-  const AclEntry(this.scope, this.permission);
+  AclEntry(this.scope, this.permission);
 
   storage.BucketAccessControl _toBucketAccessControl() {
     var acl = new storage.BucketAccessControl();
@@ -198,7 +204,11 @@ class AclEntry {
     return acl;
   }
 
-  int get hashCode => _jenkinsHash([scope, permission]);
+  int get hashCode {
+    return _cachedHashCode != null
+        ? _cachedHashCode
+        : _cachedHashCode = _jenkinsHash([scope, permission]);
+  }
 
   bool operator==(Object other) {
     return other is AclEntry &&
@@ -222,6 +232,8 @@ class AclEntry {
 ///
 /// See https://cloud.google.com/storage/docs/accesscontrol for more details.
 abstract class AclScope {
+  int _cachedHashCode;
+
   /// ACL type for scope representing a Google Storage id.
   static const int _TYPE_STORAGE_ID = 0;
 
@@ -254,14 +266,18 @@ abstract class AclScope {
   final int _type;
 
   /// ACL scope for all authenticated users.
-  static const allAuthenticated = const AllAuthenticatedScope();
+  static AllAuthenticatedScope allAuthenticated = new AllAuthenticatedScope();
 
   /// ACL scope for all users.
-  static const allUsers = const AllUsersScope();
+  static AllUsersScope allUsers = new AllUsersScope();
 
-  const AclScope._(this._type, this._id);
+  AclScope._(this._type, this._id);
 
-  int get hashCode => _jenkinsHash([_type, _id]);
+  int get hashCode {
+    return _cachedHashCode != null
+        ? _cachedHashCode
+        : _cachedHashCode = _jenkinsHash([_type, _id]);
+  }
 
   bool operator==(Object other) {
     return other is AclScope && _type == other._type && _id == other._id;
@@ -277,7 +293,7 @@ abstract class AclScope {
 /// The [storageId] is a string of 64 hexadecimal digits that identifies a
 /// specific Google account holder or a specific Google group.
 class StorageIdScope extends AclScope {
-  const StorageIdScope(String storageId)
+  StorageIdScope(String storageId)
       : super._(AclScope._TYPE_STORAGE_ID, storageId);
 
   /// Google Storage ID.
@@ -288,7 +304,7 @@ class StorageIdScope extends AclScope {
 
 /// An ACL scope for an entity identified by an individual email address.
 class AccountScope extends AclScope {
-  const AccountScope(String email): super._(AclScope._TYPE_ACCOUNT, email);
+  AccountScope(String email): super._(AclScope._TYPE_ACCOUNT, email);
 
   /// Email address.
   String get email => _id;
@@ -298,7 +314,7 @@ class AccountScope extends AclScope {
 
 /// An ACL scope for an entity identified by an Google Groups email.
 class GroupScope extends AclScope {
-  const GroupScope(String group): super._(AclScope._TYPE_GROUP, group);
+  GroupScope(String group): super._(AclScope._TYPE_GROUP, group);
 
   /// Group name.
   String get group => _id;
@@ -308,7 +324,7 @@ class GroupScope extends AclScope {
 
 /// An ACL scope for an entity identified by a domain name.
 class DomainScope extends AclScope {
-  const DomainScope(String domain): super._(AclScope._TYPE_DOMAIN, domain);
+  DomainScope(String domain): super._(AclScope._TYPE_DOMAIN, domain);
 
   /// Domain name.
   String get domain => _id;
@@ -341,7 +357,7 @@ class OpaqueScope extends AclScope {
 
 /// ACL scope for a all authenticated users.
 class AllAuthenticatedScope extends AclScope {
-  const AllAuthenticatedScope()
+  AllAuthenticatedScope()
       : super._(AclScope._TYPE_ALL_AUTHENTICATED, null);
 
   String get _storageEntity => 'allAuthenticatedUsers';
@@ -349,7 +365,7 @@ class AllAuthenticatedScope extends AclScope {
 
 /// ACL scope for a all users.
 class AllUsersScope extends AclScope {
-  const AllUsersScope(): super._(AclScope._TYPE_ALL_USERS, null);
+  AllUsersScope(): super._(AclScope._TYPE_ALL_USERS, null);
 
   String get _storageEntity => 'allUsers';
 }

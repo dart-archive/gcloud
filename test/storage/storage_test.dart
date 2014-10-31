@@ -995,15 +995,15 @@ main() {
   });
 
   group('acl', () {
-    const id = const StorageIdScope('1234567890');
-    const user = const AccountScope('sgjesse@google.com');
-    const group = const GroupScope('dart');
-    const domain = const DomainScope('dartlang.org');
+    var id = new StorageIdScope('1234567890');
+    var user = new AccountScope('sgjesse@google.com');
+    var group = new GroupScope('dart');
+    var domain = new DomainScope('dartlang.org');
 
-    const userRead = const AclEntry(user, AclPermission.READ);
-    const groupWrite = const AclEntry(group, AclPermission.WRITE);
-    const domainFullControl =
-        const AclEntry(domain, AclPermission.FULL_CONTROL);
+    var userRead = new AclEntry(user, AclPermission.READ);
+    var groupWrite = new AclEntry(group, AclPermission.WRITE);
+    var domainFullControl =
+        new AclEntry(domain, AclPermission.FULL_CONTROL);
 
     test('compare-scope', () {
       expect(id, new StorageIdScope('1234567890'));
