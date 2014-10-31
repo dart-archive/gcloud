@@ -62,6 +62,20 @@ export 'common.dart';
 
 part 'src/storage_impl.dart';
 
+int _jenkinsHash(List e) {
+  const _HASH_MASK = 0x3fffffff;
+  int hash = 0;
+  for (int i = 0; i < e.length; i++) {
+    int c = e[i].hashCode;
+    hash = (hash + c) & _HASH_MASK;
+    hash = (hash + (hash << 10)) & _HASH_MASK;
+    hash ^= (hash >> 6);
+  }
+  hash = (hash + (hash << 3)) & _HASH_MASK;
+  hash ^= (hash >> 11);
+  hash = (hash + (hash << 15)) & _HASH_MASK;
+  return hash;
+}
 
 /// An ACL (Access Control List) describes access rights to buckets and
 /// objects.
@@ -70,7 +84,7 @@ part 'src/storage_impl.dart';
 /// which individually prevent or grant access.
 /// The access controls are described by [AclEntry] objects.
 class Acl {
-  final _entries;
+  final List<AclEntry> _entries;
 
   /// The entries in the ACL.
   List<AclEntry> get entries => new UnmodifiableListView<AclEntry>(_entries);
@@ -85,6 +99,24 @@ class Acl {
   List<storage.ObjectAccessControl> _toObjectAccessControlList() {
     return _entries.map((entry) => entry._toObjectAccessControl()).toList();
   }
+
+  int get hashCode => _jenkinsHash(_entries);
+
+  bool operator==(Object other) {
+    if (other is Acl) {
+      List entries = _entries;
+      List otherEntries = other._entries;
+      if (entries.length != otherEntries.length) return false;
+      for (int i = 0; i < entries.length; i++) {
+        if (entries[i] != otherEntries[i]) return false;
+      }
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  String toString() => 'Acl($_entries)';
 }
 
 /// An ACL entry specifies that an entity has a specific access permission.
@@ -94,7 +126,7 @@ class AclEntry {
   final AclScope scope;
   final AclPermission permission;
 
-  AclEntry(this.scope, this.permission);
+  const AclEntry(this.scope, this.permission);
 
   storage.BucketAccessControl _toBucketAccessControl() {
     var acl = new storage.BucketAccessControl();
@@ -109,6 +141,16 @@ class AclEntry {
     acl.role = permission._storageObjectRole;
     return acl;
   }
+
+  int get hashCode => _jenkinsHash([scope, permission]);
+
+  bool operator==(Object other) {
+    return other is AclEntry &&
+           scope == other.scope &&
+           permission == other.permission;
+  }
+
+  String toString() => 'AclEntry($scope, $permission)';
 }
 
 /// An ACL scope specifies an entity for which a permission applies.
@@ -175,6 +217,14 @@ abstract class AclScope {
         throw new UnsupportedError('Unexpected ACL scope');
     }
   }
+
+  int get hashCode => _jenkinsHash([_type, _id]);
+
+  bool operator==(Object other) {
+    return other is AclScope && _type == other._type && _id == other._id;
+  }
+
+  String toString() => 'AclScope($_storageEntity)';
 }
 
 /// An ACL scope for an entity identified by a 'Google Storage ID'.
@@ -182,7 +232,7 @@ abstract class AclScope {
 /// The [storageId] is a string of 64 hexadecimal digits that identifies a
 /// specific Google account holder or a specific Google group.
 class StorageIdScope extends AclScope {
-  StorageIdScope(String storageId)
+  const StorageIdScope(String storageId)
       : super._(AclScope._TYPE_STORAGE_ID, storageId);
 
   /// Google Storage ID.
@@ -191,7 +241,7 @@ class StorageIdScope extends AclScope {
 
 /// An ACL scope for an entity identified by an individual email address.
 class AccountScope extends AclScope {
-  AccountScope(String email): super._(AclScope._TYPE_ACCOUNT, email);
+  const AccountScope(String email): super._(AclScope._TYPE_ACCOUNT, email);
 
   /// Email address.
   String get email => _id;
@@ -199,7 +249,7 @@ class AccountScope extends AclScope {
 
 /// An ACL scope for an entity identified by an Google Groups email.
 class GroupScope extends AclScope {
-  GroupScope(String group): super._(AclScope._TYPE_GROUP, group);
+  const GroupScope(String group): super._(AclScope._TYPE_GROUP, group);
 
   /// Group name.
   String get group => _id;
@@ -207,7 +257,7 @@ class GroupScope extends AclScope {
 
 /// An ACL scope for an entity identified by a domain name.
 class DomainScope extends AclScope {
-  DomainScope(String domain): super._(AclScope._TYPE_DOMAIN, domain);
+  const DomainScope(String domain): super._(AclScope._TYPE_DOMAIN, domain);
 
   /// Domain name.
   String get domain => _id;
@@ -246,6 +296,14 @@ class AclPermission {
   String get _storageBucketRole => _id;
 
   String get _storageObjectRole => this == WRITE ? FULL_CONTROL._id : _id;
+
+  int get hashCode => _id.hashCode;
+
+  bool operator==(Object other) {
+    return other is AclPermission && _id == other._id;
+  }
+
+  String toString() => 'AclPermission($_id)';
 }
 
 /// Definition of predefined ACLs.
@@ -258,37 +316,42 @@ class AclPermission {
 /// be present. For a description of these predefined ACLs see:
 /// https://cloud.google.com/storage/docs/accesscontrol#extension.
 class PredefinedAcl {
-  String _name;
-  PredefinedAcl._(this._name);
+  final String _name;
+  const PredefinedAcl._(this._name);
 
   /// Predefined ACL for the 'authenticated-read' ACL. Applies to both buckets
   /// and objects.
-  static PredefinedAcl authenticatedRead =
-      new PredefinedAcl._('authenticatedRead');
+  static const PredefinedAcl authenticatedRead =
+      const PredefinedAcl._('authenticatedRead');
 
   /// Predefined ACL for the 'private' ACL. Applies to both buckets
   /// and objects.
-  static PredefinedAcl private = new PredefinedAcl._('private');
+  static const PredefinedAcl private = const PredefinedAcl._('private');
 
   /// Predefined ACL for the 'project-private' ACL. Applies to both buckets
   /// and objects.
-  static PredefinedAcl projectPrivate = new PredefinedAcl._('projectPrivate');
+  static const PredefinedAcl projectPrivate =
+      const PredefinedAcl._('projectPrivate');
 
   /// Predefined ACL for the 'public-read' ACL. Applies to both buckets
   /// and objects.
-  static PredefinedAcl publicRead = new PredefinedAcl._('publicRead');
+  static const PredefinedAcl publicRead = const PredefinedAcl._('publicRead');
 
   /// Predefined ACL for the 'public-read-write' ACL. Applies only to buckets.
-  static PredefinedAcl publicReadWrite = new PredefinedAcl._('publicReadWrite');
+  static const PredefinedAcl publicReadWrite =
+      const PredefinedAcl._('publicReadWrite');
 
   /// Predefined ACL for the 'bucket-owner-full-control' ACL. Applies only to
   /// objects.
-  static PredefinedAcl bucketOwnerFullControl =
-      new PredefinedAcl._('bucketOwnerFullControl');
+  static const PredefinedAcl bucketOwnerFullControl =
+      const PredefinedAcl._('bucketOwnerFullControl');
 
   /// Predefined ACL for the 'bucket-owner-read' ACL. Applies only to
   /// objects.
-  static PredefinedAcl bucketOwnerRead = new PredefinedAcl._('bucketOwnerRead');
+  static const PredefinedAcl bucketOwnerRead =
+      const PredefinedAcl._('bucketOwnerRead');
+
+  String toString() => 'PredefinedAcl($_name)';
 }
 
 /// Information on a bucket.

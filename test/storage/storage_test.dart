@@ -843,4 +843,49 @@ main() {
       });
     });
   });
+
+  group('acl', () {
+    const id = const StorageIdScope('1234567890');
+    const user = const AccountScope('sgjesse@google.com');
+    const group = const GroupScope('dart');
+    const domain = const DomainScope('dartlang.org');
+
+    const userRead = const AclEntry(user, AclPermission.READ);
+    const groupWrite = const AclEntry(group, AclPermission.WRITE);
+    const domainFullControl =
+        const AclEntry(domain, AclPermission.FULL_CONTROL);
+
+    test('compare-scope', () {
+      expect(id, new StorageIdScope('1234567890'));
+      expect(user, new AccountScope('sgjesse@google.com'));
+      expect(group, new GroupScope('dart'));
+      expect(domain, new DomainScope('dartlang.org'));
+      expect(AclScope.allAuthenticated, new AllAuthenticatedScope());
+      expect(AclScope.allUsers, new AllUsersScope());
+    });
+
+    test('compare-entries', () {
+      expect(userRead, new AclEntry(user, AclPermission.READ));
+      expect(groupWrite, new AclEntry(group, AclPermission.WRITE));
+      expect(domainFullControl,
+             new AclEntry(domain, AclPermission.FULL_CONTROL));
+    });
+
+    test('compare-acls', () {
+      var acl = new Acl([userRead, groupWrite, domainFullControl]);
+      expect(acl, new Acl([new AclEntry(user, AclPermission.READ),
+                           new AclEntry(group, AclPermission.WRITE),
+                           new AclEntry(domain, AclPermission.FULL_CONTROL)]));
+      expect(acl,
+             isNot(equals(new Acl([new AclEntry(group, AclPermission.WRITE),
+                          new AclEntry(user, AclPermission.READ),
+                          new AclEntry(domain, AclPermission.FULL_CONTROL)]))));
+    });
+
+
+    test('compare-predefined-acls', () {
+      expect(PredefinedAcl.private, PredefinedAcl.private);
+      expect(PredefinedAcl.private, isNot(equals(PredefinedAcl.publicRead)));
+    });
+  });
 }
