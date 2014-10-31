@@ -50,10 +50,15 @@ import 'package:unittest/unittest.dart';
 
 import 'package:gcloud/db.dart' as db;
 
-@db.ModelMetadata(const PersonDesc())
+@db.Kind()
 class Person extends db.Model {
+  @db.StringProperty()
   String name;
+
+  @db.IntProperty()
   int age;
+
+  @db.ModelKeyProperty()
   db.Key wife;
 
   operator==(Object other) => sameAs(other);
@@ -70,9 +75,13 @@ class Person extends db.Model {
   String toString() => 'Person(id: $id, name: $name, age: $age)';
 }
 
-@db.ModelMetadata(const UserDesc())
+
+@db.Kind()
 class User extends Person {
+  @db.StringProperty()
   String nickname;
+
+  @db.StringListProperty(propertyName: 'language')
   List<String> languages = const [];
 
   sameAs(Object other) {
@@ -100,26 +109,13 @@ class User extends Person {
       'User(${super.toString()}, nickname: $nickname, languages: $languages';
 }
 
-class PersonDesc extends db.ModelDescription {
-  final id = const db.IntProperty();
-  final name = const db.StringProperty();
-  final age = const db.IntProperty();
-  final wife = const db.ModelKeyProperty();
 
-  const PersonDesc({String kind: 'Person'}) : super(kind);
-}
-
-class UserDesc extends PersonDesc {
-  final nickname = const db.StringProperty();
-  final languages =
-      const db.StringListProperty(propertyName: 'language');
-  const UserDesc({String kind: 'User'}) : super(kind: kind);
-}
-
-
-@db.ModelMetadata(const ExpandoPersonDesc())
+@db.Kind()
 class ExpandoPerson extends db.ExpandoModel {
+  @db.StringProperty()
   String name;
+
+  @db.StringProperty(propertyName: 'NN')
   String nickname;
 
   operator==(Object other) {
@@ -136,14 +132,6 @@ class ExpandoPerson extends db.ExpandoModel {
     }
     return false;
   }
-}
-
-class ExpandoPersonDesc extends db.ExpandoModelDescription {
-  final id = const db.IntProperty();
-  final name = const db.StringProperty();
-  final nickname = const db.StringProperty(propertyName: 'NN');
-
-  const ExpandoPersonDesc() : super('ExpandoPerson');
 }
 
 

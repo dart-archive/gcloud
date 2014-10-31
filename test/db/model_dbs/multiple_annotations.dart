@@ -6,11 +6,6 @@ library gcloud.db.model_test.multiple_annotations;
 
 import 'package:gcloud/db.dart' as db;
 
-@db.ModelMetadata(const ADesc())
-@db.ModelMetadata(const ADesc())
+@db.Kind()
+@db.Kind()
 class A extends db.Model { }
-
-class ADesc extends db.ModelDescription {
-  final id = const db.IntProperty();
-  const ADesc() : super('A');
-}

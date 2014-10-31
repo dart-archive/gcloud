@@ -16,5 +16,3 @@ part 'src/db/db.dart';
 part 'src/db/models.dart';
 part 'src/db/model_db.dart';
 part 'src/db/model_db_impl.dart';
-part 'src/db/model_description.dart';
-part 'src/db/properties.dart';

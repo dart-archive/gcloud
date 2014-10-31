@@ -4,10 +4,12 @@
 
 library gcloud.db.meta_model;
 
-import '../db.dart';
+import '../db.dart' as db;
 
-@ModelMetadata(const NamespaceDescription())
-class Namespace extends ExpandoModel {
+@db.Kind(name: '__namespace__')
+class Namespace extends db.ExpandoModel {
+  static const int EmptyNamespaceId = 1;
+
   String get name {
     // The default namespace will be reported with id 1.
     if (id == NamespaceDescription.EmptyNamespaceId) return null;
@@ -15,18 +17,7 @@ class Namespace extends ExpandoModel {
   }
 }
 
-@ModelMetadata(const KindDescription())
-class Kind extends Model {
+@db.Kind(name: '__kind__')
+class Kind extends db.Model {
   String get name => id;
-}
-
-class NamespaceDescription extends ExpandoModelDescription {
-  static const int EmptyNamespaceId = 1;
-  final id = const IntProperty();
-  const NamespaceDescription() : super('__namespace__');
-}
-
-class KindDescription extends ModelDescription {
-  final id = const IntProperty();
-  const KindDescription() : super('__kind__');
 }

@@ -15,9 +15,8 @@ import 'package:unittest/unittest.dart';
 import 'model_dbs/duplicate_kind.dart' as test1;
 import 'model_dbs/duplicate_property.dart' as test2;
 import 'model_dbs/multiple_annotations.dart' as test3;
-import 'model_dbs/invalid_id_property.dart' as test4;
-import 'model_dbs/duplicate_fieldname.dart' as test5;
-import 'model_dbs/no_default_constructor.dart' as test6;
+import 'model_dbs/duplicate_fieldname.dart' as test4;
+import 'model_dbs/no_default_constructor.dart' as test5;
 
 main() {
   newModelDB(Symbol symbol)=> new ModelDBImpl.fromLibrary(symbol);
@@ -37,11 +36,6 @@ main() {
       test('multiple_annotations', () {
         expect(new Future.sync(() {
           newModelDB(#gcloud.db.model_test.multiple_annotations);
-        }), throwsA(isStateError));
-      });
-      test('invalid_id', () {
-        expect(new Future.sync(() {
-          newModelDB(#gcloud.db.model_test.invalid_id);
         }), throwsA(isStateError));
       });
       test('duplicate_fieldname', () {

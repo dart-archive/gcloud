@@ -6,12 +6,7 @@ library gcloud.db.model_test.no_default_constructor;
 
 import 'package:gcloud/db.dart' as db;
 
-@db.ModelMetadata(const ADesc())
+@db.Kind()
 class A extends db.Model {
   A(int i);
-}
-
-class ADesc extends db.ModelDescription {
-  final id = const db.IntProperty();
-  const ADesc() : super('A');
 }

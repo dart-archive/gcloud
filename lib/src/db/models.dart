@@ -104,9 +104,6 @@ class Partition {
  *
  * Every model class has a [id] -- which must be an integer or a string, and
  * a [parentKey]. The [key] getter is returning the key for the model object.
- *
- * Every concrete model class inheriting (directly or indirectly) from [Model]
- * needs a [ModelMetadata] annotation containing it's [ModelDescription].
  */
 abstract class Model {
   Object id;
@@ -117,9 +114,6 @@ abstract class Model {
 
 /**
  * Superclass for all expanded model classes.
- *
- * The subclasses of this model must have a [ModelMetadata] annotation
- * containing a [ExpandoModelDescription].
  *
  * The [ExpandoModel] class adds support for having dynamic properties. You can
  * set arbitrary fields on these models. The expanded values must be values

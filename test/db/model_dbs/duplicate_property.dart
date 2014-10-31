@@ -6,12 +6,11 @@ library gcloud.db.model_test.duplicate_property;
 
 import 'package:gcloud/db.dart' as db;
 
-@db.ModelMetadata(const ADesc())
-class A extends db.Model { }
+@db.Kind()
+class A extends db.Model {
+  @db.IntProperty()
+  int foo;
 
-class ADesc extends db.ModelDescription {
-  final id = const db.IntProperty();
-  final foo = const db.IntProperty(propertyName: 'foo');
-  final bar = const db.IntProperty(propertyName: 'foo');
-  const ADesc() : super('A');
+  @db.IntProperty(propertyName: 'foo')
+  int bar;
 }

@@ -6,21 +6,14 @@ library gcloud.db.model_test.duplicate_fieldname;
 
 import 'package:gcloud/db.dart' as db;
 
-@db.ModelMetadata(const ADesc())
-class A extends db.Model {}
-
-@db.ModelMetadata(const BDesc())
-class B extends A {}
-
-
-class ADesc extends db.ModelDescription {
-  final id = const db.IntProperty();
-
-  final foo = const db.IntProperty(propertyName: 'foo');
-  const ADesc({String kind: 'A'}) : super(kind);
+@db.Kind()
+class A extends db.Model {
+  @db.IntProperty()
+  int foo;
 }
 
-class BDesc extends ADesc {
-  final foo = const db.IntProperty(propertyName: 'bar');
-  const BDesc() : super(kind: 'B');
+@db.Kind()
+class B extends A {
+  @db.IntProperty(propertyName: 'bar')
+  int foo;
 }
