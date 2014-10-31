@@ -261,6 +261,12 @@ abstract class AclScope {
 
   const AclScope._(this._type, this._id);
 
+  int get hashCode => _jenkinsHash([_type, _id]);
+
+  bool operator==(Object other) {
+    return other is AclScope && _type == other._type && _id == other._id;
+  }
+
   String toString() => 'AclScope($_storageEntity)';
 
   String get _storageEntity;
