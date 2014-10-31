@@ -338,6 +338,7 @@ main() {
                   new storage.Object.fromJson(JSON.decode(mediaUpload.json));
               expect(object.name, objectName);
               expect(mediaUpload.bytes, bytes);
+              expect(mediaUpload.contentType, 'application/octet-stream');
               return mock.respond(new storage.Object()..name = objectName);
         }));
       }));
@@ -595,6 +596,118 @@ main() {
       });
     });
 
+    test('write-with-metadata-short', () {
+      var metadata =
+          [new ObjectMetadata(contentType: 'mime/type'),
+           new ObjectMetadata(contentType: 'type/mime',
+                              cacheControl: 'control-cache'),
+           new ObjectMetadata(cacheControl: 'control-cache'),
+           new ObjectMetadata(cacheControl: 'control-cache',
+                              contentDisposition: 'disp-content'),
+           new ObjectMetadata(contentDisposition: 'disp-content',
+                              contentEncoding: 'encoding',
+                              contentLanguage: 'language'),
+           new ObjectMetadata(custom: {'x': 'y'}),
+           new ObjectMetadata(custom: {'a': 'b', 'x': 'y'})
+          ];
+
+      withMockClient((mock, api) {
+        int count = 0;
+        var bytes = [1, 2, 3];
+
+        mock.registerUpload(
+            'POST', 'b/$bucketName/o', expectAsync((request) {
+          return mock.processNormalMediaUpload(request)
+              .then(expectAsync((mediaUpload) {
+                var object =
+                    new storage.Object.fromJson(JSON.decode(mediaUpload.json));
+                ObjectMetadata m = metadata[count];
+                expect(object.name, objectName);
+                expect(mediaUpload.bytes, bytes);
+                var contentType = m.contentType != null
+                    ? m.contentType : 'application/octet-stream';
+                expect(mediaUpload.contentType, contentType);
+                expect(object.cacheControl, m.cacheControl);
+                expect(object.contentDisposition, m.contentDisposition);
+                expect(object.contentEncoding, m.contentEncoding);
+                expect(object.contentLanguage, m.contentLanguage);
+                expect(object.metadata, m.custom);
+                count++;
+                return mock.respond(new storage.Object()..name = objectName);
+              }));
+        }, count: metadata.length));
+
+        var bucket = api.bucket(bucketName);
+        var futures = [];
+        for (int i = 0; i < metadata.length; i++) {
+          futures.add(bucket.writeBytes(objectName, bytes,
+                                        metadata: metadata[i]));
+        }
+        return Future.wait(futures);
+      });
+    });
+
+    test('write-with-metadata-long', () {
+      var metadata =
+          [new ObjectMetadata(contentType: 'mime/type'),
+           new ObjectMetadata(contentType: 'type/mime',
+                              cacheControl: 'control-cache'),
+           new ObjectMetadata(cacheControl: 'control-cache'),
+           new ObjectMetadata(cacheControl: 'control-cache',
+                              contentDisposition: 'disp-content'),
+           new ObjectMetadata(contentDisposition: 'disp-content',
+                              contentEncoding: 'encoding',
+                              contentLanguage: 'language'),
+           new ObjectMetadata(custom: {'x': 'y'}),
+           new ObjectMetadata(custom: {'a': 'b', 'x': 'y'})
+          ];
+
+      withMockClient((mock, api) {
+        int countInitial = 0;
+        int countData = 0;
+
+        mock.registerResumableUpload(
+            'POST', 'b/$bucketName/o', expectAsync((request) {
+          var object = new storage.Object.fromJson(JSON.decode(request.body));
+          ObjectMetadata m = metadata[countInitial];
+          expect(object.name, objectName);
+          var contentType = m.contentType != null
+              ? m.contentType : 'application/octet-stream';
+          expect(object.cacheControl, m.cacheControl);
+          expect(object.contentDisposition, m.contentDisposition);
+          expect(object.contentEncoding, m.contentEncoding);
+          expect(object.contentLanguage, m.contentLanguage);
+          expect(object.metadata, m.custom);
+          countInitial++;
+          return mock.respondInitiateResumableUpload(PROJECT);
+        }, count: metadata.length));
+        mock.registerResumableUpload(
+            'PUT', 'b/$PROJECT/o', expectAsync((request) {
+          ObjectMetadata m = metadata[countData % metadata.length];
+          var contentType = m.contentType != null
+              ? m.contentType : 'application/octet-stream';
+          expect(request.headers['content-type'], contentType);
+          bool firstPart = countData < metadata.length;
+          countData++;
+          if (firstPart) {
+            expect(request.bodyBytes.length, MB);
+            return mock.respondContinueResumableUpload();
+          } else {
+            expect(request.bodyBytes.length, 1);
+            return mock.respond(new storage.Object()..name = objectName);
+          }
+        }, count: metadata.length * 2));
+
+        var bucket = api.bucket(bucketName);
+        var futures = [];
+        for (int i = 0; i < metadata.length; i++) {
+          futures.add(bucket.writeBytes(objectName, bytesResumableUpload,
+                                        metadata: metadata[i]));
+        }
+        return Future.wait(futures);
+      });
+    });
+
     test('write-with-predefined-acl', () {
       var predefined =
           [[PredefinedAcl.authenticatedRead, 'authenticatedRead'],
@@ -616,6 +729,7 @@ main() {
                     new storage.Object.fromJson(JSON.decode(mediaUpload.json));
                 expect(object.name, objectName);
                 expect(mediaUpload.bytes, bytes);
+                expect(mediaUpload.contentType, 'application/octet-stream');
                 expect(request.url.queryParameters['predefinedAcl'],
                        predefined[count++][1]);
                 expect(object.acl, isNull);
@@ -667,6 +781,7 @@ main() {
                     new storage.Object.fromJson(JSON.decode(mediaUpload.json));
                 expect(object.name, objectName);
                 expect(mediaUpload.bytes, bytes);
+                expect(mediaUpload.contentType, 'application/octet-stream');
                 expect(request.url.queryParameters['predefinedAcl'], isNull);
                 expect(object.acl, isNotNull);
                 expect(object.acl.length, count + 1);
@@ -738,6 +853,7 @@ main() {
                     new storage.Object.fromJson(JSON.decode(mediaUpload.json));
                 expect(object.name, objectName);
                 expect(mediaUpload.bytes, bytes);
+                expect(mediaUpload.contentType, 'application/octet-stream');
                 expect(request.url.queryParameters['predefinedAcl'],
                        predefined[predefinedIndex][1]);
                 expect(object.acl, isNotNull);
@@ -805,6 +921,40 @@ main() {
           expect(stat.name, objectName);
           expect(stat.updated, new DateTime(2014));
           expect(stat.metadata.contentType, 'mime/type');
+        }));
+      });
+    });
+
+    test('stat-acl', () {
+      withMockClient((mock, api) {
+        mock.register(
+            'GET', 'b/$bucketName/o/$objectName', expectAsync((request) {
+          expect(request.url.queryParameters['alt'], 'json');
+          var acl1 = new storage.ObjectAccessControl();
+          acl1.entity = 'user-1234567890';
+          acl1.role = 'OWNER';
+          var acl2 = new storage.ObjectAccessControl();
+          acl2.entity = 'user-xxx@yyy.zzz';
+          acl2.role = 'OWNER';
+          var acl3 = new storage.ObjectAccessControl();
+          acl3.entity = 'xxx-1234567890';
+          acl3.role = 'OWNER';
+          return mock.respond(new storage.Object()
+              ..name = objectName
+              ..acl = [acl1, acl2, acl3]);
+        }));
+
+        var api = new Storage(mock, PROJECT);
+        var bucket = api.bucket(bucketName);
+        bucket.info(objectName).then(expectAsync((ObjectInfo info) {
+          expect(info.name, objectName);
+          expect(info.metadata.acl.entries.length, 3);
+          expect(info.metadata.acl.entries[0] is AclEntry, isTrue);
+          expect(info.metadata.acl.entries[0].scope is StorageIdScope, isTrue);
+          expect(info.metadata.acl.entries[1] is AclEntry, isTrue);
+          expect(info.metadata.acl.entries[1].scope is AccountScope, isTrue);
+          expect(info.metadata.acl.entries[2] is AclEntry, isTrue);
+          expect(info.metadata.acl.entries[2].scope is OpaqueScope, isTrue);
         }));
       });
     });

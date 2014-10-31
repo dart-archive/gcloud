@@ -73,8 +73,8 @@ class _StorageImpl implements Storage {
   }
 
   Future<BucketInfo> bucketInfo(String bucketName) {
-    return _api.buckets.get(bucketName)
-        .then((bucket) => new _BucketInformationImpl(bucket));
+    return _api.buckets.get(bucketName, projection: 'full')
+        .then((bucket) => new _BucketInfoImpl(bucket));
   }
 
   Stream<String> listBucketNames() {
@@ -108,14 +108,20 @@ class _StorageImpl implements Storage {
   }
 }
 
-class _BucketInformationImpl implements BucketInfo {
+class _BucketInfoImpl implements BucketInfo {
   storage.Bucket _bucket;
 
-  _BucketInformationImpl(this._bucket);
+  _BucketInfoImpl(this._bucket);
 
   String get bucketName => _bucket.name;
 
+  String get etag => _bucket.etag;
+
   DateTime get created => _bucket.timeCreated;
+
+  String get id => _bucket.id;
+
+  Acl get acl => new Acl._fromBucketAcl(_bucket);
 }
 
 /// Bucket API implementation providing access to objects.
@@ -196,8 +202,12 @@ class _BucketImpl implements Bucket {
   }
 
   Future<ObjectInfo> info(String objectName) {
-    return _api.objects.get(bucketName, objectName)
-        .then((object) => new _ObjectStatImpl(object));
+    return _api.objects.get(bucketName, objectName, projection: 'full')
+        .then((object) => new _ObjectInfoImpl(object));
+  }
+
+  Future delete(String objectName) {
+    return _api.objects.delete(bucketName, objectName);
   }
 
   Stream<BucketEntry> list({String prefix}) {
@@ -221,21 +231,16 @@ class _BucketImpl implements Bucket {
     // TODO: support other ObjectMetadata implementations?
     _ObjectMetadata md = metadata;
     var object = md._object;
-    if (md._acl == null && _defaultObjectAcl == null) {
+    if (md._object.acl == null && _defaultObjectAcl == null) {
       throw new ArgumentError('ACL is required for update');
     }
     if (md.contentType == null) {
       throw new ArgumentError('Content-Type is required for update');
     }
-    var acl = md._acl != null ? md._acl : _defaultObjectAcl;
-
-    var predefinedAcl;
-    if (acl != null) {
-      object.acl = acl._toObjectAccessControlList();
+    if (md._object.acl == null) {
+      md._object.acl = _defaultObjectAcl._toObjectAccessControlList();
     }
-
-    return _api.objects.update(
-        object, bucketName, objectName, predefinedAcl: predefinedAcl);
+    return _api.objects.update(object, bucketName, objectName);
   }
 
   Future<storage.Objects> _listObjects(
@@ -329,25 +334,30 @@ class _ObjectGenerationImpl implements ObjectGeneration {
   _ObjectGenerationImpl(this.objectGeneration, this.metaGeneration);
 }
 
-class _ObjectStatImpl implements ObjectInfo {
-  storage.Object _object;
+class _ObjectInfoImpl implements ObjectInfo {
+  final storage.Object _object;
+  final ObjectMetadata _metadata;
   Uri _downloadLink;
   ObjectGeneration _generation;
-  ObjectMetadata _metadata;
 
-  _ObjectStatImpl(object) :
+  _ObjectInfoImpl(storage.Object object) :
       _object = object, _metadata = new _ObjectMetadata._(object);
 
   String get name => _object.name;
 
-  int get size => int.parse(_object.size);
+  int get length => int.parse(_object.size);
 
   DateTime get updated  => _object.updated;
+
+  String get etag => _object.etag;
 
   List<int> get md5Hash =>
       crypto.CryptoUtils.base64StringToBytes(_object.md5Hash);
 
-  int get crc32CChecksum  => int.parse(_object.crc32c);
+  int get crc32CChecksum  {
+    var list = crypto.CryptoUtils.base64StringToBytes(_object.crc32c);
+    return (list[3] << 24) | (list[2] << 16) | (list[1] << 8) | list[0];
+  }
 
   Uri get downloadLink {
     if (_downloadLink == null) {
@@ -369,7 +379,10 @@ class _ObjectStatImpl implements ObjectInfo {
 }
 
 class _ObjectMetadata implements ObjectMetadata {
-  storage.Object _object;
+  final storage.Object _object;
+  Acl _cachedAcl;
+  ObjectGeneration _cachedGeneration;
+  Map _cachedCustom;
 
   _ObjectMetadata({Acl acl,
                    String contentType,
@@ -377,8 +390,8 @@ class _ObjectMetadata implements ObjectMetadata {
                    String cacheControl,
                    String contentDisposition,
                    String contentLanguage,
-                   Map<String, String> custom}) {
-    _object = new storage.Object();
+                   Map<String, String> custom})
+      : _object = new storage.Object() {
     _object.acl = acl != null ? acl._toObjectAccessControlList() : null;
     _object.contentType = contentType;
     _object.contentEncoding = contentEncoding;
@@ -390,26 +403,38 @@ class _ObjectMetadata implements ObjectMetadata {
 
   _ObjectMetadata._(this._object);
 
-  List<storage.ObjectAccessControl> get _acl => _object.acl;
-  set acl(Acl value) => _object.acl = value._toObjectAccessControlList();
+  Acl get acl {
+    if (_cachedAcl == null) {
+      _cachedAcl = new Acl._fromObjectAcl(_object);
+    }
+    return _cachedAcl;
+  }
 
   String get contentType => _object.contentType;
-  set contentType(String value) => _object.contentType = value;
 
   String get contentEncoding => _object.contentEncoding;
-  set contentEncoding(String value) => _object.contentEncoding = value;
 
   String get cacheControl => _object.cacheControl;
-  set cacheControl(String value) => _object.cacheControl = value;
 
   String get contentDisposition => _object.contentDisposition;
-  set contentDisposition(String value) => _object.contentDisposition = value;
 
   String get contentLanguage => _object.contentLanguage;
-  set contentLanguage(String value) => _object.contentLanguage = value;
 
-  Map<String, String> get custom => _object.metadata;
-  set custom(Map<String, String> value) => _object.metadata = value;
+  ObjectGeneration get generation {
+    if (_cachedGeneration == null) {
+      _cachedGeneration = new ObjectGeneration(
+          _object.generation, int.parse(_object.metageneration));
+    }
+    return _cachedGeneration;
+  }
+
+  Map<String, String> get custom {
+    if (_object.metadata == null) return null;
+    if (_cachedCustom == null) {
+      _cachedCustom = new UnmodifiableMapView(_object.metadata);
+    }
+    return _cachedCustom;
+  }
 
   ObjectMetadata replace({Acl acl,
                           String contentType,
@@ -419,7 +444,7 @@ class _ObjectMetadata implements ObjectMetadata {
                           String contentLanguage,
                           Map<String, String> custom}) {
     return new _ObjectMetadata(
-        acl: acl != null ? acl : _acl,
+        acl: acl != null ? acl : this.acl,
         contentType: contentType != null ? contentType : this.contentType,
         contentEncoding: contentEncoding != null ? contentEncoding
                                                  : this.contentEncoding,
@@ -428,7 +453,7 @@ class _ObjectMetadata implements ObjectMetadata {
                                                        : this.contentEncoding,
         contentLanguage: contentLanguage != null ? contentLanguage
                                                  : this.contentEncoding,
-        custom: custom != null ? custom : this.custom);
+        custom: custom != null ? new Map.from(custom) : this.custom);
   }
 }
 
@@ -549,7 +574,9 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
   }
 
   void _startNormalUpload(Stream stream, int length) {
-    var media = new common.Media(stream, length);
+    var contentType = _object.contentType != null
+        ? _object.contentType : 'application/octet-stream';
+    var media = new common.Media(stream, length, contentType: contentType);
     _api.objects.insert(_object,
                         _bucketName,
                         name: _objectName,
@@ -557,12 +584,14 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
                         uploadMedia: media,
                         uploadOptions: common.UploadOptions.Default)
         .then((response) {
-          _doneCompleter.complete(new _ObjectStatImpl(response));
+          _doneCompleter.complete(new _ObjectInfoImpl(response));
         }, onError: _completeError);
   }
 
   void _startResumableUpload(Stream stream, int length) {
-    var media = new common.Media(stream, length);
+    var contentType = _object.contentType != null
+        ? _object.contentType : 'application/octet-stream';
+    var media = new common.Media(stream, length, contentType: contentType);
     _api.objects.insert(_object,
                         _bucketName,
                         name: _objectName,
@@ -570,7 +599,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
                         uploadMedia: media,
                         uploadOptions: common.UploadOptions.Resumable)
         .then((response) {
-          _doneCompleter.complete(new _ObjectStatImpl(response));
+          _doneCompleter.complete(new _ObjectInfoImpl(response));
         }, onError: _completeError);
   }
 }

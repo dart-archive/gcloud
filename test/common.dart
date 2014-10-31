@@ -153,13 +153,13 @@ class MockClient extends http.BaseClient {
                     .then((j) => json = j);
               } else if (partCount == 2) {
                 // Second part is the base64 encoded bytes.
-                expect(contentType, 'application/octet-stream');
                 mimeMultipart
                     .transform(ASCII.decoder)
                     .fold('', (p, e) => '$p$e')
                     .then(crypto.CryptoUtils.base64StringToBytes)
                     .then((bytes) {
-                      completer.complete(new NormalMediaUpload(json, bytes));
+                      completer.complete(
+                          new NormalMediaUpload(json, bytes, contentType));
                     });
               } else {
                 // Exactly two parts expected.
@@ -172,7 +172,56 @@ class MockClient extends http.BaseClient {
 }
 
 class NormalMediaUpload {
-  String json;
-  List<int> bytes;
-  NormalMediaUpload(this.json, this.bytes);
+  final String json;
+  final List<int> bytes;
+  final String contentType;
+  NormalMediaUpload(this.json, this.bytes, this.contentType);
+}
+
+// Implementation of http.Client which traces all requests and responses.
+// Mainly useful for local testing.
+class TraceClient extends http.BaseClient {
+  final http.Client client;
+
+  TraceClient(this.client);
+
+  Future<http.StreamedResponse> send(http.BaseRequest request) {
+    print(request);
+    return request.finalize().toBytes().then((body) {
+      print('--- START REQUEST ---');
+      print(UTF8.decode(body));
+      print('--- END REQUEST ---');
+      var r = new RequestImpl(request.method, request.url, body);
+      r.headers.addAll(request.headers);
+      return client.send(r).then((http.StreamedResponse rr) {
+        return rr.stream.toBytes().then((body) {
+          print('--- START RESPONSE ---');
+          print(UTF8.decode(body));
+          print('--- END RESPONSE ---');
+          return new http.StreamedResponse(
+              new http.ByteStream.fromBytes(body),
+              rr.statusCode,
+              headers: rr.headers);
+
+        });
+      });
+    });
+  }
+
+  void close() {
+    client.close();
+  }
+}
+
+// http.BaseRequest implementationn used by the TraceClient.
+class RequestImpl extends http.BaseRequest {
+  final List<int> _body;
+
+  RequestImpl(String method, Uri url, this._body)
+      : super(method, url);
+
+  http.ByteStream finalize() {
+    super.finalize();
+    return new http.ByteStream.fromBytes(_body);
+  }
 }

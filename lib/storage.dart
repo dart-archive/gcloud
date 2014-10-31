@@ -49,7 +49,7 @@
 library gcloud.storage;
 
 import 'dart:async';
-import 'dart:collection' show UnmodifiableListView;
+import 'dart:collection' show UnmodifiableListView, UnmodifiableMapView;
 
 import 'package:http/http.dart' as http;
 
@@ -91,6 +91,62 @@ class Acl {
 
   /// Create a new ACL with a list of ACL entries.
   Acl(Iterable<AclEntry> entries) : _entries = new List.from(entries);
+
+  Acl._fromBucketAcl(storage.Bucket bucket)
+      : _entries = new List(bucket.acl == null ? 0 : bucket.acl.length) {
+    if (bucket.acl != null) {
+      for (int i = 0; i < bucket.acl.length; i++) {
+        _entries[i] = new AclEntry(_aclScopeFromEntity(bucket.acl[i].entity),
+                                   _aclPermissionFromRole(bucket.acl[i].role));
+      }
+    }
+  }
+
+  Acl._fromObjectAcl(storage.Object object)
+      : _entries = new List(object.acl == null ? 0 : object.acl.length) {
+    if (object.acl != null) {
+      for (int i = 0; i < object.acl.length; i++) {
+        _entries[i] = new AclEntry(_aclScopeFromEntity(object.acl[i].entity),
+                                   _aclPermissionFromRole(object.acl[i].role));
+      }
+    }
+  }
+
+  AclScope _aclScopeFromEntity(String entity) {
+    if (entity.startsWith('user-')) {
+      String tmp = entity.substring(5);
+      int at = tmp.indexOf('@');
+      if (at != -1) {
+        return new AccountScope(tmp);
+      } else {
+        return new StorageIdScope(tmp);
+      }
+    } else if (entity.startsWith('group-')) {
+      return new GroupScope(entity.substring(6));
+    } else if (entity.startsWith('domain-')) {
+      return new DomainScope(entity.substring(7));
+    } else if (entity.startsWith('allAuthenticatedUsers-')) {
+      return AclScope.allAuthenticated;
+    } else if (entity.startsWith('allUsers-')) {
+      return AclScope.allUsers;
+    } else if (entity.startsWith('project-')) {
+      String tmp = entity.substring(8);
+      int dash = tmp.indexOf('-');
+      if (dash != -1) {
+        return new ProjectScope(tmp.substring(dash + 1),
+                                tmp.substring(0, dash));
+      }
+    }
+    return new OpaqueScope(entity);
+  }
+
+  AclPermission _aclPermissionFromRole(String role) {
+    if (role == 'READER') return AclPermission.READ;
+    if (role == 'WRITER') return AclPermission.WRITE;
+    if (role == 'OWNER') return AclPermission.FULL_CONTROL;
+    throw new UnsupportedError(
+        "Server returned a unsupported permission role '$role'");
+  }
 
   List<storage.BucketAccessControl> _toBucketAccessControlList() {
     return _entries.map((entry) => entry._toBucketAccessControl()).toList();
@@ -169,20 +225,26 @@ abstract class AclScope {
   /// ACL type for scope representing a Google Storage id.
   static const int _TYPE_STORAGE_ID = 0;
 
+  /// ACL type for scope representing a project entity.
+  static const int _TYPE_PROJECT = 1;
+
   /// ACL type for scope representing an account holder.
-  static const int _TYPE_ACCOUNT = 1;
+  static const int _TYPE_ACCOUNT = 2;
 
   /// ACL type for scope representing a group.
-  static const int _TYPE_GROUP = 2;
+  static const int _TYPE_GROUP = 3;
 
   /// ACL type for scope representing a domain.
-  static const int _TYPE_DOMAIN = 3;
+  static const int _TYPE_DOMAIN = 4;
 
   /// ACL type for scope representing all authenticated users.
-  static const int _TYPE_ALL_AUTHENTICATED = 4;
+  static const int _TYPE_ALL_AUTHENTICATED = 5;
 
   /// ACL type for scope representing all users.
-  static const int _TYPE_ALL_USERS = 5;
+  static const int _TYPE_ALL_USERS = 6;
+
+  /// ACL type for scope representing an unsupported scope.
+  static const int _TYPE_OPAQUE = 7;
 
   /// The id of the actual entity this ACL scope represents. The actual values
   /// are set in the different subclasses.
@@ -199,32 +261,9 @@ abstract class AclScope {
 
   const AclScope._(this._type, this._id);
 
-  String get _storageEntity {
-    switch (_type) {
-      case _TYPE_STORAGE_ID:
-        return 'user-$_id';
-      case _TYPE_ACCOUNT:
-        return 'user-$_id';
-      case _TYPE_GROUP:
-        return 'group-$_id';
-      case _TYPE_DOMAIN:
-        return 'domain-$_id';
-      case _TYPE_ALL_AUTHENTICATED:
-        return 'allAuthenticatedUsers';
-      case _TYPE_ALL_USERS:
-        return 'allUsers';
-      default:
-        throw new UnsupportedError('Unexpected ACL scope');
-    }
-  }
-
-  int get hashCode => _jenkinsHash([_type, _id]);
-
-  bool operator==(Object other) {
-    return other is AclScope && _type == other._type && _id == other._id;
-  }
-
   String toString() => 'AclScope($_storageEntity)';
+
+  String get _storageEntity;
 }
 
 /// An ACL scope for an entity identified by a 'Google Storage ID'.
@@ -237,6 +276,8 @@ class StorageIdScope extends AclScope {
 
   /// Google Storage ID.
   String get storageId => _id;
+
+  String get _storageEntity => 'user-$_id';
 }
 
 /// An ACL scope for an entity identified by an individual email address.
@@ -245,6 +286,8 @@ class AccountScope extends AclScope {
 
   /// Email address.
   String get email => _id;
+
+  String get _storageEntity => 'user-$_id';
 }
 
 /// An ACL scope for an entity identified by an Google Groups email.
@@ -253,6 +296,8 @@ class GroupScope extends AclScope {
 
   /// Group name.
   String get group => _id;
+
+  String get _storageEntity => 'group-$_id';
 }
 
 /// An ACL scope for an entity identified by a domain name.
@@ -261,17 +306,46 @@ class DomainScope extends AclScope {
 
   /// Domain name.
   String get domain => _id;
+
+  String get _storageEntity => 'domain-$_id';
+}
+
+/// An ACL scope for an project related entity.
+class ProjectScope extends AclScope {
+  /// Project role.
+  ///
+  /// Possible values are `owners`, `editors` and `viewers`.
+  final String role;
+
+  ProjectScope(String project, String this.role)
+      : super._(AclScope._TYPE_PROJECT, project);
+
+  /// Project ID.
+  String get project => _id;
+
+  String get _storageEntity => 'project-$role-$_id';
+}
+
+/// An ACL scope for an unsupported scope.
+class OpaqueScope extends AclScope {
+  OpaqueScope(String id) : super._(AclScope._TYPE_OPAQUE, id);
+
+  String get _storageEntity => _id;
 }
 
 /// ACL scope for a all authenticated users.
 class AllAuthenticatedScope extends AclScope {
   const AllAuthenticatedScope()
       : super._(AclScope._TYPE_ALL_AUTHENTICATED, null);
+
+  String get _storageEntity => 'allAuthenticatedUsers';
 }
 
 /// ACL scope for a all users.
 class AllUsersScope extends AclScope {
   const AllUsersScope(): super._(AclScope._TYPE_ALL_USERS, null);
+
+  String get _storageEntity => 'allUsers';
 }
 
 /// Permissions for individual scopes in an ACL.
@@ -359,8 +433,17 @@ abstract class BucketInfo {
   /// Name of the bucket.
   String get bucketName;
 
+  /// Entity tag for the bucket.
+  String get etag;
+
   /// When this bucket was created.
   DateTime get created;
+
+  /// Bucket ID.
+  String get id;
+
+  /// Acl of the bucket.
+  Acl get acl;
 }
 
 /// Access to Cloud Storage
@@ -461,11 +544,14 @@ abstract class ObjectInfo {
   /// Name of the object.
   String get name;
 
-  /// Size of the data.
-  int get size;
+  /// Length of the data.
+  int get length;
 
   /// When this object was updated.
   DateTime get updated;
+
+  /// Entity tag for the object.
+  String get etag;
 
   /// MD5 hash of the object.
   List<int> get md5Hash;
@@ -484,43 +570,45 @@ abstract class ObjectInfo {
 }
 
 /// Generational information on an object.
-abstract class ObjectGeneration {
+class ObjectGeneration {
   /// Object generation.
-  String get objectGeneration;
+  final String objectGeneration;
 
   /// Metadata generation.
-  int get metaGeneration;
+  final int metaGeneration;
+
+  const ObjectGeneration(this.objectGeneration, this.metaGeneration);
 }
 
-/// Access to object metadata
+/// Access to object metadata.
 abstract class ObjectMetadata {
   factory ObjectMetadata({Acl acl, String contentType, String contentEncoding,
       String cacheControl, String contentDisposition, String contentLanguage,
       Map<String, String> custom}) = _ObjectMetadata;
-  /// ACL
-  void set acl(Acl value);
+  /// ACL.
+  Acl get acl;
 
   /// `Content-Type` for this object.
-  String contentType;
+  String get contentType;
 
   /// `Content-Encoding` for this object.
-  String contentEncoding;
+  String get contentEncoding;
 
   /// `Cache-Control` for this object.
-  String cacheControl;
+  String get cacheControl;
 
   /// `Content-Disposition` for this object.
-  String contentDisposition;
+  String get contentDisposition;
 
   /// `Content-Language` for this object.
   ///
   /// The value of this field must confirm to RFC 3282.
-  String contentLanguage;
+  String get contentLanguage;
 
   /// Custom metadata.
-  Map<String, String> custom;
+  Map<String, String> get custom;
 
-  /// Create a copy of this object with some values replaces.
+  /// Create a copy of this object with some values replaced.
   ///
   // TODO: This cannot be used to set values to null.
   ObjectMetadata replace({Acl acl, String contentType, String contentEncoding,
@@ -609,6 +697,11 @@ abstract class Bucket {
   ///
   // TODO: More documentation
   Future<ObjectInfo> info(String name);
+
+  /// Delete an object.
+  ///
+  // TODO: More documentation
+  Future delete(String name);
 
   /// Update object metadata.
   ///
