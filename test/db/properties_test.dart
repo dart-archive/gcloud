@@ -180,12 +180,8 @@ class ModelDBMock implements ModelDB {
     return _datastoreKey;
   }
 
-  modelDescriptionState(ModelDescription modelDescription) => null;
-  Iterable<ModelDescription> get modelDescriptions => null;
   Map<String, Property> propertiesForModel(modelDescription) => null;
-  modelClass(ModelDescription md) => null;
   Model fromDatastoreEntity(datastore.Entity entity) => null;
-  ModelDescription modelDescriptionForType(Type type) => null;
   datastore.Entity toDatastoreEntity(Model model) => null;
   String fieldNameToPropertyName(String kind, String fieldName) => null;
   String kindName(Type type) => null;
