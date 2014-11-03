@@ -39,14 +39,6 @@ import 'utils.dart';
 
 import '../../common_e2e.dart';
 
-// Note:
-// Non-ancestor queries (i.e. queries not lookups) result in index scans.
-// The index tables are updated in a "eventually consistent" way.
-//
-// So this can make tests flaky, the index updates take longer than the
-// following constant.
-const INDEX_UPDATE_DELAY = const Duration(seconds: 10);
-
 Future sleep(Duration duration) {
   var completer = new Completer();
   new Timer(duration, completer.complete);

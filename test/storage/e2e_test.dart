@@ -260,7 +260,11 @@ main() {
       return runE2EUnittest(() {
         runTests(storage, storage.bucket(testBucket));
       }).whenComplete(() {
-        storage.deleteBucket(testBucket);
+        // Deleting a bucket relies on eventually consistent behaviour, hence
+        // the delay in attempt to prevent test flakiness.
+        return new Future.delayed(STORAGE_LIST_DELAY, () {
+          return storage.deleteBucket(testBucket);
+        });
       });
     });
   });

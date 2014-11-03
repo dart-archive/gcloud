@@ -26,6 +26,26 @@ const String DEFAULT_PROJECT = 'dart-gcloud-e2e';
 const String DEFAULT_KEY_LOCATION =
     'gs://dart-archive-internal/keys/dart-gcloud-e2e.json';
 
+// Used for db/datastore e2e tests:
+//
+// Non-ancestor queries (i.e. queries not lookups) result in index scans.
+// The index tables are updated in a "eventually consistent" way.
+//
+// So this can make tests flaky, if the index updates take longer than the
+// following constant.
+const INDEX_UPDATE_DELAY = const Duration(seconds: 20);
+
+// Used for storage e2e tests:
+//
+// List operations on buckets are eventually consistent. Bucket deletion is
+// also dependent on list operations to ensure the bucket is empty before
+// deletion.
+//
+// So this can make tests flaky. The following delay is introduced as an
+// attempt to account for that.
+const STORAGE_LIST_DELAY = const Duration(seconds: 5);
+
+
 bool onBot() {
   // When running on the package-bot the current user is chrome-bot.
   var envName;

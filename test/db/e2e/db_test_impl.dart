@@ -53,14 +53,6 @@ import 'package:gcloud/src/datastore_impl.dart' as datastore_impl;
 import '../../datastore/e2e/datastore_test_impl.dart' as datastore_test;
 import '../../common_e2e.dart';
 
-// Note:
-// Non-ancestor queries (i.e. queries not lookups) result in index scans.
-// The index tables are updated in a "eventually consistent" way.
-//
-// So this can make tests flaky, if the index updates take longer than the
-// following constant.
-const INDEX_UPDATE_DELAY = const Duration(seconds: 10);
-
 @db.Kind()
 class Person extends db.Model {
   @db.StringProperty()
