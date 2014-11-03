@@ -471,7 +471,8 @@ abstract class BucketInfo {
 /// Access to Cloud Storage
 abstract class Storage {
   /// List of required OAuth2 scopes for Cloud Storage operation.
-  static const Scopes = const [storage.StorageApi.DevstorageFullControlScope];
+  static const List<String> SCOPES =
+      const <String>[storage.StorageApi.DevstorageFullControlScope];
 
   /// Initializes access to cloud storage.
   factory Storage(http.Client client, String project) = _StorageImpl;

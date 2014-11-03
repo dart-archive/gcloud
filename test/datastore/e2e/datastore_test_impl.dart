@@ -30,11 +30,22 @@ library datastore_test;
 import 'dart:async';
 
 import 'package:gcloud/datastore.dart';
+import 'package:gcloud/src/datastore_impl.dart' as datastore_impl;
 import 'package:gcloud/common.dart';
 import 'package:unittest/unittest.dart';
 
 import '../error_matchers.dart';
 import 'utils.dart';
+
+import '../../common_e2e.dart';
+
+// Note:
+// Non-ancestor queries (i.e. queries not lookups) result in index scans.
+// The index tables are updated in a "eventually consistent" way.
+//
+// So this can make tests flaky, the index updates take longer than the
+// following constant.
+const INDEX_UPDATE_DELAY = const Duration(seconds: 10);
 
 Future sleep(Duration duration) {
   var completer = new Completer();
@@ -717,14 +728,6 @@ runTests(Datastore datastore) {
       var indexedEntity = sorted.where(indexFilterMatches).toList();
       expect(indexedEntity.length, equals(1));
 
-      // Note:
-      // Non-ancestor queries (i.e. queries not lookups) result in index scans.
-      // The index tables are updated in a "eventually consistent" way.
-      //
-      // So this can make tests flaky, the index updates take longer than the
-      // following constant.
-      var INDEX_UPDATE_DELAY = const Duration(seconds: 10);
-
       var filters = [
           new Filter(FilterRelation.GreatherThan, QUERY_KEY, QUERY_LOWER_BOUND),
           new Filter(FilterRelation.LessThan, QUERY_KEY, QUERY_UPPER_BOUND),
@@ -1008,6 +1011,36 @@ runTests(Datastore datastore) {
           return Future.forEach(futures, (f) => f()).then(expectAsync((_) {}));
         });
       });
+    });
+  });
+}
+
+Future cleanupDB(Datastore db) {
+  // cleanup() will call itself again as long as the DB is not clean.
+  cleanup() {
+    var q = new Query(limit: 500);
+    return consumePages((_) => db.query(q)).then((List<Entity> entities) {
+      entities = entities.where((entity) {
+        return !entity.key.elements[0].kind.contains('__');
+      }).toList();
+
+      if (entities.length == 0) return null;
+
+      print('[cleanupDB]: Removing left-over ${entities.length} entities');
+      var deletes = entities.map((e) => e.key).toList();
+      return db.commit(deletes: deletes).then((_) => cleanup());
+    });
+  }
+  return cleanup();
+}
+
+main() {
+  var scopes = datastore_impl.DatastoreImpl.SCOPES;
+
+  withAuthClient(scopes, (String project, httpClient) {
+    var datastore = new datastore_impl.DatastoreImpl(httpClient, 's~$project');
+    return cleanupDB(datastore).then((_) {
+      return runE2EUnittest(() => runTests(datastore));
     });
   });
 }

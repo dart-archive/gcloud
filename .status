@@ -2,15 +2,19 @@
 */*/packages/*: Skip
 */*/*/packages/*: Skip
 
-build/test/datastore/e2e/*: Skip
-build/test/db/e2e/*: Skip
-
-test/datastore/e2e/*: Skip
-test/db/e2e/*: Skip
+# This test is slow because
+# - eventual consistency forces us to put in sleep()s
+# - it does e2e testing
+# - it combines several tests to avoid concurrent tests touching the same data
+build/test/db_all_e2e_test: Slow, Pass
+test/db_all_e2e_test: Slow, Pass
 
 [ $browser ]
 build/test/storage/e2e_test: Skip
 test/storage/e2e_test: Skip
+
+build/test/db_all_e2e_test: Skip
+test/db_all_e2e_test: Skip
 
 [ $compiler == dart2js ]
 *: Skip

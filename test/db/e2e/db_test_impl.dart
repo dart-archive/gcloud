@@ -47,8 +47,19 @@ library db_test;
 import 'dart:async';
 
 import 'package:unittest/unittest.dart';
-
 import 'package:gcloud/db.dart' as db;
+import 'package:gcloud/src/datastore_impl.dart' as datastore_impl;
+
+import '../../datastore/e2e/datastore_test_impl.dart' as datastore_test;
+import '../../common_e2e.dart';
+
+// Note:
+// Non-ancestor queries (i.e. queries not lookups) result in index scans.
+// The index tables are updated in a "eventually consistent" way.
+//
+// So this can make tests flaky, if the index updates take longer than the
+// following constant.
+const INDEX_UPDATE_DELAY = const Duration(seconds: 10);
 
 @db.Kind()
 class Person extends db.Model {
@@ -449,14 +460,6 @@ runTests(db.DatastoreDB store) {
       var barUsers = users.where(
           (User u) => u.languages.contains('bar')).toList();
 
-      // Note:
-      // Non-ancestor queries (i.e. queries not lookups) result in index scans.
-      // The index tables are updated in a "eventually consistent" way.
-      //
-      // So this can make tests flaky, if the index updates take longer than the
-      // following constant.
-      var INDEX_UPDATE_DELAY = const Duration(seconds: 5);
-
       var allInserts = []
           ..addAll(users)
           ..addAll(expandoPersons);
@@ -607,6 +610,17 @@ runTests(db.DatastoreDB store) {
           return Future.forEach(tests, (f) => f());
         });
       });
+    });
+  });
+}
+
+main() {
+  var scopes = datastore_impl.DatastoreImpl.SCOPES;
+
+  withAuthClient(scopes, (String project, httpClient) {
+    var datastore = new datastore_impl.DatastoreImpl(httpClient, 's~$project');
+    return datastore_test.cleanupDB(datastore).then((_) {
+      return runE2EUnittest(() => runTests(new db.DatastoreDB(datastore)));
     });
   });
 }

@@ -20,8 +20,9 @@ class TransactionImpl implements datastore.Transaction {
 }
 
 class DatastoreImpl implements datastore.Datastore {
-  static const List<String> Scopes = const [
-      api.DatastoreApi.DatastoreScope
+  static const List<String> SCOPES = const <String>[
+      api.DatastoreApi.DatastoreScope,
+      api.DatastoreApi.UserinfoEmailScope,
   ];
 
   final api.DatastoreApi _api;

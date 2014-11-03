@@ -12,7 +12,6 @@ import 'package:http_parser/http_parser.dart' as http_parser;
 import 'package:mime/mime.dart' as mime;
 import 'package:unittest/unittest.dart';
 
-const PROJECT = 'test-project';
 const CONTENT_TYPE_JSON_UTF8 = 'application/json; charset=utf-8';
 
 const RESPONSE_HEADERS = const {

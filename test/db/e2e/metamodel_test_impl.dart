@@ -59,7 +59,8 @@ runTests(datastore, db.DatastoreDB store) {
       return datastore.commit(inserts: entities).then((_) {
         return sleep(const Duration(seconds: 10)).then((_) {
           var namespaceQuery = store.query(Namespace);
-          return namespaceQuery.run().then((List<Namespace> namespaces) {
+          return namespaceQuery.run().toList()
+              .then((List<Namespace> namespaces) {
             expect(namespaces.length, 3);
             expect(namespaces, contains(cond((ns) => ns.name == null)));
             expect(namespaces,
@@ -71,7 +72,7 @@ runTests(datastore, db.DatastoreDB store) {
             for (var namespace in namespaces) {
               var partition = store.newPartition(namespace.name);
               var kindQuery = store.query(Kind, partition: partition);
-              futures.add(kindQuery.run().then((List<Kind> kinds) {
+              futures.add(kindQuery.run().toList().then((List<Kind> kinds) {
                 expect(kinds.length, greaterThanOrEqualTo(2));
                 if (namespace.name == null) {
                   expect(kinds, contains(cond((k) => k.name == 'NullKind')));

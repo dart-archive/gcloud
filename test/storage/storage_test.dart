@@ -16,6 +16,7 @@ import 'package:googleapis/storage/v1.dart' as storage;
 import 'package:googleapis/common/common.dart' as common;
 
 import '../common.dart';
+import '../common_e2e.dart';
 
 
 const String ROOT_PATH = '/storage/v1/';
