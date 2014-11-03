@@ -12,7 +12,7 @@ class Namespace extends db.ExpandoModel {
 
   String get name {
     // The default namespace will be reported with id 1.
-    if (id == NamespaceDescription.EmptyNamespaceId) return null;
+    if (id == Namespace.EmptyNamespaceId) return null;
     return id;
   }
 }
