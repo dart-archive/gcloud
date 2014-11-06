@@ -23,7 +23,7 @@ class Key {
     }
     if (id != null && id is! String && id is! int) {
       throw new ArgumentError(
-          'The id argument must not be an integer or a String.');
+          'The id argument must be an integer or a String.');
     }
   }
 
