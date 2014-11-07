@@ -1,4 +1,4 @@
-## 0.1.0
+## 0.1.1
 
 * Increased version constraint on googleapis{,_auth,_beta}.
 
