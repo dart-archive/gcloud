@@ -5,8 +5,6 @@
 library gcloud.datastore_impl;
 
 import 'dart:async';
-import 'dart:convert';
-import 'dart:math';
 
 import 'package:http/http.dart' as http;
 
