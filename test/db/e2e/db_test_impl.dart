@@ -457,7 +457,7 @@ runTests(db.DatastoreDB store) {
           ..addAll(expandoPersons);
       var allKeys = allInserts.map((db.Model model) => model.key).toList();
       return store.commit(inserts: allInserts).then((_) {
-        return sleep(INDEX_UPDATE_DELAY).then((_) {
+        return waitUntilEntitiesReady(store, allKeys).then((_) {
           var tests = [
             // Queries for [Person] return no results, we only have [User]
             // objects.
@@ -589,7 +589,7 @@ runTests(db.DatastoreDB store) {
             () => store.commit(deletes: allKeys),
 
             // Wait until the entity deletes are reflected in the indices.
-            () => sleep(INDEX_UPDATE_DELAY),
+            () => waitUntilEntitiesGone(store, allKeys),
 
             // Make sure queries don't return results
             () => store.lookup(allKeys).then((List<db.Model> models) {
@@ -603,6 +603,44 @@ runTests(db.DatastoreDB store) {
         });
       });
     });
+  });
+}
+
+Future waitUntilEntitiesReady(db.DatastoreDB mdb, List<db.Key> keys) {
+  return waitUntilEntitiesHelper(mdb, keys, true);
+}
+
+Future waitUntilEntitiesGone(db.DatastoreDB mdb, List<db.Key> keys) {
+  return waitUntilEntitiesHelper(mdb, keys, false);
+}
+
+Future waitUntilEntitiesHelper(db.DatastoreDB mdb,
+                               List<db.Key> keys,
+                               bool positive) {
+  var keysByKind = {};
+  for (var key in keys) {
+    keysByKind.putIfAbsent(key.type, () => []).add(key);
+  }
+
+  Future waitForKeys(Type kind, List<db.Key> keys) {
+    return mdb.query(kind).run().toList().then((List<db.Model> models) {
+      for (var key in keys) {
+        bool found = false;
+        for (var model in models) {
+          if (key == model.key) found = true;
+        }
+        if (positive) {
+          if (!found) return waitForKeys(kind, keys);
+        } else {
+          if (found) return waitForKeys(kind, keys);
+        }
+      }
+      return null;
+    });
+  }
+
+  return Future.forEach(keysByKind.keys.toList(), (Type kind) {
+    return waitForKeys(kind, keysByKind[kind]);
   });
 }
 

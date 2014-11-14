@@ -745,7 +745,7 @@ runTests(Datastore datastore) {
 
       test('query', () {
         return insert(stringNamedEntities, []).then((keys) {
-          return sleep(INDEX_UPDATE_DELAY).then((_) {
+          return waitUntilEntitiesReady(datastore, stringNamedKeys).then((_) {
             var tests = [
               // EntityKind query
               () => testQueryAndCompare(
@@ -838,7 +838,7 @@ runTests(Datastore datastore) {
               () => delete(stringNamedKeys, transactional: true),
 
               // Wait until the entity deletes are reflected in the indices.
-              () => sleep(INDEX_UPDATE_DELAY),
+              () => waitUntilEntitiesGone(datastore, stringNamedKeys),
 
               // Make sure queries don't return results
               () => testQueryAndCompare(
@@ -879,8 +879,10 @@ runTests(Datastore datastore) {
 
         return datastore.commit(inserts: [entity, entity2]).then((_) {
           var futures = [
+            // FIXME/TODO: Ancestor queries should be strongly consistent.
+            // We should not need to wait for them.
             () {
-              return sleep(INDEX_UPDATE_DELAY);
+              return waitUntilEntitiesReady(datastore, [subSubKey, subSubKey2]);
             },
             // Test that lookup only returns inserted entities.
             () {
@@ -1008,22 +1010,89 @@ runTests(Datastore datastore) {
 }
 
 Future cleanupDB(Datastore db) {
-  // cleanup() will call itself again as long as the DB is not clean.
-  cleanup() {
-    var q = new Query(limit: 500);
+  Future<List<String>> getNamespaces() {
+    var q = new Query(kind: '__namespace__');
     return consumePages((_) => db.query(q)).then((List<Entity> entities) {
-      entities = entities.where((entity) {
-        return !entity.key.elements[0].kind.contains('__');
+      return entities.map((Entity e) {
+        var id = e.key.elements.last.id;
+        if (id == 1) return null;
+        return id;
       }).toList();
+    });
+  }
 
+  Future<List<String>> getKinds(String namespace) {
+    var partition = new Partition(namespace);
+    var q = new Query(kind: '__kind__');
+    return consumePages((_) => db.query(q, partition: partition))
+        .then((List<Entity> entities) {
+      return entities
+          .map((Entity e) => e.key.elements.last.id)
+          .where((String kind) => !kind.contains('__'))
+          .toList();
+    });
+  }
+
+  // cleanup() will call itself again as long as the DB is not clean.
+  cleanup(String namespace, String kind) {
+    var partition = new Partition(namespace);
+    var q = new Query(kind: kind, limit: 500);
+    return consumePages((_) => db.query(q, partition: partition))
+        .then((List<Entity> entities) {
       if (entities.length == 0) return null;
 
       print('[cleanupDB]: Removing left-over ${entities.length} entities');
       var deletes = entities.map((e) => e.key).toList();
-      return db.commit(deletes: deletes).then((_) => cleanup());
+      return db.commit(deletes: deletes).then((_) => cleanup(namespace, kind));
     });
   }
-  return cleanup();
+
+  return getNamespaces().then((List<String> namespaces) {
+    return Future.forEach(namespaces, (String namespace) {
+      return getKinds(namespace).then((List<String> kinds) {
+        return Future.forEach(kinds, (String kind) {
+          return cleanup(namespace, kind);
+        });
+      });
+    });
+  });
+}
+
+Future waitUntilEntitiesReady(Datastore db, List<Key> keys) {
+  return waitUntilEntitiesHelper(db, keys, true);
+}
+
+Future waitUntilEntitiesGone(Datastore db, List<Key> keys) {
+  return waitUntilEntitiesHelper(db, keys, false);
+}
+
+Future waitUntilEntitiesHelper(Datastore db, List<Key> keys, bool positive) {
+  var keysByKind = {};
+  for (var key in keys) {
+    keysByKind.putIfAbsent(key.elements.last.kind, () => []).add(key);
+  }
+
+  Future waitForKeys(String kind, List<Key> keys) {
+    var q = new Query(kind: kind);
+    return consumePages((_) => db.query(q)).then((entities) {
+      for (var key in keys) {
+        bool found = false;
+        for (var entity in entities) {
+          if (key == entity.key) found = true;
+        }
+        if (positive) {
+          if (!found) return waitForKeys(kind, keys);
+        } else {
+          if (found) return waitForKeys(kind, keys);
+        }
+      }
+      return null;
+    });
+  }
+
+  return Future.forEach(keysByKind.keys.toList(), (String kind) {
+    return waitForKeys(kind, keysByKind[kind]);
+  });
 }
 
 main() {
