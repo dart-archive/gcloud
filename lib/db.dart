@@ -7,12 +7,34 @@ library gcloud.db;
 import 'dart:async';
 import 'dart:collection';
 import 'dart:mirrors' as mirrors;
-import 'datastore.dart' as datastore;
 
 import 'common.dart' show Page, StreamFromPages;
+import 'service_scope.dart' as ss;
+import 'datastore.dart' as datastore;
 
 part 'src/db/annotations.dart';
 part 'src/db/db.dart';
 part 'src/db/models.dart';
 part 'src/db/model_db.dart';
 part 'src/db/model_db_impl.dart';
+
+const Symbol _dbKey = #_gcloud.db;
+
+/// Access the [DatastoreDB] object available in the current service scope.
+///
+/// The returned object will be the one which was previously registered with
+/// [registerDbService] within the current (or a parent) service scope.
+///
+/// Accessing this getter outside of a service scope will result in an error.
+DatastoreDB get dbService => ss.lookup(_dbKey);
+
+/// Registers the [DatastoreDB] object within the current service scope.
+///
+/// The provided `db` object will be avilable via the top-level `db` getter.
+///
+/// Calling this function outside of a service scope will result in an error.
+/// Calling this function more than once inside the same service scope is not
+/// allowed.
+void registerDbService(DatastoreDB db) {
+  ss.register(_dbKey, db);
+}

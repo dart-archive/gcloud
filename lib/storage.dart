@@ -54,13 +54,37 @@ import 'dart:collection' show UnmodifiableListView, UnmodifiableMapView;
 import 'package:http/http.dart' as http;
 
 import 'package:crypto/crypto.dart' as crypto;
-import 'package:googleapis/storage/v1.dart' as storage;
+import 'package:googleapis/storage/v1.dart' as storage_api;
 import 'package:googleapis/common/common.dart' as common;
+
+import 'service_scope.dart' as ss;
 
 import 'common.dart';
 export 'common.dart';
 
 part 'src/storage_impl.dart';
+
+const Symbol _storageKey = #_gcloud.storage;
+
+/// Access the [Storage] object available in the current service scope.
+///
+/// The returned object will be the one which was previously registered with
+/// [registerStorageService] within the current (or a parent) service scope.
+///
+/// Accessing this getter outside of a service scope will result in an error.
+Storage get storageService => ss.lookup(_storageKey);
+
+/// Registers the [storage] object within the current service scope.
+///
+/// The provided `storage` object will be avilable via the top-level `storage`
+/// getter.
+///
+/// Calling this function outside of a service scope will result in an error.
+/// Calling this function more than once inside the same service scope is not
+/// allowed.
+void registerStorageService(Storage storage) {
+  ss.register(_storageKey, storage);
+}
 
 int _jenkinsHash(List e) {
   const _HASH_MASK = 0x3fffffff;
@@ -93,7 +117,7 @@ class Acl {
   /// Create a new ACL with a list of ACL entries.
   Acl(Iterable<AclEntry> entries) : _entries = new List.from(entries);
 
-  Acl._fromBucketAcl(storage.Bucket bucket)
+  Acl._fromBucketAcl(storage_api.Bucket bucket)
       : _entries = new List(bucket.acl == null ? 0 : bucket.acl.length) {
     if (bucket.acl != null) {
       for (int i = 0; i < bucket.acl.length; i++) {
@@ -103,7 +127,7 @@ class Acl {
     }
   }
 
-  Acl._fromObjectAcl(storage.Object object)
+  Acl._fromObjectAcl(storage_api.Object object)
       : _entries = new List(object.acl == null ? 0 : object.acl.length) {
     if (object.acl != null) {
       for (int i = 0; i < object.acl.length; i++) {
@@ -149,11 +173,11 @@ class Acl {
         "Server returned a unsupported permission role '$role'");
   }
 
-  List<storage.BucketAccessControl> _toBucketAccessControlList() {
+  List<storage_api.BucketAccessControl> _toBucketAccessControlList() {
     return _entries.map((entry) => entry._toBucketAccessControl()).toList();
   }
 
-  List<storage.ObjectAccessControl> _toObjectAccessControlList() {
+  List<storage_api.ObjectAccessControl> _toObjectAccessControlList() {
     return _entries.map((entry) => entry._toObjectAccessControl()).toList();
   }
 
@@ -190,15 +214,15 @@ class AclEntry {
 
   AclEntry(this.scope, this.permission);
 
-  storage.BucketAccessControl _toBucketAccessControl() {
-    var acl = new storage.BucketAccessControl();
+  storage_api.BucketAccessControl _toBucketAccessControl() {
+    var acl = new storage_api.BucketAccessControl();
     acl.entity = scope._storageEntity;
     acl.role = permission._storageBucketRole;
     return acl;
   }
 
-  storage.ObjectAccessControl _toObjectAccessControl() {
-    var acl = new storage.ObjectAccessControl();
+  storage_api.ObjectAccessControl _toObjectAccessControl() {
+    var acl = new storage_api.ObjectAccessControl();
     acl.entity = scope._storageEntity;
     acl.role = permission._storageObjectRole;
     return acl;
@@ -472,7 +496,7 @@ abstract class BucketInfo {
 abstract class Storage {
   /// List of required OAuth2 scopes for Cloud Storage operation.
   static const List<String> SCOPES =
-      const <String>[storage.StorageApi.DevstorageFullControlScope];
+      const <String>[storage_api.StorageApi.DevstorageFullControlScope];
 
   /// Initializes access to cloud storage.
   factory Storage(http.Client client, String project) = _StorageImpl;

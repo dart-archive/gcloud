@@ -35,14 +35,14 @@ class _AbsoluteName {
 /// Storage API implementation providing access to buckets.
 class _StorageImpl implements Storage {
   final String project;
-  final storage.StorageApi _api;
+  final storage_api.StorageApi _api;
 
   _StorageImpl(client, this.project)
-      : _api = new storage.StorageApi(client);
+      : _api = new storage_api.StorageApi(client);
 
   Future createBucket(String bucketName,
                       {PredefinedAcl predefinedAcl, Acl acl}) {
-    var bucket = new storage.Bucket()..name = bucketName;
+    var bucket = new storage_api.Bucket()..name = bucketName;
     var predefinedName = predefinedAcl != null ? predefinedAcl._name : null;
     if (acl != null) {
       bucket.acl = acl._toBucketAccessControlList();
@@ -100,7 +100,7 @@ class _StorageImpl implements Storage {
         .then((_) => null);
   }
 
-  Future<storage.Buckets> _listBuckets(int pageSize, String nextPageToken) {
+  Future<storage_api.Buckets> _listBuckets(int pageSize, String nextPageToken) {
     return _api.buckets.list(
         project,
         maxResults: pageSize,
@@ -109,7 +109,7 @@ class _StorageImpl implements Storage {
 }
 
 class _BucketInfoImpl implements BucketInfo {
-  storage.Bucket _bucket;
+  final storage_api.Bucket _bucket;
 
   _BucketInfoImpl(this._bucket);
 
@@ -126,7 +126,7 @@ class _BucketInfoImpl implements BucketInfo {
 
 /// Bucket API implementation providing access to objects.
 class _BucketImpl implements Bucket {
-  final storage.StorageApi _api;
+  final storage_api.StorageApi _api;
   PredefinedAcl _defaultPredefinedObjectAcl;
   Acl _defaultObjectAcl;
   final String bucketName;
@@ -145,7 +145,7 @@ class _BucketImpl implements Bucket {
       String objectName,
       {int length, ObjectMetadata metadata,
        Acl acl, PredefinedAcl predefinedAcl, String contentType}) {
-    storage.Object object;
+    storage_api.Object object;
     if (metadata == null) {
       metadata = new _ObjectMetadata(acl: acl, contentType: contentType);
     } else {
@@ -243,7 +243,7 @@ class _BucketImpl implements Bucket {
     return _api.objects.update(object, bucketName, objectName);
   }
 
-  Future<storage.Objects> _listObjects(
+  Future<storage_api.Objects> _listObjects(
       String bucketName, String prefix, String delimiter,
       int pageSize, String nextPageToken) {
     return _api.objects.list(
@@ -261,7 +261,7 @@ class _BucketPageImpl implements Page<String> {
   final String _nextPageToken;
   final List<String> items;
 
-  _BucketPageImpl(this._storage, this._pageSize, storage.Buckets response)
+  _BucketPageImpl(this._storage, this._pageSize, storage_api.Buckets response)
       : items = new List(response.items != null ? response.items.length : 0),
         _nextPageToken = response.nextPageToken {
     for (int i = 0; i < items.length; i++) {
@@ -290,7 +290,7 @@ class _ObjectPageImpl implements Page<BucketEntry> {
 
   _ObjectPageImpl(
       this._bucket, this._prefix, this._pageSize,
-      storage.Objects response)
+      storage_api.Objects response)
       : items = new List(
             (response.items != null ? response.items.length : 0) +
             (response.prefixes != null ? response.prefixes.length : 0)),
@@ -335,12 +335,12 @@ class _ObjectGenerationImpl implements ObjectGeneration {
 }
 
 class _ObjectInfoImpl implements ObjectInfo {
-  final storage.Object _object;
+  final storage_api.Object _object;
   final ObjectMetadata _metadata;
   Uri _downloadLink;
   ObjectGeneration _generation;
 
-  _ObjectInfoImpl(storage.Object object) :
+  _ObjectInfoImpl(storage_api.Object object) :
       _object = object, _metadata = new _ObjectMetadata._(object);
 
   String get name => _object.name;
@@ -379,7 +379,7 @@ class _ObjectInfoImpl implements ObjectInfo {
 }
 
 class _ObjectMetadata implements ObjectMetadata {
-  final storage.Object _object;
+  final storage_api.Object _object;
   Acl _cachedAcl;
   ObjectGeneration _cachedGeneration;
   Map _cachedCustom;
@@ -391,7 +391,7 @@ class _ObjectMetadata implements ObjectMetadata {
                    String contentDisposition,
                    String contentLanguage,
                    Map<String, String> custom})
-      : _object = new storage.Object() {
+      : _object = new storage_api.Object() {
     _object.acl = acl != null ? acl._toObjectAccessControlList() : null;
     _object.contentType = contentType;
     _object.contentEncoding = contentEncoding;
@@ -462,10 +462,10 @@ class _ObjectMetadata implements ObjectMetadata {
 /// media upload (multipart mime) or resumable media upload.
 class _MediaUploadStreamSink implements StreamSink<List<int>> {
   static const int _DEFAULT_MAX_NORMAL_UPLOAD_LENGTH = 1024 * 1024;
-  final storage.StorageApi _api;
+  final storage_api.StorageApi _api;
   final String _bucketName;
   final String _objectName;
-  final storage.Object _object;
+  final storage_api.Object _object;
   final String _predefinedAcl;
   final int _length;
   final int _maxNormalUploadLength;

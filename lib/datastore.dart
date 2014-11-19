@@ -12,6 +12,29 @@ library gcloud.datastore;
 import 'dart:async';
 
 import 'common.dart' show Page;
+import 'service_scope.dart' as ss;
+
+const Symbol _datastoreKey = #_gcloud.datastore;
+
+/// Access the [Datastore] object available in the current service scope.
+///
+/// The returned object will be the one which was previously registered with
+/// [registerDatastoreService] within the current (or a parent) service scope.
+///
+/// Accessing this getter outside of a service scope will result in an error.
+Datastore get datastoreService => ss.lookup(_datastoreKey);
+
+/// Registers the [Datastore] object within the current service scope.
+///
+/// The provided `datastore` object will be avilable via the top-level
+/// `datastore` getter.
+///
+/// Calling this function outside of a service scope will result in an error.
+/// Calling this function more than once inside the same service scope is not
+/// allowed.
+void registerDatastoreService(Datastore datastore) {
+  ss.register(_datastoreKey, datastore);
+}
 
 class ApplicationError implements Exception {
   final String message;
