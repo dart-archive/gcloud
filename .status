@@ -2,11 +2,15 @@
 */*/packages/*: Skip
 */*/*/packages/*: Skip
 
+# We do not run the e2e tests inside the build/ directory in order to prevent
+# ./tools/test.py from running several e2e in parallel.
+build/test/db_all_e2e_test: Skip
+build/test/storage/e2e_test: Skip
+
 # This test is slow because
 # - eventual consistency forces us to put in sleep()s
 # - it does e2e testing
 # - it combines several tests to avoid concurrent tests touching the same data
-build/test/db_all_e2e_test: Slow, Pass
 test/db_all_e2e_test: Slow, Pass
 
 [ $browser ]
