@@ -136,7 +136,14 @@ class Query {
    * Adds a filter to this [Query].
    *
    * [filterString] has form "name OP" where 'name' is a fieldName of the
-   * model and OP is an operator (e.g. "name >=").
+   * model and OP is an operator. The following operators are supported:
+   *
+   *   * '<' (less than)
+   *   * '<=' (less than or equal)
+   *   * '>' (greater than)
+   *   * '>=' (greater than or equal)
+   *   * '=' (equal)
+   *   * 'IN' (in - `comparisonObject` must be a list)
    *
    * [comparisonObject] is the object for comparison.
    */
