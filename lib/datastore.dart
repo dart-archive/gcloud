@@ -22,6 +22,7 @@ const Symbol _datastoreKey = #_gcloud.datastore;
 /// [registerDatastoreService] within the current (or a parent) service scope.
 ///
 /// Accessing this getter outside of a service scope will result in an error.
+/// See the `package:gcloud/service_scope.dart` library for more information.
 Datastore get datastoreService => ss.lookup(_datastoreKey);
 
 /// Registers the [Datastore] object within the current service scope.

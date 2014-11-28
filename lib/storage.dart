@@ -72,6 +72,7 @@ const Symbol _storageKey = #_gcloud.storage;
 /// [registerStorageService] within the current (or a parent) service scope.
 ///
 /// Accessing this getter outside of a service scope will result in an error.
+/// See the `package:gcloud/service_scope.dart` library for more information.
 Storage get storageService => ss.lookup(_storageKey);
 
 /// Registers the [storage] object within the current service scope.

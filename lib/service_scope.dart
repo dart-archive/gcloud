@@ -63,6 +63,15 @@
 ///         print('Server application shut down cleanly');
 ///       });
 ///     }
+///
+/// As an example, the `package:appengine/appengine.dart` package runs request
+/// handlers inside a service scope, which has most `package:gcloud` services
+/// registered.
+///
+/// The core application code can then be independent of `package:appengine`
+/// and instead depend only on the services needed (e.g.
+/// `package:gcloud/storage.dart`) by using getters in the service library (e.g.
+/// the `storageService`) which are implemented with service scope lookups.
 library gcloud.service_scope;
 
 import 'dart:async';
