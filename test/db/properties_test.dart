@@ -111,6 +111,7 @@ main() {
 
       expect(prop.validate(null, null), isFalse);
       expect(prop.validate(null, []), isTrue);
+      expect(prop.validate(null, [true]), isTrue);
       expect(prop.validate(null, [true, false]), isTrue);
       expect(prop.validate(null, [true, false, 1]), isFalse);
       expect(prop.encodeValue(null, []), equals(null));
@@ -121,6 +122,28 @@ main() {
       expect(prop.decodePrimitiveValue(null, true), equals([true]));
       expect(prop.decodePrimitiveValue(null, [true, false]),
              equals([true, false]));
+    });
+
+    test('composed_list_property', () {
+      var prop = const ListProperty(const CustomProperty());
+
+      var c1 = new Custom()..customValue = 'c1';
+      var c2 = new Custom()..customValue = 'c2';
+
+      expect(prop.validate(null, null), isFalse);
+      expect(prop.validate(null, []), isTrue);
+      expect(prop.validate(null, [c1]), isTrue);
+      expect(prop.validate(null, [c1, c2]), isTrue);
+      expect(prop.validate(null, [c1, c2, 1]), isFalse);
+      expect(prop.encodeValue(null, []), equals(null));
+      expect(prop.encodeValue(null, [c1]), equals(c1.customValue));
+      expect(prop.encodeValue(null, [c1, c2]),
+             equals([c1.customValue, c2.customValue]));
+      expect(prop.decodePrimitiveValue(null, null), equals([]));
+      expect(prop.decodePrimitiveValue(null, []), equals([]));
+      expect(prop.decodePrimitiveValue(null, c1.customValue), equals([c1]));
+      expect(prop.decodePrimitiveValue(null, [c1.customValue, c2.customValue]),
+             equals([c1, c2]));
     });
 
     test('modelkey_property', () {
@@ -144,6 +167,36 @@ main() {
              equals(dbKey));
     });
   });
+}
+
+class Custom {
+  String customValue;
+
+  int get hashCode => customValue.hashCode;
+
+  bool operator==(other) {
+    return other is Custom && other.customValue == customValue;
+  }
+}
+
+class CustomProperty extends StringProperty {
+  const CustomProperty(
+      {String propertyName: null, bool required: false, bool indexed: true});
+
+  bool validate(ModelDB db, Object value) {
+    if (required && value == null) return false;
+    return value == null || value is Custom;
+  }
+
+  Object decodePrimitiveValue(ModelDB db, Object value) {
+    if (value == null) return null;
+    return new Custom()..customValue = value;
+  }
+
+  Object encodeValue(ModelDB db, Object value) {
+    if (value == null) return null;
+    return (value as Custom).customValue;
+  }
 }
 
 class KeyMock implements Key {

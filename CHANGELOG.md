@@ -1,6 +1,8 @@
 ## 0.1.3
 
 * Widen package:googleapis dependency constraint in pubspec.yaml.
+* Bugfix in `package:appengine/db.dart`: Correctly handle ListProperties
+of length 1.
 
 ## 0.1.2
 

@@ -258,14 +258,14 @@ class ListProperty extends Property {
     if (value == null) return null;
     List list = value;
     if (list.length == 0) return null;
-    if (list.length == 1) return list[0];
+    if (list.length == 1) return subProperty.encodeValue(db, list[0]);
     return list.map(
         (value) => subProperty.encodeValue(db, value)).toList();
   }
 
   Object decodePrimitiveValue(ModelDB db, Object value) {
     if (value == null) return [];
-    if (value is! List) return [value];
+    if (value is! List) return [subProperty.decodePrimitiveValue(db, value)];
     return (value as List)
         .map((entry) => subProperty.decodePrimitiveValue(db, entry))
         .toList();
