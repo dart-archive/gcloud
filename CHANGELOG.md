@@ -1,3 +1,7 @@
+## 0.1.3
+
+* Widen package:googleapis dependency constraint in pubspec.yaml.
+
 ## 0.1.2
 
 * Introduced `package:gcloud/service_scope.dart` library.
