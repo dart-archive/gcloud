@@ -64,7 +64,7 @@ export 'common.dart';
 
 part 'src/storage_impl.dart';
 
-const Symbol _storageKey = #_gcloud.storage;
+const Symbol _storageKey = #gcloud.storage;
 
 /// Access the [Storage] object available in the current service scope.
 ///

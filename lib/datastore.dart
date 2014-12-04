@@ -14,7 +14,7 @@ import 'dart:async';
 import 'common.dart' show Page;
 import 'service_scope.dart' as ss;
 
-const Symbol _datastoreKey = #_gcloud.datastore;
+const Symbol _datastoreKey = #gcloud.datastore;
 
 /// Access the [Datastore] object available in the current service scope.
 ///

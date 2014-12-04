@@ -77,7 +77,7 @@ library gcloud.service_scope;
 import 'dart:async';
 
 /// The Symbol used as index in the zone map for the service scope object.
-const Symbol _ServiceScopeKey = #_gcloud.service_scope;
+const Symbol _ServiceScopeKey = #gcloud.service_scope;
 
 /// An empty service scope.
 ///

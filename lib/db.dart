@@ -18,7 +18,7 @@ part 'src/db/models.dart';
 part 'src/db/model_db.dart';
 part 'src/db/model_db_impl.dart';
 
-const Symbol _dbKey = #_gcloud.db;
+const Symbol _dbKey = #gcloud.db;
 
 /// Access the [DatastoreDB] object available in the current service scope.
 ///

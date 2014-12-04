@@ -10,7 +10,7 @@ import 'package:http/http.dart' as http;
 
 import 'service_scope.dart' as ss;
 
-const Symbol _authenticatedClientKey = #_gcloud.http;
+const Symbol _authenticatedClientKey = #gcloud.http;
 
 /// Access the [http.Client] object available in the current service scope.
 ///
