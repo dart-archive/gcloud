@@ -598,7 +598,6 @@ runTests(Datastore datastore, String namespace) {
                throwsA(isTransactionAbortedError));
       });
     });
-
     group('query', () {
       Future testQuery(String kind,
                        {List<Filter> filters,
@@ -611,7 +610,8 @@ runTests(Datastore datastore, String namespace) {
           var query = new Query(
               kind: kind, filters: filters, orders: orders,
               offset: offset, limit: limit);
-          return consumePages((_) => datastore.query(query))
+          return consumePages(
+              (_) => datastore.query(query, partition: partition))
               .then((List<Entity> entities) {
             if (transaction != null) {
               return datastore.commit(transaction: transaction)
@@ -757,7 +757,8 @@ runTests(Datastore datastore, String namespace) {
 
       test('query', () {
         return insert(stringNamedEntities, []).then((keys) {
-          return waitUntilEntitiesReady(datastore, stringNamedKeys).then((_) {
+          return waitUntilEntitiesReady(
+              datastore, stringNamedKeys, partition).then((_) {
             var tests = [
               // EntityKind query
               () => testQueryAndCompare(
@@ -850,7 +851,8 @@ runTests(Datastore datastore, String namespace) {
               () => delete(stringNamedKeys, transactional: true),
 
               // Wait until the entity deletes are reflected in the indices.
-              () => waitUntilEntitiesGone(datastore, stringNamedKeys),
+              () => waitUntilEntitiesGone(
+                  datastore, stringNamedKeys, partition),
 
               // Make sure queries don't return results
               () => testQueryAndCompare(
@@ -878,7 +880,8 @@ runTests(Datastore datastore, String namespace) {
          *        + SubSubKind:1  -- This is a real entity of kind SubSubKind
          *        + SubSubKind2:1 -- This is a real entity of kind SubSubKind2
          */
-        var rootKey = new Key.fromParent('RootKind', 1);
+        var rootKey =
+            new Key([new KeyElement('RootKind', 1)], partition: partition);
         var subKey = new Key.fromParent('SubKind', 1, parent: rootKey);
         var subSubKey = new Key.fromParent('SubSubKind', 1, parent: subKey);
         var subSubKey2 = new Key.fromParent('SubSubKind2', 1, parent: subKey);
@@ -894,7 +897,8 @@ runTests(Datastore datastore, String namespace) {
             // FIXME/TODO: Ancestor queries should be strongly consistent.
             // We should not need to wait for them.
             () {
-              return waitUntilEntitiesReady(datastore, [subSubKey, subSubKey2]);
+              return waitUntilEntitiesReady(
+                  datastore, [subSubKey, subSubKey2], partition);
             },
             // Test that lookup only returns inserted entities.
             () {
@@ -915,7 +919,8 @@ runTests(Datastore datastore, String namespace) {
             () {
               var ancestorQuery =
                   new Query(ancestorKey: rootKey, orders: orders);
-              return consumePages((_) => datastore.query(ancestorQuery))
+              return consumePages(
+                  (_) => datastore.query(ancestorQuery, partition: partition))
                   .then((results) {
                 expect(results.length, 2);
                 expect(compareEntity(entity, results[0]), isTrue);
@@ -926,7 +931,8 @@ runTests(Datastore datastore, String namespace) {
             () {
               var ancestorQuery =
                   new Query(ancestorKey: subKey, orders: orders);
-              return consumePages((_) => datastore.query(ancestorQuery))
+              return consumePages(
+                  (_) => datastore.query(ancestorQuery, partition: partition))
                   .then((results) {
                 expect(results.length, 2);
                 expect(compareEntity(entity, results[0]), isTrue);
@@ -936,7 +942,8 @@ runTests(Datastore datastore, String namespace) {
             // - by [subSubKey]
             () {
               var ancestorQuery = new Query(ancestorKey: subSubKey);
-              return consumePages((_) => datastore.query(ancestorQuery))
+              return consumePages(
+                  (_) => datastore.query(ancestorQuery, partition: partition))
                   .then((results) {
                 expect(results.length, 1);
                 expect(compareEntity(entity, results[0]), isTrue);
@@ -945,7 +952,8 @@ runTests(Datastore datastore, String namespace) {
             // - by [subSubKey2]
             () {
               var ancestorQuery = new Query(ancestorKey: subSubKey2);
-              return consumePages((_) => datastore.query(ancestorQuery))
+              return consumePages(
+                  (_) => datastore.query(ancestorQuery, partition: partition))
                   .then((results) {
                 expect(results.length, 1);
                 expect(compareEntity(entity2, results[0]), isTrue);
@@ -956,7 +964,8 @@ runTests(Datastore datastore, String namespace) {
             // - by [rootKey] + 'SubSubKind'
             () {
               var query = new Query(ancestorKey: rootKey, kind: 'SubSubKind');
-              return consumePages((_) => datastore.query(query))
+              return consumePages(
+                  (_) => datastore.query(query, partition: partition))
                   .then((List<Entity> results) {
                 expect(results.length, 1);
                 expect(compareEntity(entity, results[0]), isTrue);
@@ -965,7 +974,8 @@ runTests(Datastore datastore, String namespace) {
             // - by [rootKey] + 'SubSubKind2'
             () {
               var query = new Query(ancestorKey: rootKey, kind: 'SubSubKind2');
-              return consumePages((_) => datastore.query(query))
+              return consumePages(
+                  (_) => datastore.query(query, partition: partition))
                   .then((List<Entity> results) {
                 expect(results.length, 1);
                 expect(compareEntity(entity2, results[0]), isTrue);
@@ -974,7 +984,8 @@ runTests(Datastore datastore, String namespace) {
             // - by [subSubKey] + 'SubSubKind'
             () {
               var query = new Query(ancestorKey: subSubKey, kind: 'SubSubKind');
-              return consumePages((_) => datastore.query(query))
+              return consumePages(
+                  (_) => datastore.query(query, partition: partition))
                   .then((List<Entity> results) {
                 expect(results.length, 1);
                 expect(compareEntity(entity, results[0]), isTrue);
@@ -984,7 +995,8 @@ runTests(Datastore datastore, String namespace) {
             () {
               var query =
                   new Query(ancestorKey: subSubKey2, kind: 'SubSubKind2');
-              return consumePages((_) => datastore.query(query))
+              return consumePages(
+                  (_) => datastore.query(query, partition: partition))
                   .then((List<Entity> results) {
                 expect(results.length, 1);
                 expect(compareEntity(entity2, results[0]), isTrue);
@@ -994,7 +1006,8 @@ runTests(Datastore datastore, String namespace) {
             () {
               var query =
                   new Query(ancestorKey: subSubKey, kind: 'SubSubKind2');
-              return consumePages((_) => datastore.query(query))
+              return consumePages(
+                  (_) => datastore.query(query, partition: partition))
                   .then((List<Entity> results) {
                 expect(results.length, 0);
               });
@@ -1003,7 +1016,8 @@ runTests(Datastore datastore, String namespace) {
             () {
               var query =
                   new Query(ancestorKey: subSubKey2, kind: 'SubSubKind');
-              return consumePages((_) => datastore.query(query))
+              return consumePages(
+                  (_) => datastore.query(query, partition: partition))
                   .then((List<Entity> results) {
                 expect(results.length, 0);
               });
@@ -1055,15 +1069,18 @@ Future cleanupDB(Datastore db, String namespace) {
   });
 }
 
-Future waitUntilEntitiesReady(Datastore db, List<Key> keys) {
-  return waitUntilEntitiesHelper(db, keys, true);
+Future waitUntilEntitiesReady(Datastore db, List<Key> keys, Partition p) {
+  return waitUntilEntitiesHelper(db, keys, true, p);
 }
 
-Future waitUntilEntitiesGone(Datastore db, List<Key> keys) {
-  return waitUntilEntitiesHelper(db, keys, false);
+Future waitUntilEntitiesGone(Datastore db, List<Key> keys, Partition p) {
+  return waitUntilEntitiesHelper(db, keys, false, p);
 }
 
-Future waitUntilEntitiesHelper(Datastore db, List<Key> keys, bool positive) {
+Future waitUntilEntitiesHelper(Datastore db,
+                               List<Key> keys,
+                               bool positive,
+                               Partition p) {
   var keysByKind = {};
   for (var key in keys) {
     keysByKind.putIfAbsent(key.elements.last.kind, () => []).add(key);
@@ -1071,7 +1088,7 @@ Future waitUntilEntitiesHelper(Datastore db, List<Key> keys, bool positive) {
 
   Future waitForKeys(String kind, List<Key> keys) {
     var q = new Query(kind: kind);
-    return consumePages((_) => db.query(q)).then((entities) {
+    return consumePages((_) => db.query(q, partition: p)).then((entities) {
       for (var key in keys) {
         bool found = false;
         for (var entity in entities) {
