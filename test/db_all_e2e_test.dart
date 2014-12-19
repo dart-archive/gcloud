@@ -4,6 +4,7 @@
 
 library gcloud.test.db_all_test;
 
+import 'dart:io';
 import 'dart:async';
 
 import 'package:gcloud/db.dart' as db;
@@ -20,26 +21,31 @@ import 'common_e2e.dart';
 main() {
   var scopes = datastore_impl.DatastoreImpl.SCOPES;
 
+  var now = new DateTime.now().millisecondsSinceEpoch;
+  String namespace = '${Platform.operatingSystem}${now}';
+
   withAuthClient(scopes, (String project, httpClient) {
     var datastore = new datastore_impl.DatastoreImpl(httpClient, 's~$project');
     var datastoreDB = new db.DatastoreDB(datastore);
 
-    return datastore_test.cleanupDB(datastore).then((_) {
-      return runE2EUnittest(() {
-        datastore_test.runTests(datastore);
+    return runE2EUnittest(() {
+      unittestConfiguration.timeout = const Duration(minutes: 1);
 
-        test('sleep-between-test-suites', () {
-          expect(new Future.delayed(const Duration(seconds: 10)), completes);
-        });
+      datastore_test.runTests(datastore, namespace);
 
-        db_test.runTests(datastoreDB);
-
-        test('sleep-between-test-suites', () {
-          expect(new Future.delayed(const Duration(seconds: 10)), completes);
-        });
-
-        db_metamodel_test.runTests(datastore, datastoreDB);
+      test('sleep-between-test-suites', () {
+        expect(new Future.delayed(const Duration(seconds: 10)), completes);
       });
+
+      db_test.runTests(datastoreDB, namespace);
+
+      test('sleep-between-test-suites', () {
+        expect(new Future.delayed(const Duration(seconds: 10)), completes);
+      });
+
+      db_metamodel_test.runTests(datastore, datastoreDB);
+    }).whenComplete(() {
+      return datastore_test.cleanupDB(datastore, namespace);
     });
   });
 }

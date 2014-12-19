@@ -144,7 +144,9 @@ Future sleep(Duration duration) {
   return completer.future;
 }
 
-runTests(db.DatastoreDB store) {
+runTests(db.DatastoreDB store, String namespace) {
+  var partition = store.newPartition(namespace);
+
   void compareModels(List<db.Model> expectedModels,
                      List<db.Model> models,
                      {bool anyOrder: false}) {
@@ -214,7 +216,7 @@ runTests(db.DatastoreDB store) {
   group('e2e_db', () {
     group('insert_lookup_delete', () {
       test('persons', () {
-        var root = store.emptyKey;
+        var root = partition.emptyKey;
         var persons = [];
         for (var i = 1; i <= 10; i++) {
           persons.add(new Person()
@@ -227,7 +229,7 @@ runTests(db.DatastoreDB store) {
         return testInsertLookupDelete(persons);
       });
       test('users', () {
-        var root = store.emptyKey;
+        var root = partition.emptyKey;
         var users = [];
         for (var i = 1; i <= 10; i++) {
           users.add(new User()
@@ -240,7 +242,7 @@ runTests(db.DatastoreDB store) {
         return testInsertLookupDelete(users);
       });
       test('expando_insert', () {
-        var root = store.emptyKey;
+        var root = partition.emptyKey;
         var expandoPersons = [];
         for (var i = 1; i <= 10; i++) {
           var expandoPerson = new ExpandoPerson()
@@ -256,7 +258,7 @@ runTests(db.DatastoreDB store) {
         return testInsertLookupDelete(expandoPersons);
       });
       test('transactional_insert', () {
-        var root = store.emptyKey;
+        var root = partition.emptyKey;
         var models = [];
 
         models.add(new Person()
@@ -281,7 +283,7 @@ runTests(db.DatastoreDB store) {
       });
 
       test('parent_key', () {
-        var root = store.emptyKey;
+        var root = partition.emptyKey;
         var users = [];
         for (var i = 333; i <= 334; i++) {
           users.add(new User()
@@ -310,7 +312,7 @@ runTests(db.DatastoreDB store) {
       });
 
       test('auto_ids', () {
-        var root = store.emptyKey;
+        var root = partition.emptyKey;
         var persons = [];
         persons.add(new Person()
             ..id = 42
@@ -322,21 +324,17 @@ runTests(db.DatastoreDB store) {
             ..parentKey = root
             ..age = 81
             ..name = 'user81');
-        // Auto id person without parentKey
-        persons.add(new Person()
-            ..age = 82
-            ..name = 'user82');
         // Auto id person with non-root parentKey
         var fatherKey = persons.first.parentKey;
         persons.add(new Person()
             ..parentKey = fatherKey
-            ..age = 83
-            ..name = 'user83');
+            ..age = 82
+            ..name = 'user82');
         persons.add(new Person()
             ..id = 43
             ..parentKey = root
-            ..age = 84
-            ..name = 'user84');
+            ..age = 83
+            ..name = 'user83');
         return store.commit(inserts: persons).then(expectAsync((_) {
           // At this point, autoIds are allocated and are relfected in the
           // models (as well as parentKey if it was empty).
@@ -357,14 +355,10 @@ runTests(db.DatastoreDB store) {
 
           expect(persons[2].id, isNotNull);
           expect(persons[2].id is int, isTrue);
-          expect(persons[2].parentKey, equals(root));
+          expect(persons[2].parentKey, equals(fatherKey));
 
-          expect(persons[3].id, isNotNull);
-          expect(persons[3].id is int, isTrue);
-          expect(persons[3].parentKey, equals(fatherKey));
-
-          expect(persons[4].id, equals(43));
-          expect(persons[4].parentKey, equals(root));
+          expect(persons[3].id, equals(43));
+          expect(persons[3].parentKey, equals(root));
 
           expect(persons[1].id != persons[2].id, isTrue);
           // NOTE: We can't make assumptions about the id of persons[3],
@@ -389,7 +383,7 @@ runTests(db.DatastoreDB store) {
     });
 
     test('query', () {
-      var root = store.emptyKey;
+      var root = partition.emptyKey;
       var users = [];
       for (var i = 1; i <= 10; i++) {
         var languages = [];
@@ -649,8 +643,9 @@ main() {
 
   withAuthClient(scopes, (String project, httpClient) {
     var datastore = new datastore_impl.DatastoreImpl(httpClient, 's~$project');
-    return datastore_test.cleanupDB(datastore).then((_) {
-      return runE2EUnittest(() => runTests(new db.DatastoreDB(datastore)));
+    return datastore_test.cleanupDB(datastore, null).then((_) {
+      return runE2EUnittest(
+          () => runTests(new db.DatastoreDB(datastore), null));
     });
   });
 }

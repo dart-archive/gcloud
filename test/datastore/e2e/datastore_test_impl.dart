@@ -49,7 +49,9 @@ Future<List<Entity>> consumePages(FirstPageProvider provider) {
   return new StreamFromPages(provider).stream.toList();
 }
 
-runTests(Datastore datastore) {
+runTests(Datastore datastore, String namespace) {
+  Partition partition = new Partition(namespace);
+
   Future withTransaction(Function f, {bool xg: false}) {
     return datastore.beginTransaction(crossEntityGroup: xg).then(f);
   }
@@ -203,11 +205,12 @@ runTests(Datastore datastore) {
         return test(null);
       }
 
-      var unnamedEntities1 = buildEntities(42, 43);
-      var unnamedEntities5 = buildEntities(1, 6);
-      var unnamedEntities20 = buildEntities(6, 26);
+      var unnamedEntities1 = buildEntities(42, 43, partition: partition);
+      var unnamedEntities5 = buildEntities(1, 6, partition: partition);
+      var unnamedEntities20 = buildEntities(6, 26, partition: partition);
       var named20000 = buildEntities(
-          1000, 21001, idFunction: (i) => 'named_${i}_of_10000');
+          1000, 21001, idFunction: (i) => 'named_${i}_of_10000',
+          partition: partition);
 
       test('insert', () {
         return testInsert(unnamedEntities5, transactional: false).then((keys) {
@@ -285,7 +288,7 @@ runTests(Datastore datastore) {
           }
         }
 
-        var keys = buildKeys(1, 4);
+        var keys = buildKeys(1, 4, partition: partition);
         return datastore.allocateIds(keys).then((List<Key> completedKeys) {
           compareResult(keys, completedKeys);
           // TODO: Make sure we can insert these keys
@@ -337,10 +340,11 @@ runTests(Datastore datastore) {
         return test(null);
       }
 
-      var unnamedEntities1 = buildEntities(42, 43);
-      var unnamedEntities5 = buildEntities(1, 6);
-      var unnamedEntities20 = buildEntities(6, 26);
-      var entitiesWithAllPropertyTypes = buildEntityWithAllProperties(1, 6);
+      var unnamedEntities1 = buildEntities(42, 43, partition: partition);
+      var unnamedEntities5 = buildEntities(1, 6, partition: partition);
+      var unnamedEntities20 = buildEntities(6, 26, partition: partition);
+      var entitiesWithAllPropertyTypes =
+          buildEntityWithAllProperties(1, 6, partition: partition);
 
       test('lookup', () {
         return insert([], unnamedEntities20, transactional: false).then((keys) {
@@ -399,9 +403,9 @@ runTests(Datastore datastore) {
         return test(null);
       }
 
-      var unnamedEntities1 = buildEntities(42, 43);
-      var unnamedEntities5 = buildEntities(1, 6);
-      var unnamedEntities99 = buildEntities(6, 106);
+      var unnamedEntities1 = buildEntities(42, 43, partition: partition);
+      var unnamedEntities5 = buildEntities(1, 6, partition: partition);
+      var unnamedEntities99 = buildEntities(6, 106, partition: partition);
 
       test('delete', () {
         return insert([], unnamedEntities99, transactional: false).then((keys) {
@@ -462,8 +466,10 @@ runTests(Datastore datastore) {
         }, xg: xg);
       }
 
-      var namedEntities1 = buildEntities(42, 43, idFunction: (i) => "i$i");
-      var namedEntities5 = buildEntities(1, 6, idFunction: (i) => "i$i");
+      var namedEntities1 =
+          buildEntities(42, 43, idFunction: (i) => "i$i", partition: partition);
+      var namedEntities5 =
+          buildEntities(1, 6, idFunction: (i) => "i$i", partition: partition);
 
       var namedEntities1Keys = namedEntities1.map((e) => e.key).toList();
       var namedEntities5Keys = namedEntities5.map((e) => e.key).toList();
@@ -494,9 +500,12 @@ runTests(Datastore datastore) {
         }
       }
 
-      var namedEntities1 = buildEntities(42, 43, idFunction: (i) => "i$i");
-      var namedEntities5 = buildEntities(1, 6, idFunction: (i) => "i$i");
-      var namedEntities20 = buildEntities(6, 26, idFunction: (i) => "i$i");
+      var namedEntities1 =
+          buildEntities(42, 43, idFunction: (i) => "i$i", partition: partition);
+      var namedEntities5 =
+          buildEntities(1, 6, idFunction: (i) => "i$i", partition: partition);
+      var namedEntities20 =
+          buildEntities(6, 26, idFunction: (i) => "i$i", partition: partition);
 
       var namedEntities1Keys = namedEntities1.map((e) => e.key).toList();
       var namedEntities5Keys = namedEntities5.map((e) => e.key).toList();
@@ -574,8 +583,10 @@ runTests(Datastore datastore) {
         });
       }
 
-      var namedEntities1 = buildEntities(42, 43, idFunction: (i) => "i$i");
-      var namedEntities5 = buildEntities(1, 6, idFunction: (i) => "i$i");
+      var namedEntities1 =
+          buildEntities(42, 43, idFunction: (i) => "i$i", partition: partition);
+      var namedEntities5 =
+          buildEntities(1, 6, idFunction: (i) => "i$i", partition: partition);
 
       test('conflicting_transaction', () {
         expect(testConflictingTransaction(namedEntities1),
@@ -685,7 +696,8 @@ runTests(Datastore datastore) {
 
       const TEST_QUERY_KIND = 'TestQueryKind';
       var stringNamedEntities = buildEntities(
-          1, 6, idFunction: (i) => 'str$i', kind: TEST_QUERY_KIND);
+          1, 6, idFunction: (i) => 'str$i', kind: TEST_QUERY_KIND,
+          partition: partition);
       var stringNamedKeys = stringNamedEntities.map((e) => e.key).toList();
 
       var QUERY_KEY = TEST_PROPERTY_KEY_PREFIX;
@@ -1009,18 +1021,7 @@ runTests(Datastore datastore) {
   });
 }
 
-Future cleanupDB(Datastore db) {
-  Future<List<String>> getNamespaces() {
-    var q = new Query(kind: '__namespace__');
-    return consumePages((_) => db.query(q)).then((List<Entity> entities) {
-      return entities.map((Entity e) {
-        var id = e.key.elements.last.id;
-        if (id == 1) return null;
-        return id;
-      }).toList();
-    });
-  }
-
+Future cleanupDB(Datastore db, String namespace) {
   Future<List<String>> getKinds(String namespace) {
     var partition = new Partition(namespace);
     var q = new Query(kind: '__kind__');
@@ -1047,13 +1048,9 @@ Future cleanupDB(Datastore db) {
     });
   }
 
-  return getNamespaces().then((List<String> namespaces) {
-    return Future.forEach(namespaces, (String namespace) {
-      return getKinds(namespace).then((List<String> kinds) {
-        return Future.forEach(kinds, (String kind) {
-          return cleanup(namespace, kind);
-        });
-      });
+  return getKinds(namespace).then((List<String> kinds) {
+    return Future.forEach(kinds, (String kind) {
+      return cleanup(namespace, kind);
     });
   });
 }
@@ -1100,8 +1097,8 @@ main() {
 
   withAuthClient(scopes, (String project, httpClient) {
     var datastore = new datastore_impl.DatastoreImpl(httpClient, 's~$project');
-    return cleanupDB(datastore).then((_) {
-      return runE2EUnittest(() => runTests(datastore));
+    return cleanupDB(datastore, null).then((_) {
+      return runE2EUnittest(() => runTests(datastore, null));
     });
   });
 }
