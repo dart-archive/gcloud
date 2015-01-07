@@ -451,12 +451,12 @@ runTests(db.DatastoreDB store, String namespace) {
           ..addAll(expandoPersons);
       var allKeys = allInserts.map((db.Model model) => model.key).toList();
       return store.commit(inserts: allInserts).then((_) {
-        return waitUntilEntitiesReady(store, allKeys).then((_) {
+        return waitUntilEntitiesReady(store, allKeys, partition).then((_) {
           var tests = [
             // Queries for [Person] return no results, we only have [User]
             // objects.
             () {
-              return store.query(Person).run().toList()
+              return store.query(Person, partition: partition).run().toList()
                   .then((List<db.Model> models) {
                 compareModels([], models);
               });
@@ -464,7 +464,7 @@ runTests(db.DatastoreDB store, String namespace) {
 
             // All users query
             () {
-              return store.query(User).run().toList()
+              return store.query(User, partition: partition).run().toList()
                   .then((List<db.Model> models) {
                 compareModels(users, models, anyOrder: true);
               });
@@ -472,7 +472,7 @@ runTests(db.DatastoreDB store, String namespace) {
 
             // Sorted query
             () {
-              return store.query(User)
+              return store.query(User, partition: partition)
                   ..order('-name')
                   ..order('nickname')
                   ..run().toList().then((List<db.Model> models) {
@@ -481,7 +481,7 @@ runTests(db.DatastoreDB store, String namespace) {
               });
             },
             () {
-              return store.query(User)
+              return store.query(User, partition: partition)
                   ..order('-name')
                   ..order('-nickname')
                   ..run().toList().then((List<db.Model> models) {
@@ -492,7 +492,7 @@ runTests(db.DatastoreDB store, String namespace) {
 
             // Sorted query with filter
             () {
-              return store.query(User)
+              return store.query(User, partition: partition)
                   ..filter('name >=', LOWER_BOUND)
                   ..order('-name')
                   ..order('nickname')
@@ -502,7 +502,7 @@ runTests(db.DatastoreDB store, String namespace) {
               });
             },
             () {
-              return store.query(User)
+              return store.query(User, partition: partition)
                   ..filter('name >=', LOWER_BOUND)
                   ..order('-name')
                   ..order('-nickname')
@@ -515,7 +515,7 @@ runTests(db.DatastoreDB store, String namespace) {
             // Filter lists
             /* FIXME: TODO: FIXME: "IN" not supported in public proto/apiary */
             () {
-              return store.query(User)
+              return store.query(User, partition: partition)
                   ..filter('languages IN', ['foo'])
                   ..order('name')
                   ..run().toList().then((List<db.Model> models) {
@@ -523,7 +523,7 @@ runTests(db.DatastoreDB store, String namespace) {
               });
             },
             () {
-              return store.query(User)
+              return store.query(User, partition: partition)
                   ..filter('languages IN', ['bar'])
                   ..order('name')
                   ..run().toList().then((List<db.Model> models) {
@@ -533,7 +533,7 @@ runTests(db.DatastoreDB store, String namespace) {
 
             // Simple limit/offset test.
             () {
-              return store.query(User)
+              return store.query(User, partition: partition)
                   ..order('-name')
                   ..order('nickname')
                   ..offset(3)
@@ -547,7 +547,7 @@ runTests(db.DatastoreDB store, String namespace) {
 
             // Expando queries: Filter on normal property.
             () {
-              return store.query(ExpandoPerson)
+              return store.query(ExpandoPerson, partition: partition)
                   ..filter('name =', expandoPersons.last.name)
                   ..run().toList().then((List<db.Model> models) {
                 compareModels([expandoPersons.last], models);
@@ -555,7 +555,7 @@ runTests(db.DatastoreDB store, String namespace) {
             },
             // Expando queries: Filter on expanded String property
             () {
-              return store.query(ExpandoPerson)
+              return store.query(ExpandoPerson, partition: partition)
                   ..filter('foo =', expandoPersons.last.foo)
                   ..run().toList().then((List<db.Model> models) {
                 compareModels([expandoPersons.last], models);
@@ -563,7 +563,7 @@ runTests(db.DatastoreDB store, String namespace) {
             },
             // Expando queries: Filter on expanded int property
             () {
-              return store.query(ExpandoPerson)
+              return store.query(ExpandoPerson, partition: partition)
                   ..filter('bar =', expandoPersons.last.bar)
                   ..run().toList().then((List<db.Model> models) {
                 compareModels([expandoPersons.last], models);
@@ -572,7 +572,7 @@ runTests(db.DatastoreDB store, String namespace) {
             // Expando queries: Filter normal property with different
             // propertyName (datastore name is 'NN').
             () {
-              return store.query(ExpandoPerson)
+              return store.query(ExpandoPerson, partition: partition)
                   ..filter('nickname =', expandoPersons.last.nickname)
                   ..run().toList().then((List<db.Model> models) {
                 compareModels([expandoPersons.last], models);
@@ -583,7 +583,7 @@ runTests(db.DatastoreDB store, String namespace) {
             () => store.commit(deletes: allKeys),
 
             // Wait until the entity deletes are reflected in the indices.
-            () => waitUntilEntitiesGone(store, allKeys),
+            () => waitUntilEntitiesGone(store, allKeys, partition),
 
             // Make sure queries don't return results
             () => store.lookup(allKeys).then((List<db.Model> models) {
@@ -600,24 +600,30 @@ runTests(db.DatastoreDB store, String namespace) {
   });
 }
 
-Future waitUntilEntitiesReady(db.DatastoreDB mdb, List<db.Key> keys) {
-  return waitUntilEntitiesHelper(mdb, keys, true);
+Future waitUntilEntitiesReady(db.DatastoreDB mdb,
+                              List<db.Key> keys,
+                              db.Partition partition) {
+  return waitUntilEntitiesHelper(mdb, keys, true, partition);
 }
 
-Future waitUntilEntitiesGone(db.DatastoreDB mdb, List<db.Key> keys) {
-  return waitUntilEntitiesHelper(mdb, keys, false);
+Future waitUntilEntitiesGone(db.DatastoreDB mdb,
+                             List<db.Key> keys,
+                             db.Partition partition) {
+  return waitUntilEntitiesHelper(mdb, keys, false, partition);
 }
 
 Future waitUntilEntitiesHelper(db.DatastoreDB mdb,
                                List<db.Key> keys,
-                               bool positive) {
+                               bool positive,
+                               db.Partition partition) {
   var keysByKind = {};
   for (var key in keys) {
     keysByKind.putIfAbsent(key.type, () => []).add(key);
   }
 
   Future waitForKeys(Type kind, List<db.Key> keys) {
-    return mdb.query(kind).run().toList().then((List<db.Model> models) {
+    return mdb.query(kind, partition: partition)
+        .run().toList().then((List<db.Model> models) {
       for (var key in keys) {
         bool found = false;
         for (var model in models) {

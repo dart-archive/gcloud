@@ -52,6 +52,8 @@ runTests(datastore, db.DatastoreDB store) {
   final cond = predicate;
 
   group('e2e_db_metamodel', () {
+    // NOTE: This test cannot safely be run concurrently, since it's using fixed
+    // keys (i.e. fixed partition + fixed Ids).
     test('namespaces__insert_lookup_delete', () {
       var entities = buildEntitiesWithDifferentNamespaces();
       var keys = entities.map((e) => e.key).toList();
@@ -61,7 +63,7 @@ runTests(datastore, db.DatastoreDB store) {
           var namespaceQuery = store.query(Namespace);
           return namespaceQuery.run().toList()
               .then((List<Namespace> namespaces) {
-            expect(namespaces.length, 3);
+            expect(namespaces.length, greaterThanOrEqualTo(3));
             expect(namespaces, contains(cond((ns) => ns.name == null)));
             expect(namespaces,
                    contains(cond((ns) => ns.name == 'FooNamespace')));
@@ -70,6 +72,11 @@ runTests(datastore, db.DatastoreDB store) {
 
             var futures = [];
             for (var namespace in namespaces) {
+              if (!(namespace == null ||
+                    namespace == 'FooNamespace' ||
+                    namespace == 'BarNamespace')) {
+                continue;
+              }
               var partition = store.newPartition(namespace.name);
               var kindQuery = store.query(Kind, partition: partition);
               futures.add(kindQuery.run().toList().then((List<Kind> kinds) {
