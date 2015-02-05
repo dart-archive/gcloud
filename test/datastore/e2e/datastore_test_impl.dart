@@ -523,11 +523,14 @@ runTests(Datastore datastore, String namespace) {
         return testEmptyCommit(namedEntities5Keys);
       });
 
+      /* Disabled until we validate if the server has started to support
+       * more than 5 concurrent commits to different entity groups.
       test('negative_empty_commit_xg', () {
         expect(testEmptyCommit(
                namedEntities20Keys, transactional: true, xg: true),
                throwsA(isApplicationError));
       });
+       */
     });
 
     group('conflicting_transaction', () {

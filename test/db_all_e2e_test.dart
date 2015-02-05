@@ -29,8 +29,6 @@ main() {
     var datastoreDB = new db.DatastoreDB(datastore);
 
     return runE2EUnittest(() {
-      unittestConfiguration.timeout = const Duration(minutes: 1);
-
       datastore_test.runTests(datastore, namespace);
 
       test('sleep-between-test-suites', () {
