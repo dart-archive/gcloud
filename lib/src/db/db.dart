@@ -315,7 +315,7 @@ class DatastoreDB {
       } else {
         partition = defaultPartition;
       }
-    } else if (partition != ancestorKey.partition) {
+    } else if (ancestorKey != null && partition != ancestorKey.partition) {
       throw new ArgumentError(
           'Ancestor queries must have the same partition in the ancestor key '
           'as the partition where the query executes in.');
