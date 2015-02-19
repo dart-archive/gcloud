@@ -1,3 +1,12 @@
+## 0.1.4
+
+* Added optional `defaultPartition` parameter to the constructor of
+  `DatastoreDB`.
+
+## 0.1.3+2
+
+* Widened googleapis/googleapis_beta constraints in pubspec.yaml.
+
 ## 0.1.3+1
 
 * Change the service scope keys keys to non-private symbols.

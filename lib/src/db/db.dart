@@ -247,9 +247,10 @@ class DatastoreDB {
   final ModelDB _modelDB;
   Partition _defaultPartition;
 
-  DatastoreDB(this.datastore, {ModelDB modelDB})
-      : _modelDB = modelDB != null ? modelDB : new ModelDBImpl() {
-    _defaultPartition = new Partition(null);
+  DatastoreDB(this.datastore, {ModelDB modelDB, Partition defaultPartition}) :
+      _modelDB = modelDB != null ? modelDB : new ModelDBImpl() {
+      _defaultPartition =
+          defaultPartition != null ? defaultPartition : new Partition(null);
   }
 
   /**
