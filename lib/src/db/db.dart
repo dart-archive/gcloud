@@ -61,6 +61,14 @@ class Transaction {
    * touch/look at an arbitrary number of rows.
    */
   Query query(Type kind, Key ancestorKey, {Partition partition}) {
+    // TODO(#25): The `partition` element is redundant and should be removed.
+    if (partition == null) {
+      partition = ancestorKey.partition;
+    } else if (ancestorKey.partition != partition) {
+      throw new ArgumentError(
+          'Ancestor queries must have the same partition in the ancestor key '
+          'as the partition where the query executes in.');
+    }
     _checkSealed();
     return new Query(db,
                      kind,
@@ -297,10 +305,25 @@ class DatastoreDB {
    * Build a query for [kind] models.
    */
   Query query(Type kind, {Partition partition, Key ancestorKey}) {
-    return  new Query(this,
-                      kind,
-                      partition: partition,
-                      ancestorKey: ancestorKey);
+    // TODO(#26): There is only one case where `partition` is not redundant
+    // Namely if `ancestorKey == null` and `partition != null`. We could
+    // say we get rid of `partition` and enforce `ancestorKey` to
+    // be `Partition.emptyKey`?
+    if (partition == null) {
+      if (ancestorKey != null) {
+        partition = ancestorKey.partition;
+      } else {
+        partition = defaultPartition;
+      }
+    } else if (partition != ancestorKey.partition) {
+      throw new ArgumentError(
+          'Ancestor queries must have the same partition in the ancestor key '
+          'as the partition where the query executes in.');
+    }
+    return new Query(this,
+                     kind,
+                     partition: partition,
+                     ancestorKey: ancestorKey);
   }
 
   /**

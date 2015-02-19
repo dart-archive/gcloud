@@ -1,3 +1,7 @@
+## 0.1.4+1
+
+* Deduce the query partition automatically from query ancestor key.
+
 ## 0.1.4
 
 * Added optional `defaultPartition` parameter to the constructor of
