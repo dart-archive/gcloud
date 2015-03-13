@@ -1,5 +1,5 @@
 name: gcloud
-version: 0.1.4+1
+version: 0.1.5-dev
 author: Dart Team <misc@dartlang.org>
 description: Dart gcloud APIs
 homepage: https://github.com/dart-lang/gcloud
