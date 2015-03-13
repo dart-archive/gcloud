@@ -19,10 +19,11 @@ import '../common.dart';
 import '../common_e2e.dart';
 
 
+const String HOSTNAME = 'www.googleapis.com';
 const String ROOT_PATH = '/storage/v1/';
 
 
-http.Client mockClient() => new MockClient(ROOT_PATH);
+http.Client mockClient() => new MockClient(HOSTNAME, ROOT_PATH);
 
 withMockClient(function) {
   var mock = mockClient();

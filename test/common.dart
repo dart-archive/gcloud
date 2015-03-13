@@ -19,15 +19,17 @@ const RESPONSE_HEADERS = const {
 };
 
 class MockClient extends http.BaseClient {
+  final String hostname;
   final String rootPath;
   final Uri rootUri;
 
   Map<String, Map<Pattern, Function>> mocks = {};
   http_testing.MockClient client;
 
-  MockClient(String rootPath) :
+  MockClient(String hostname, String rootPath) :
+    hostname = hostname,
     rootPath = rootPath,
-    rootUri = Uri.parse('https://www.googleapis.com${rootPath}') {
+    rootUri = Uri.parse('https://$hostname$rootPath') {
     client = new http_testing.MockClient(handler);
   }
 
@@ -58,7 +60,7 @@ class MockClient extends http.BaseClient {
   }
 
   Future<http.Response> handler(http.Request request) {
-    expect(request.url.host, 'pubsub.googleapis.com');
+    expect(request.url.host, hostname);
     var path = request.url.path;
     if (mocks[request.method] == null) {
       throw 'No mock handler for method ${request.method} found. '

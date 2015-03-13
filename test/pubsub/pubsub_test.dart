@@ -16,10 +16,10 @@ import 'package:googleapis_beta/pubsub/v1beta2.dart' as pubsub;
 import '../common.dart';
 import '../common_e2e.dart';
 
-
+const String HOSTNAME = 'pubsub.googleapis.com';
 const String ROOT_PATH = '/v1beta2/';
 
-http.Client mockClient() => new MockClient(ROOT_PATH);
+http.Client mockClient() => new MockClient(HOSTNAME, ROOT_PATH);
 
 main() {
   group('api', () {
