@@ -77,8 +77,8 @@ Storage get storageService => ss.lookup(_storageKey);
 
 /// Registers the [storage] object within the current service scope.
 ///
-/// The provided `storage` object will be avilable via the top-level `storage`
-/// getter.
+/// The provided `storage` object will be avilable via the top-level
+/// `storageService` getter.
 ///
 /// Calling this function outside of a service scope will result in an error.
 /// Calling this function more than once inside the same service scope is not

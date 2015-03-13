@@ -58,7 +58,7 @@ class MockClient extends http.BaseClient {
   }
 
   Future<http.Response> handler(http.Request request) {
-    expect(request.url.host, 'www.googleapis.com');
+    expect(request.url.host, 'pubsub.googleapis.com');
     var path = request.url.path;
     if (mocks[request.method] == null) {
       throw 'No mock handler for method ${request.method} found. '

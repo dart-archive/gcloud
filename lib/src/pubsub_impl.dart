@@ -15,44 +15,36 @@ class _PubSubImpl implements PubSub {
     this._client = client,
     this.project = project,
     _api = new pubsub.PubsubApi(client),
-    _topicPrefix = '/topics/$project/',
-    _subscriptionPrefix = '/subscriptions/$project/';
+    _topicPrefix = 'projects/$project/topics/',
+    _subscriptionPrefix = 'projects/$project/subscriptions/';
 
 
   String _fullTopicName(String name) {
-    if (name.startsWith('/') && !name.startsWith('/topics')) {
-      throw new ArgumentError("Illegal absolute topic name. Absolute topic "
-                              "name must start with '/topics'");
-    }
-    return name.startsWith('/topics') ? name : '${_topicPrefix}$name';
+    return name.startsWith('projects/') ? name : '${_topicPrefix}$name';
   }
 
   String _fullSubscriptionName(name) {
-      if (name.startsWith('/') && !name.startsWith('/subscriptions')) {
-        throw new ArgumentError("Illegal absolute topic name. Absolute topic "
-                                "name must start with '/subscriptions'");
-      }
-      return name.startsWith('/subscriptions') ? name
-                                               : '${_subscriptionPrefix}$name';
+    return name.startsWith('projects/') ? name
+                                        : '${_subscriptionPrefix}$name';
   }
 
   Future<pubsub.Topic> _createTopic(String name) {
-    return _api.topics.create(new pubsub.Topic()..name = name);
+    return _api.projects.topics.create(new pubsub.Topic()..name = name, name);
   }
 
   Future _deleteTopic(String name) {
-    return _api.topics.delete(name);
+    // The Pub/Sub delete API returns an instance of Empty.
+    return _api.projects.topics.delete(name).then((_) => null);
   }
 
   Future<pubsub.Topic> _getTopic(String name) {
-    return _api.topics.get(name);
+    return _api.projects.topics.get(name);
   }
 
   Future<pubsub.ListTopicsResponse> _listTopics(
       int pageSize, String nextPageToken) {
-    var query = 'cloud.googleapis.com/project in (/projects/$project)';
-    return _api.topics.list(
-        query: query, maxResults: pageSize, pageToken: nextPageToken);
+    return _api.projects.topics.list(
+        'projects/$project', pageSize: pageSize, pageToken: nextPageToken);
   }
 
   Future<pubsub.Subscription> _createSubscription(
@@ -65,95 +57,79 @@ class _PubSubImpl implements PubSub {
           new pubsub.PushConfig()..pushEndpoint = endpoint.toString();
       subscription.pushConfig = pushConfig;
     }
-    return _api.subscriptions.create(subscription);
+    return _api.projects.subscriptions.create(subscription, name);
   }
 
   Future _deleteSubscription(String name) {
-    return _api.subscriptions.delete(_fullSubscriptionName(name));
+    // The Pub/Sub delete API returns an instance of Empty.
+    return _api.projects.subscriptions.delete(_fullSubscriptionName(name))
+        .then((_) => null);
   }
 
   Future<pubsub.Subscription> _getSubscription(String name) {
-    return _api.subscriptions.get(name);
+    return _api.projects.subscriptions.get(name);
   }
 
   Future<pubsub.ListSubscriptionsResponse> _listSubscriptions(
       String topic, int pageSize, String nextPageToken) {
-    // See https://developers.google.com/pubsub/v1beta1/subscriptions/list for
-    // the specification of the query format.
-    var query = topic == null
-        ? 'cloud.googleapis.com/project in (/projects/$project)'
-        : 'pubsub.googleapis.com/topic in (/topics/$project/$topic)';
-    return _api.subscriptions.list(
-        query: query, maxResults: pageSize, pageToken: nextPageToken);
+    return _api.projects.subscriptions.list(
+        'projects/$project', pageSize: pageSize, pageToken: nextPageToken);
   }
 
   Future _modifyPushConfig(String subscription, Uri endpoint) {
     var pushConfig = new pubsub.PushConfig()
          ..pushEndpoint = endpoint != null ? endpoint.toString() : null;
     var request = new pubsub.ModifyPushConfigRequest()
-        ..subscription = subscription
         ..pushConfig = pushConfig;
-    return _api.subscriptions.modifyPushConfig(request);
+    return _api.projects.subscriptions.modifyPushConfig(request, subscription);
   }
 
   Future _publish(
-      String topic, List<int> message, Map<String, dynamic> labels) {
-    var l = null;
-    if (labels != null) {
-      l = [];
-      labels.forEach((key, value) {
-        if (value is String) {
-          l.add(new pubsub.Label()..key = key..strValue = value);
-        } else {
-          l.add(new pubsub.Label()..key = key..numValue = value.toString());
-        }
-      });
-    }
+      String topic, List<int> message, Map<String, String> attributes) {
     var request = new pubsub.PublishRequest()
-        ..topic = topic
-        ..message = (new pubsub.PubsubMessage()
+        ..messages = [(new pubsub.PubsubMessage()
             ..dataAsBytes = message
-            ..label = l);
-    return _api.topics.publish(request);
+            ..attributes = attributes)];
+    // TODO(sgjesse): Handle PublishResponse containing message ids.
+    return _api.projects.topics.publish(request, topic).then((_) => null);
   }
 
   Future<pubsub.PullResponse> _pull(
       String subscription, bool returnImmediately) {
     var request = new pubsub.PullRequest()
-        ..subscription = subscription
+        ..maxMessages = 1
         ..returnImmediately = returnImmediately;
-    return _api.subscriptions.pull(request);
+    return _api.projects.subscriptions.pull(request, subscription);
   }
 
   Future _ack(String ackId, String subscription) {
     var request = new pubsub.AcknowledgeRequest()
-        ..ackId = [ ackId ]
-        ..subscription = subscription;
-    return _api.subscriptions.acknowledge(request);
+        ..ackIds = [ ackId ];
+    return _api.projects.subscriptions.acknowledge(request, subscription);
   }
 
   void _checkTopicName(name) {
-    if (name.startsWith('/') && !name.startsWith(_topicPrefix)) {
+    if (name.startsWith('projects/') && !name.contains('/topics/')) {
       throw new ArgumentError(
-          "Illegal topic name. Absolute topic names for project '$project' "
-          "must start with $_topicPrefix");
+          "Illegal topic name. Absolute topic names must have the form "
+          "'projects/[project-id]/topics/[topic-name]");
     }
-    if (name.length == _topicPrefix.length) {
+    if (name.endsWith('/topics/')) {
       throw new ArgumentError(
           'Illegal topic name. Relative part of the name cannot be empty');
     }
   }
 
   void _checkSubscriptionName(name) {
-    if (name.startsWith('/') && !name.startsWith(_subscriptionPrefix)) {
+    if (name.startsWith('projects/') && !name.contains('/subscriptions/')) {
       throw new ArgumentError(
-          "Illegal subscription name. Absolute subscription names for project "
-          "'$project' must start with $_subscriptionPrefix");
+          "Illegal subscription name. Absolute subscription names must have "
+          "the form 'projects/[project-id]/subscriptions/[subscription-name]");
     }
-    if (name.length == _subscriptionPrefix.length) {
+    if (name.endsWith('/subscriptions/')) {
       throw new ArgumentError(
-          'Illegal subscription name. '
-          'Relative part of the name cannot be empty');
+          'Illegal subscription name. Relative part of the name cannot be '
+          'empty');
     }
   }
 
@@ -237,12 +213,12 @@ class _MessageImpl implements Message {
   // null.
   final List<int> _bytesMessage;
 
-  final Map labels;
+  final Map<String, String> attributes;
 
-  _MessageImpl.withString(this._stringMessage, {this.labels})
+  _MessageImpl.withString(this._stringMessage, {this.attributes})
       : _bytesMessage = null;
 
-  _MessageImpl.withBytes(this._bytesMessage, {this.labels})
+  _MessageImpl.withBytes(this._bytesMessage, {this.attributes})
       : _stringMessage = null;
 
   List<int> get asBytes =>
@@ -262,7 +238,6 @@ class _PullMessage implements Message {
   final pubsub.PubsubMessage _message;
   List<int> _bytes;
   String _string;
-  Map _labels;
 
   _PullMessage(this._message);
 
@@ -276,16 +251,7 @@ class _PullMessage implements Message {
     return _string;
   }
 
-  Map<String, dynamic> get labels {
-    if (_labels == null) {
-      _labels = <String, dynamic>{};
-      _message.label.forEach((label) {
-        _labels[label.key] =
-            label.numValue != null ? label.numValue : label.strValue;
-      });
-    }
-    return _labels;
-  }
+  Map<String, String> get attributes => _message.attributes;
 }
 
 /// Message received through Pub/Sub push delivery.
@@ -296,9 +262,9 @@ class _PullMessage implements Message {
 /// The labels have been decoded into a Map.
 class _PushMessage implements Message {
   final String _base64Message;
-  final Map labels;
+  final Map<String, String> attributes;
 
-  _PushMessage(this._base64Message, this.labels);
+  _PushMessage(this._base64Message, this.attributes);
 
   List<int> get asBytes => CryptoUtils.base64StringToBytes(_base64Message);
 
@@ -311,18 +277,18 @@ class _PushMessage implements Message {
 class _PullEventImpl implements PullEvent {
   /// Pub/Sub API object.
   final _PubSubImpl _api;
+  /// Subscription this was received from.
+  final String _subscriptionName;
   /// Low level response received from Pub/Sub.
   final pubsub.PullResponse _response;
   final Message message;
 
-  _PullEventImpl(this._api, response)
+  _PullEventImpl(this._api, this._subscriptionName, response)
       : this._response = response,
         message = new _PullMessage(response.pubsubEvent.message);
 
-  bool get isTruncated => _response.pubsubEvent.truncated;
-
   Future acknowledge() {
-    return _api._ack(_response.ackId, _response.pubsubEvent.subscription);
+    return _api._ack(_response.receivedMessages[0].ackId, _subscriptionName);
   }
 
 }
@@ -380,17 +346,17 @@ class _TopicImpl implements Topic {
   String get absoluteName => _topic.name;
 
   Future publish(Message message) {
-    return _api._publish(_topic.name, message.asBytes, message.labels);
+    return _api._publish(_topic.name, message.asBytes, message.attributes);
   }
 
   Future delete() => _api._deleteTopic(_topic.name);
 
-  Future publishString(String message, {Map<String, dynamic> labels}) {
-    return _api._publish(_topic.name, UTF8.encode(message), labels);
+  Future publishString(String message, {Map<String, String> attributes}) {
+    return _api._publish(_topic.name, UTF8.encode(message), attributes);
   }
 
-  Future publishBytes(List<int> message, {Map<String, dynamic> labels}) {
-    return _api._publish(_topic.name, message, labels);
+  Future publishBytes(List<int> message, {Map<String, String> attributes}) {
+    return _api._publish(_topic.name, message, attributes);
   }
 }
 
@@ -422,7 +388,7 @@ class _SubscriptionImpl implements Subscription {
   Future<PullEvent> pull({bool noWait: true}) {
     return _api._pull(_subscription.name, noWait)
         .then((response) {
-          return new _PullEventImpl(_api, response);
+          return new _PullEventImpl(_api, _subscription.name, response);
         }).catchError((e) => null,
                       test: (e) => e is pubsub.DetailedApiRequestError &&
                                    e.status == 400);
@@ -448,10 +414,10 @@ class _TopicPageImpl implements Page<Topic> {
   _TopicPageImpl(this._api,
                 this._pageSize,
                 pubsub.ListTopicsResponse response)
-      : items = new List(response.topic.length),
+      : items = new List(response.topics.length),
         _nextPageToken = response.nextPageToken {
-    for (int i = 0; i < response.topic.length; i++) {
-      items[i] = new _TopicImpl(_api, response.topic[i]);
+    for (int i = 0; i < response.topics.length; i++) {
+      items[i] = new _TopicImpl(_api, response.topics[i]);
     }
   }
 
@@ -478,13 +444,13 @@ class _SubscriptionPageImpl implements Page<Subscription> {
                         this._topic,
                         this._pageSize,
                         pubsub.ListSubscriptionsResponse response)
-      : items = new List(response.subscription != null
-                                               ? response.subscription.length
+      : items = new List(response.subscriptions != null
+                                               ? response.subscriptions.length
                                                : 0),
         _nextPageToken = response.nextPageToken{
-    if (response.subscription != null) {
-      for (int i = 0; i < response.subscription.length; i++) {
-        items[i] = new _SubscriptionImpl(_api, response.subscription[i]);
+    if (response.subscriptions != null) {
+      for (int i = 0; i < response.subscriptions.length; i++) {
+        items[i] = new _SubscriptionImpl(_api, response.subscriptions[i]);
       }
     }
   }

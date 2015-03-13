@@ -11,37 +11,42 @@ import 'package:unittest/unittest.dart';
 
 import 'package:gcloud/pubsub.dart';
 
-import 'package:googleapis_beta/pubsub/v1beta1.dart' as pubsub;
+import 'package:googleapis_beta/pubsub/v1beta2.dart' as pubsub;
 
 import '../common.dart';
+import '../common_e2e.dart';
 
-const String ROOT_PATH = '/pubsub/v1beta1/';
+
+const String ROOT_PATH = '/v1beta2/';
 
 http.Client mockClient() => new MockClient(ROOT_PATH);
 
 main() {
   group('api', () {
     var badTopicNames = [
-        '/', '/topics', '/topics/$PROJECT', '/topics/$PROJECT/',
-        '/topics/${PROJECT}x', '/topics/${PROJECT}x/'];
+        'projects/', 'projects/topics', 'projects/$PROJECT',
+        'projects/$PROJECT/', 'projects/${PROJECT}/topics',
+        'projects/${PROJECT}/topics/'];
 
     var badSubscriptionNames = [
-        '/', '/subscriptions', '/subscriptions/$PROJECT',
-        '/subscriptions/$PROJECT/', '/subscriptions/${PROJECT}x',
-        '/subscriptions/${PROJECT}x/'];
+        'projects/', 'projects/subscriptions', 'projects/$PROJECT',
+        'projects/$PROJECT/', 'projects/${PROJECT}/subscriptions',
+        'projects/${PROJECT}/subscriptions/'];
 
     group('topic', () {
       var name = 'test-topic';
-      var absoluteName = '/topics/$PROJECT/test-topic';
+      var absoluteName = 'projects/$PROJECT/topics/test-topic';
 
       test('create', () {
         var mock = mockClient();
-        mock.register('POST', 'topics', expectAsync((request) {
-          var requestTopic =
-              new pubsub.Topic.fromJson(JSON.decode(request.body));
-          expect(requestTopic.name, absoluteName);
-          return mock.respond(new pubsub.Topic()..name = absoluteName);
-        }, count: 2));
+        mock.register(
+            'PUT', 'projects/$PROJECT/topics/test-topic',
+            expectAsync((request) {
+              var requestTopic =
+                  new pubsub.Topic.fromJson(JSON.decode(request.body));
+              expect(requestTopic.name, absoluteName);
+              return mock.respond(new pubsub.Topic()..name = absoluteName);
+            }, count: 2));
 
         var api = new PubSub(mock, PROJECT);
         return api.createTopic(name).then(expectAsync((topic) {
@@ -69,8 +74,7 @@ main() {
       test('delete', () {
         var mock = mockClient();
         mock.register(
-            'DELETE', new RegExp(r'topics/[a-z/-]*$'), expectAsync((request) {
-          expect(request.url.path, '${ROOT_PATH}topics/$absoluteName');
+            'DELETE', 'projects/test-project/topics/test-topic', expectAsync((request) {
           expect(request.body.length, 0);
           return mock.respondEmpty();
         }, count: 2));
@@ -98,8 +102,7 @@ main() {
       test('lookup', () {
         var mock = mockClient();
         mock.register(
-            'GET', new RegExp(r'topics/[a-z/-]*$'), expectAsync((request) {
-          expect(request.url.path, '${ROOT_PATH}topics/$absoluteName');
+            'GET', 'projects/test-project/topics/test-topic', expectAsync((request) {
           expect(request.body.length, 0);
           return mock.respond(new pubsub.Topic()..name = absoluteName);
         }, count: 2));
@@ -128,13 +131,12 @@ main() {
       });
 
       group('query', () {
-        var query = 'cloud.googleapis.com/project in (/projects/$PROJECT)';
         var defaultPageSize = 50;
 
         addTopics(pubsub.ListTopicsResponse response, int first, int count) {
-          response.topic = [];
+          response.topics = [];
           for (int i = 0; i < count; i++) {
-            response.topic.add(new pubsub.Topic()..name = 'topic-${first + i}');
+            response.topics.add(new pubsub.Topic()..name = 'topic-${first + i}');
           }
         }
 
@@ -150,10 +152,9 @@ main() {
             totalCalls = totalPages;
           }
           var pageCount = 0;
-          mock.register('GET', 'topics', expectAsync((request) {
+          mock.register('GET', 'projects/$PROJECT/topics', expectAsync((request) {
             pageCount++;
-            expect(request.url.queryParameters['query'], query);
-            expect(request.url.queryParameters['maxResults'], '$pageSize');
+            expect(request.url.queryParameters['pageSize'], '$pageSize');
             expect(request.body.length, 0);
             if (pageCount > 1) {
               expect(request.url.queryParameters['pageToken'], 'next-page');
@@ -256,7 +257,7 @@ main() {
             runTest(bool withPause) {
               // Test error on first GET request.
               var mock = mockClient();
-              mock.register('GET', 'topics', expectAsync((request) {
+              mock.register('GET', 'projects/$PROJECT/topics', expectAsync((request) {
                 return mock.respondError(500);
               }));
               var api = new PubSub(mock, PROJECT);
@@ -295,7 +296,7 @@ main() {
                         scheduleMicrotask(() => subscription.resume());
                       }
                       mock.clear();
-                      mock.register('GET', 'topics', expectAsync((request) {
+                      mock.register('GET', 'projects/$PROJECT/topics', expectAsync((request) {
                         return mock.respondError(500);
                       }));
                     }
@@ -400,13 +401,13 @@ main() {
 
     group('subscription', () {
       var name = 'test-subscription';
-      var absoluteName = '/subscriptions/$PROJECT/test-subscription';
+      var absoluteName = 'projects/$PROJECT/subscriptions/test-subscription';
       var topicName = 'test-topic';
-      var absoluteTopicName = '/topics/$PROJECT/test-topic';
+      var absoluteTopicName = 'projects/$PROJECT/topics/test-topic';
 
       test('create', () {
         var mock = mockClient();
-        mock.register('POST', 'subscriptions', expectAsync((request) {
+        mock.register('PUT', 'projects/$PROJECT/subscriptions', expectAsync((request) {
           var requestSubscription =
               new pubsub.Subscription.fromJson(JSON.decode(request.body));
           expect(requestSubscription.name, absoluteName);
@@ -444,8 +445,7 @@ main() {
         var mock = mockClient();
         mock.register(
             'DELETE',
-            new RegExp(r'subscriptions/[a-z/-]*$'), expectAsync((request) {
-          expect(request.url.path, '${ROOT_PATH}subscriptions/$absoluteName');
+            'projects/$PROJECT/subscriptions', expectAsync((request) {
           expect(request.body.length, 0);
           return mock.respondEmpty();
         }, count: 2));
@@ -474,8 +474,7 @@ main() {
         var mock = mockClient();
         mock.register(
             'GET',
-            new RegExp(r'subscriptions/[a-z/-]*$'), expectAsync((request) {
-          expect(request.url.path, '${ROOT_PATH}subscriptions/$absoluteName');
+            new RegExp('projects/$PROJECT/subscriptions'), expectAsync((request) {
           expect(request.body.length, 0);
           return mock.respond(new pubsub.Subscription()..name = absoluteName);
         }, count: 2));
@@ -505,16 +504,13 @@ main() {
       });
 
       group('query', () {
-        var query = 'cloud.googleapis.com/project in (/projects/$PROJECT)';
-        var topicQuery =
-            'pubsub.googleapis.com/topic in (/topics/$PROJECT/topic)';
         var defaultPageSize = 50;
 
         addSubscriptions(
             pubsub.ListSubscriptionsResponse response, int first, int count) {
-          response.subscription = [];
+          response.subscriptions = [];
           for (int i = 0; i < count; i++) {
-            response.subscription.add(
+            response.subscriptions.add(
                 new pubsub.Subscription()..name = 'subscription-${first + i}');
           }
         }
@@ -532,11 +528,9 @@ main() {
             totalCalls = totalPages;
           }
           var pageCount = 0;
-          mock.register('GET', 'subscriptions', expectAsync((request) {
+          mock.register('GET', 'projects/$PROJECT/subscriptions', expectAsync((request) {
             pageCount++;
-            expect(request.url.queryParameters['query'],
-                   topic == null ? query : topicQuery);
-            expect(request.url.queryParameters['maxResults'], '$pageSize');
+            expect(request.url.queryParameters['pageSize'], '$pageSize');
             expect(request.body.length, 0);
             if (pageCount > 1) {
               expect(request.url.queryParameters['pageToken'], 'next-page');
@@ -650,7 +644,7 @@ main() {
             runTest(bool withPause) {
               // Test error on first GET request.
               var mock = mockClient();
-              mock.register('GET', 'subscriptions', expectAsync((request) {
+              mock.register('GET', 'projects/$PROJECT/subscriptions', expectAsync((request) {
                 return mock.respondError(500);
               }));
               var api = new PubSub(mock, PROJECT);
@@ -690,7 +684,7 @@ main() {
                       }
                       mock.clear();
                       mock.register(
-                          'GET', 'subscriptions', expectAsync((request) {
+                          'GET', 'projects/$PROJECT/subscriptions', expectAsync((request) {
                         return mock.respondError(500);
                       }));
                     }
@@ -819,27 +813,27 @@ main() {
 
   group('topic', () {
     var name = 'test-topic';
-    var absoluteName = '/topics/$PROJECT/test-topic';
+    var absoluteName = 'projects/$PROJECT/topics/test-topic';
     var message = 'Hello, world!';
     var messageBytes = UTF8.encode(message);
     var messageBase64 = crypto.CryptoUtils.bytesToBase64(messageBytes);
-    var labels = {'a': 1, 'b': 'text'};
+    var attributes = {'a': '1', 'b': 'text'};
 
     registerLookup(mock) {
       mock.register(
-          'GET', new RegExp(r'topics/[a-z/-]*$'), expectAsync((request) {
-        expect(request.url.path, '${ROOT_PATH}topics/$absoluteName');
+          'GET', absoluteName, expectAsync((request) {
         expect(request.body.length, 0);
         return mock.respond(new pubsub.Topic()..name = absoluteName);
       }));
     }
 
     registerPublish(mock, count, fn) {
-      mock.register('POST', 'topics/publish', expectAsync((request) {
-        var publishRequest =
-            new pubsub.PublishRequest.fromJson(JSON.decode(request.body));
-        return fn(publishRequest);
-      }, count: count));
+      mock.register('POST', 'projects/test-project/topics/test-topic:publish',
+          expectAsync((request) {
+            var publishRequest =
+                new pubsub.PublishRequest.fromJson(JSON.decode(request.body));
+            return fn(publishRequest);
+          }, count: count));
     }
 
     test('publish', () {
@@ -850,10 +844,10 @@ main() {
       return api.lookupTopic(name).then(expectAsync((topic) {
         mock.clear();
         registerPublish(mock, 4, ((request) {
-          expect(request.topic, absoluteName);
-          expect(request.message.data, messageBase64);
-          expect(request.message.label, isNull);
-          return mock.respondEmpty();
+          expect(request.messages.length, 1);
+          expect(request.messages[0].data, messageBase64);
+          expect(request.messages[0].attributes, isNull);
+          return mock.respond(new pubsub.PublishResponse()..messageIds = [0]);
         }));
 
         return topic.publishString(message).then(expectAsync((result) {
@@ -874,7 +868,7 @@ main() {
       }));
     });
 
-    test('publish-with-labels', () {
+    test('publish-with-attributes', () {
       var mock = mockClient();
       registerLookup(mock);
 
@@ -882,35 +876,26 @@ main() {
       return api.lookupTopic(name).then(expectAsync((topic) {
         mock.clear();
         registerPublish(mock, 4, ((request) {
-          expect(request.topic, absoluteName);
-          expect(request.message.data, messageBase64);
-          expect(request.message.label, isNotNull);
-          expect(request.message.label.length, labels.length);
-          request.message.label.forEach((label) {
-            expect(labels.containsKey(label.key), isTrue);
-            if (label.numValue != null) {
-              expect(label.strValue, isNull);
-              expect(labels[label.key], int.parse(label.numValue));
-            } else {
-              expect(label.strValue, isNotNull);
-              expect(labels[label.key], label.strValue);
-            }
-          });
-          return mock.respondEmpty();
+          expect(request.messages.length, 1);
+          expect(request.messages[0].data, messageBase64);
+          expect(request.messages[0].attributes, isNotNull);
+          expect(request.messages[0].attributes.length, attributes.length);
+          expect(request.messages[0].attributes, attributes);
+          return mock.respond(new pubsub.PublishResponse()..messageIds = [0]);
         }));
 
-        return topic.publishString(message, labels: labels)
+        return topic.publishString(message, attributes: attributes)
             .then(expectAsync((result) {
           expect(result, isNull);
-          return topic.publishBytes(messageBytes, labels: labels)
+          return topic.publishBytes(messageBytes, attributes: attributes)
               .then(expectAsync((result) {
             expect(result, isNull);
             return topic.publish(
-                new Message.withString(message, labels: labels))
+                new Message.withString(message, attributes: attributes))
                 .then(expectAsync((result) {
               expect(result, isNull);
               return topic.publish(
-                  new Message.withBytes(messageBytes, labels: labels))
+                  new Message.withBytes(messageBytes, attributes: attributes))
                   .then(expectAsync((result) {
                 expect(result, isNull);
               }));
@@ -923,8 +908,7 @@ main() {
     test('delete', () {
       var mock = mockClient();
       mock.register(
-          'GET', new RegExp(r'topics/[a-z/-]*$'), expectAsync((request) {
-        expect(request.url.path, '${ROOT_PATH}topics/$absoluteName');
+          'GET', absoluteName, expectAsync((request) {
         expect(request.body.length, 0);
         return mock.respond(new pubsub.Topic()..name = absoluteName);
       }));
@@ -935,8 +919,7 @@ main() {
         expect(topic.absoluteName, absoluteName);
 
         mock.register(
-            'DELETE', new RegExp(r'topics/[a-z/-]*$'), expectAsync((request) {
-          expect(request.url.path, '${ROOT_PATH}topics/$absoluteName');
+            'DELETE', absoluteName, expectAsync((request) {
           expect(request.body.length, 0);
           return mock.respondEmpty();
         }));
@@ -950,15 +933,14 @@ main() {
 
   group('subscription', () {
     var name = 'test-subscription';
-    var absoluteName = '/subscriptions/$PROJECT/test-subscription';
+    var absoluteName = 'projects/$PROJECT/subscriptions/test-subscription';
     var topicName = 'test-topic';
-    var absoluteTopicName = '/topics/$PROJECT/test-topic';
+    var absoluteTopicName = 'projects/$PROJECT/topics/test-topic';
 
     test('delete', () {
       var mock = mockClient();
       mock.register(
-          'GET', new RegExp(r'subscriptions/[a-z/-]*$'), expectAsync((request) {
-        expect(request.url.path, '${ROOT_PATH}subscriptions/$absoluteName');
+          'GET', absoluteName, expectAsync((request) {
         expect(request.body.length, 0);
         return mock.respond(new pubsub.Topic()..name = absoluteName);
       }));
@@ -968,10 +950,7 @@ main() {
         expect(subscription.name, name);
         expect(subscription.absoluteName, absoluteName);
 
-        mock.register(
-            'DELETE',
-            new RegExp(r'subscriptions/[a-z/-]*$'), expectAsync((request) {
-          expect(request.url.path, '${ROOT_PATH}subscriptions/$absoluteName');
+        mock.register('DELETE', absoluteName, expectAsync((request) {
           expect(request.body.length, 0);
           return mock.respondEmpty();
         }));
@@ -996,7 +975,7 @@ main() {
     "labels": [
       {
         "key":"messageNo",
-        "numValue":30
+        "numValue":"30"
       },
       {
         "key":"test",
@@ -1009,8 +988,8 @@ main() {
 ''';
       var event = new PushEvent.fromJson(requestBody);
       expect(event.message.asString, "Hello, world 30 of 50!");
-      expect(event.message.labels['messageNo'], 30);
-      expect(event.message.labels['test'], 'hello');
+      expect(event.message.attributes['messageNo'], '30');
+      expect(event.message.attributes['test'], 'hello');
       expect(event.subscriptionName, absoluteSubscriptionName);
     });
 
@@ -1036,8 +1015,8 @@ main() {
 ''';
       var event = new PushEvent.fromJson(requestBody);
       expect(event.message.asString, "Hello, world 30 of 50!");
-      expect(event.message.labels['messageNo'], 30);
-      expect(event.message.labels['test'], 'hello');
+      expect(event.message.attributes['messageNo'], 30);
+      expect(event.message.attributes['test'], 'hello');
       expect(event.subscriptionName, absoluteSubscriptionName);
     });
   });
