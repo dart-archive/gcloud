@@ -105,7 +105,9 @@ class _PubSubImpl implements PubSub {
   Future _ack(String ackId, String subscription) {
     var request = new pubsub.AcknowledgeRequest()
         ..ackIds = [ ackId ];
-    return _api.projects.subscriptions.acknowledge(request, subscription);
+    // The Pub/Sub acknowledge API returns an instance of Empty.
+    return _api.projects.subscriptions.acknowledge(
+        request, subscription).then((_) => null);;
   }
 
   void _checkTopicName(name) {
@@ -283,9 +285,10 @@ class _PullEventImpl implements PullEvent {
   final pubsub.PullResponse _response;
   final Message message;
 
-  _PullEventImpl(this._api, this._subscriptionName, response)
+  _PullEventImpl(
+      this._api, this._subscriptionName, pubsub.PullResponse response)
       : this._response = response,
-        message = new _PullMessage(response.pubsubEvent.message);
+        message = new _PullMessage(response.receivedMessages[0].message);
 
   Future acknowledge() {
     return _api._ack(_response.receivedMessages[0].ackId, _subscriptionName);
@@ -388,6 +391,13 @@ class _SubscriptionImpl implements Subscription {
   Future<PullEvent> pull({bool noWait: true}) {
     return _api._pull(_subscription.name, noWait)
         .then((response) {
+          // The documentation says 'Returns an empty list if there are no
+          // messages available in the backlog'. However the receivedMessages
+          // property can also be null in that case.
+          if (response.receivedMessages == null ||
+              response.receivedMessages.length == 0) {
+            return null;
+          }
           return new _PullEventImpl(_api, _subscription.name, response);
         }).catchError((e) => null,
                       test: (e) => e is pubsub.DetailedApiRequestError &&
