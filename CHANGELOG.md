@@ -1,3 +1,7 @@
+## 0.1.4+2
+
+* Enforce fully populated entity keys in a number of places.
+
 ## 0.1.4+1
 
 * Deduce the query partition automatically from query ancestor key.

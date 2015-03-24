@@ -29,7 +29,7 @@ class DatastoreImpl implements datastore.Datastore {
   DatastoreImpl(http.Client client, this._project)
       : _api = new api.DatastoreApi(client);
 
-  api.Key _convertDatastore2ApiKey(datastore.Key key) {
+  api.Key _convertDatastore2ApiKey(datastore.Key key, {bool enforceId: true}) {
     var apiKey = new api.Key();
 
     apiKey.partitionId = new api.PartitionId()
@@ -43,6 +43,10 @@ class DatastoreImpl implements datastore.Datastore {
         part.id = '${element.id}';
       } else if (element.id is String) {
         part.name = element.id;
+      } else if (enforceId) {
+        throw new datastore.ApplicationError(
+            'Error while encoding entity key: Using `null` as the id is not '
+            'allowed.');
       }
       return part;
     }).toList();
@@ -141,7 +145,7 @@ class DatastoreImpl implements datastore.Datastore {
           ..blobValueAsBytes = value.bytes;
     } else if (value is datastore.Key) {
       return apiValue
-          ..keyValue = _convertDatastore2ApiKey(value);
+          ..keyValue = _convertDatastore2ApiKey(value, enforceId: false);
     } else if (value is List) {
       if (!lists) {
         // FIXME(Issue #3): Consistently handle exceptions.
@@ -210,7 +214,7 @@ class DatastoreImpl implements datastore.Datastore {
           ..blobValueAsBytes = value.bytes;
     } else if (value is datastore.Key) {
       return apiProperty
-          ..keyValue = _convertDatastore2ApiKey(value);
+          ..keyValue = _convertDatastore2ApiKey(value, enforceId: false);
     } else if (value is List) {
       if (!lists) {
         // FIXME(Issue #3): Consistently handle exceptions.
@@ -259,10 +263,11 @@ class DatastoreImpl implements datastore.Datastore {
                                 unIndexedProperties: unindexedProperties);
   }
 
-  api.Entity _convertDatastore2ApiEntity(datastore.Entity entity) {
+  api.Entity _convertDatastore2ApiEntity(datastore.Entity entity,
+                                         {bool enforceId: false}) {
     var apiEntity = new api.Entity();
 
-    apiEntity.key  = _convertDatastore2ApiKey(entity.key);
+    apiEntity.key  = _convertDatastore2ApiKey(entity.key, enforceId: enforceId);
     apiEntity.properties = {};
     if (entity.properties != null) {
       for (var key in entity.properties.keys) {
@@ -319,7 +324,8 @@ class DatastoreImpl implements datastore.Datastore {
     var pf = new api.PropertyFilter();
     pf.operator = 'HAS_ANCESTOR';
     pf.property = new api.PropertyReference()..name = '__key__';
-    pf.value = new api.Value()..keyValue = _convertDatastore2ApiKey(key);
+    pf.value = new api.Value()
+        ..keyValue = _convertDatastore2ApiKey(key, enforceId: true);
     return new api.Filter()..propertyFilter = pf;
   }
 
@@ -380,7 +386,9 @@ class DatastoreImpl implements datastore.Datastore {
 
   Future<List<datastore.Key>> allocateIds(List<datastore.Key> keys) {
     var request = new api.AllocateIdsRequest();
-    request..keys = keys.map(_convertDatastore2ApiKey).toList();
+    request..keys = keys.map((key) {
+      return _convertDatastore2ApiKey(key, enforceId: false);
+    }).toList();
     return _api.datasets.allocateIds(request, _project).then((response) {
       return response.keys.map(_convertApi2DatastoreKey).toList();
     }, onError: _handleError);
@@ -420,13 +428,14 @@ class DatastoreImpl implements datastore.Datastore {
       request.mutation.insertAutoId = new List(autoIdInserts.length);
       for (int i = 0; i < autoIdInserts.length; i++) {
         request.mutation.insertAutoId[i] =
-            _convertDatastore2ApiEntity(autoIdInserts[i]);
+            _convertDatastore2ApiEntity(autoIdInserts[i], enforceId: false);
       }
     }
     if (deletes != null) {
       request.mutation.delete = new List(deletes.length);
       for (int i = 0; i < deletes.length; i++) {
-        request.mutation.delete[i] = _convertDatastore2ApiKey(deletes[i]);
+        request.mutation.delete[i] =
+            _convertDatastore2ApiKey(deletes[i], enforceId: true);
       }
     }
     return _api.datasets.commit(request, _project).then((result) {
@@ -443,7 +452,9 @@ class DatastoreImpl implements datastore.Datastore {
 
   Future<List<datastore.Entity>> lookup(List<datastore.Key> keys,
                                         {datastore.Transaction transaction}) {
-    var apiKeys = keys.map(_convertDatastore2ApiKey).toList();
+    var apiKeys = keys.map((key) {
+      return _convertDatastore2ApiKey(key, enforceId: true);
+    }).toList();
     var request = new api.LookupRequest();
     request.keys = apiKeys;
     if (transaction != null) {

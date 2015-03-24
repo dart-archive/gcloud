@@ -194,7 +194,7 @@ runTests(Datastore datastore, String namespace) {
       Future<List<Key>> testInsertNegative(List<Entity> entities,
           {bool transactional: false, bool xg: false}) {
         test(Transaction transaction) {
-          expect(datastore.commit(inserts: entities,
+          expect(datastore.commit(autoIdInserts: entities,
                                   transaction: transaction),
                                   throwsA(isApplicationError));
         }
@@ -207,7 +207,7 @@ runTests(Datastore datastore, String namespace) {
 
       var unnamedEntities1 = buildEntities(42, 43, partition: partition);
       var unnamedEntities5 = buildEntities(1, 6, partition: partition);
-      var unnamedEntities20 = buildEntities(6, 26, partition: partition);
+      var unnamedEntities26 = buildEntities(6, 32, partition: partition);
       var named20000 = buildEntities(
           1000, 21001, idFunction: (i) => 'named_${i}_of_10000',
           partition: partition);
@@ -243,15 +243,14 @@ runTests(Datastore datastore, String namespace) {
         });
       });
 
-      // Does not work with cloud datastore REST api, why?
-      test('negative_insert_transactional', () {
-        return testInsertNegative(unnamedEntities5, transactional: true);
+      test('negative_insert__incomplete_path', () {
+        expect(datastore.commit(inserts: unnamedEntities1),
+                                throwsA(isApplicationError));
       });
 
-      // Does not work with cloud datastore REST api, why?
       test('negative_insert_transactional_xg', () {
         return testInsertNegative(
-            unnamedEntities20, transactional: true, xg: true);
+            unnamedEntities26, transactional: true, xg: true);
       });
 
       test('negative_insert_20000_entities', () {
