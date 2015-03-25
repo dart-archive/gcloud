@@ -77,7 +77,7 @@ Storage get storageService => ss.lookup(_storageKey);
 
 /// Registers the [storage] object within the current service scope.
 ///
-/// The provided `storage` object will be avilable via the top-level
+/// The provided `storage` object will be available via the top-level
 /// `storageService` getter.
 ///
 /// Calling this function outside of a service scope will result in an error.
@@ -433,7 +433,7 @@ class AclPermission {
 /// predefined ACLs have explicit names, and can _only_ be used to set an ACL,
 /// when either creating or updating a bucket or object. This set of predefined
 /// ACLs are expanded on the server to their actual list of [AclEntry] objects.
-/// When information is retreived on a bucket or object, this expanded list will
+/// When information is retrieved on a bucket or object, this expanded list will
 /// be present. For a description of these predefined ACLs see:
 /// https://cloud.google.com/storage/docs/accesscontrol#extension.
 class PredefinedAcl {
