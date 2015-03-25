@@ -388,8 +388,8 @@ class _SubscriptionImpl implements Subscription {
 
   Future delete() => _api._deleteSubscription(_subscription.name);
 
-  Future<PullEvent> pull({bool noWait: true}) {
-    return _api._pull(_subscription.name, noWait)
+  Future<PullEvent> pull({bool wait: true}) {
+    return _api._pull(_subscription.name, !wait)
         .then((response) {
           // The documentation says 'Returns an empty list if there are no
           // messages available in the backlog'. However the receivedMessages

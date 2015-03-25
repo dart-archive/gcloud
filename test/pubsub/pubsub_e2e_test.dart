@@ -100,7 +100,7 @@ runTests(PubSub pubsub, String project, String prefix) {
       expect(await subscription.pull(), isNull);
 
       expect(await topic.publishString('Hello, world!'), isNull);
-      var pullEvent = await subscription.pull(noWait: false);
+      var pullEvent = await subscription.pull();
       expect(pullEvent, isNotNull);
       expect(pullEvent.message.asString, 'Hello, world!');
       expect(await pullEvent.acknowledge(), isNull);

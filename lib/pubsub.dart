@@ -327,13 +327,13 @@ abstract class Subscription {
 
   /// Pull a message from the subscription.
   ///
-  /// If [noWait] is true, the method will complete the returned `Future`
-  /// with `null` if it finds that there are no messages available.
+  /// If `wait` is `true` (the default), the method will wait for a message
+  /// to become available, and will then complete the `Future` with a
+  /// `PullEvent` containing the message.
   ///
-  /// If `noWait` is false, the method will wait for a message to become
-  /// available, and will then complete the `Future` with a `PullEvent`
-  /// containing the message.
-  Future<PullEvent> pull({bool noWait: true});
+  /// If [wait] is `false`, the method will complete the returned `Future`
+  /// with `null` if it finds that there are no messages available.
+  Future<PullEvent> pull({bool wait: true});
 }
 
 /// The content of a Pub/Sub message.
