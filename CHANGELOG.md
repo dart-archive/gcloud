@@ -1,3 +1,7 @@
+## 0.2.0+1
+
+* Fix broken import of package:googleapis/common/common.dart.
+
 ## 0.2.0
 
 * Add support for Cloud Pub/Sub.

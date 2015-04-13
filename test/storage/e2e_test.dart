@@ -6,8 +6,8 @@ library gcloud.storage;
 
 import 'dart:async';
 
+import 'package:googleapis/storage/v1.dart' as storage_api;
 import 'package:gcloud/storage.dart';
-import 'package:googleapis/common/common.dart' as common;
 import 'package:unittest/unittest.dart';
 
 import '../common_e2e.dart';
@@ -17,7 +17,7 @@ String generateBucketName() {
   return 'dart-e2e-test-$id';
 }
 
-bool testDetailedApiError(e) => e is common.DetailedApiRequestError;
+bool testDetailedApiError(e) => e is storage_api.DetailedApiRequestError;
 
 // Generate a list just above the limit when changing to resumable upload.
 const int MB = 1024 * 1024;

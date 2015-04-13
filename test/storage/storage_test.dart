@@ -7,13 +7,13 @@ library gcloud.storage;
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:googleapis/storage/v1.dart' as storage_api;
 import 'package:http/http.dart' as http;
 import 'package:unittest/unittest.dart';
 
 import 'package:gcloud/storage.dart';
 
 import 'package:googleapis/storage/v1.dart' as storage;
-import 'package:googleapis/common/common.dart' as common;
 
 import '../common.dart';
 import '../common_e2e.dart';
@@ -325,8 +325,8 @@ main() {
         new List.generate(minResumableUpload, (e) => e & 255);
 
     bool testArgumentError(e) => e is ArgumentError;
-    bool testApiError(e) => e is common.ApiRequestError;
-    bool testDetailedApiError(e) => e is common.DetailedApiRequestError;
+    bool testApiError(e) => e is storage_api.ApiRequestError;
+    bool testDetailedApiError(e) => e is storage_api.DetailedApiRequestError;
     Function expectStatus(status) => (e) => expect(e.status, status);
     Function expectNotNull(status) => (o) => expect(o, isNotNull);
 
@@ -536,13 +536,13 @@ main() {
               .then((_) => throw 'Unexpected')
               .catchError(
                   expectAsync(expectNotNull),
-                  test: (e) => e is String || e is common.ApiRequestError);
+                  test: (e) => e is String || e is storage_api.ApiRequestError);
           return new Stream.fromIterable(data)
               .pipe(sink)
               .then((_) => throw 'Unexpected')
               .catchError(
                   expectAsync(expectNotNull),
-                  test: (e) => e is String || e is common.ApiRequestError);
+                  test: (e) => e is String || e is storage_api.ApiRequestError);
         }
 
         test([bytesResumableUpload], bytesResumableUpload.length + 1)

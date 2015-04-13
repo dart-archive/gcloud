@@ -5,7 +5,6 @@
 import 'dart:async';
 
 import 'package:gcloud/pubsub.dart';
-import 'package:googleapis/common/common.dart' as common;
 import 'package:unittest/unittest.dart';
 
 import '../common_e2e.dart';

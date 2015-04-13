@@ -55,7 +55,6 @@ import 'package:http/http.dart' as http;
 
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:googleapis/storage/v1.dart' as storage_api;
-import 'package:googleapis/common/common.dart' as common;
 
 import 'service_scope.dart' as ss;
 

@@ -65,7 +65,10 @@ class _StorageImpl implements Storage {
   }
 
   Future<bool> bucketExists(String bucketName) {
-    notFoundError(e) => e is common.DetailedApiRequestError && e.status == 404;
+    notFoundError(e) {
+      return e is storage_api.DetailedApiRequestError && e.status == 404;
+    }
+
     return _api.buckets.get(bucketName)
         .then((_) => true)
         .catchError((e) => false, test: notFoundError);
@@ -196,7 +199,7 @@ class _BucketImpl implements Bucket {
     _api.objects.get(
         bucketName,
         objectName,
-        downloadOptions: common.DownloadOptions.FullMedia).then(
+        downloadOptions: storage_api.DownloadOptions.FullMedia).then(
         (media) => media.stream.pipe(controller.sink));
     return controller.stream;
   }
@@ -532,7 +535,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
         // TODO: Avoid using another stream-controller.
         _resumableController = new StreamController(sync: true);
         buffer.forEach(_resumableController.add);
-        var media = new common.Media(_resumableController.stream, null);
+        var media = new storage_api.Media(_resumableController.stream, null);
         _startResumableUpload(_resumableController.stream, _length);
         _state = _STATE_DECIDED_RESUMABLE;
       }
@@ -576,13 +579,13 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
   void _startNormalUpload(Stream stream, int length) {
     var contentType = _object.contentType != null
         ? _object.contentType : 'application/octet-stream';
-    var media = new common.Media(stream, length, contentType: contentType);
+    var media = new storage_api.Media(stream, length, contentType: contentType);
     _api.objects.insert(_object,
                         _bucketName,
                         name: _objectName,
                         predefinedAcl: _predefinedAcl,
                         uploadMedia: media,
-                        uploadOptions: common.UploadOptions.Default)
+                        uploadOptions: storage_api.UploadOptions.Default)
         .then((response) {
           _doneCompleter.complete(new _ObjectInfoImpl(response));
         }, onError: _completeError);
@@ -591,13 +594,13 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
   void _startResumableUpload(Stream stream, int length) {
     var contentType = _object.contentType != null
         ? _object.contentType : 'application/octet-stream';
-    var media = new common.Media(stream, length, contentType: contentType);
+    var media = new storage_api.Media(stream, length, contentType: contentType);
     _api.objects.insert(_object,
                         _bucketName,
                         name: _objectName,
                         predefinedAcl: _predefinedAcl,
                         uploadMedia: media,
-                        uploadOptions: common.UploadOptions.Resumable)
+                        uploadOptions: storage_api.UploadOptions.Resumable)
         .then((response) {
           _doneCompleter.complete(new _ObjectInfoImpl(response));
         }, onError: _completeError);
