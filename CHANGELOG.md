@@ -1,3 +1,8 @@
+## 0.2.0
+
+* Add support for Cloud Pub/Sub.
+* Require Dart version 1.9.
+
 ## 0.1.4+2
 
 * Enforce fully populated entity keys in a number of places.

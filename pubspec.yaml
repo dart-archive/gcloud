@@ -1,5 +1,5 @@
 name: gcloud
-version: 0.2.0-dev
+version: 0.2.0
 author: Dart Team <misc@dartlang.org>
 description: Dart gcloud APIs
 homepage: https://github.com/dart-lang/gcloud
@@ -7,8 +7,8 @@ environment:
   sdk: '>=1.9.1 <2.0.0'
 dependencies:
   crypto: '>=0.9.0 <0.10.0'
-  googleapis: '>=0.2.0 <0.7.0'
-  googleapis_beta: '>=0.10.0 <0.11.0'
+  googleapis: '>=0.2.0 <0.9.0'
+  googleapis_beta: '>=0.10.0 <0.13.0'
   http: '>=0.11.0 <0.12.0'
 dev_dependencies:
   googleapis_auth: '>=0.1.1 <0.3.0'
