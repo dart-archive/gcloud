@@ -14,6 +14,10 @@ build/test/pubsub/pubsub_e2e_test: Skip
 # - it combines several tests to avoid concurrent tests touching the same data
 test/db_all_e2e_test: Slow, Pass
 
+# This test is slow because
+# - it does e2e testing
+test/pubsub/pubsub_e2e_test: Slow, Pass
+
 [ $browser ]
 build/test/storage/e2e_test: Skip
 test/storage/e2e_test: Skip
