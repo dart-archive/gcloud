@@ -32,7 +32,7 @@ runTests(PubSub pubsub, String project, String prefix) {
       expect(await pubsub.deleteTopic(topicName), isNull);
     });
 
-    solo_test('create-list-delete', () async {
+    test('create-list-delete', () async {
       const int count = 5;
 
       var topicPrefix = generateTopicName();
@@ -124,33 +124,44 @@ main() {
         runTests(pubsub, project, prefix);
       });
     } finally {
-      // Try to delete any leftover subscriptions from the tests.
-      var subscriptions = await pubsub.listSubscriptions().toList();
-      for (var subscription in subscriptions) {
-        if (subscription.name.startsWith(prefix)) {
-          try {
-            print('WARNING: Removing leftover subscription '
-                  '${subscription.name}');
-            leftovers = true;
-            await pubsub.deleteSubscription(subscription.name);
-          } catch (e) {
-            print('Error during test cleanup of subscription '
-                  '${subscription.name} ($e)');
+      print('checking for leftover subscriptions');
+      try {
+        // Try to delete any leftover subscriptions from the tests.
+        var subscriptions = await pubsub.listSubscriptions().toList();
+        for (var subscription in subscriptions) {
+          if (subscription.name.startsWith(prefix)) {
+            try {
+              print('WARNING: Removing leftover subscription '
+                    '${subscription.name}');
+              leftovers = true;
+              await pubsub.deleteSubscription(subscription.name);
+            } catch (e) {
+              print('Error during test cleanup of subscription '
+                    '${subscription.name} ($e)');
+            }
           }
         }
+      } catch (e) {
+        print('Error checking for leftover subscriptions  ($e)');
       }
+
       // Try to delete any leftover topics from the tests.
-      var topics = await pubsub.listTopics().toList();
-      for (var topic in topics) {
-        if (topic.name.startsWith(prefix)) {
-          try {
-            print('WARNING: Removing leftover topic ${topic.name}');
-            leftovers = true;
-            await pubsub.deleteTopic(topic.name);
-          } catch (e) {
-            print('Error during test cleanup of topic ${topic.name} ($e)');
+      print('checking for leftover topics');
+      try {
+        var topics = await pubsub.listTopics().toList();
+        for (var topic in topics) {
+          if (topic.name.startsWith(prefix)) {
+            try {
+              print('WARNING: Removing leftover topic ${topic.name}');
+              leftovers = true;
+              await pubsub.deleteTopic(topic.name);
+            } catch (e) {
+              print('Error during test cleanup of topic ${topic.name} ($e)');
+            }
           }
         }
+      } catch (e) {
+        print('Error checking for leftover topics ($e)');
       }
     }
 
