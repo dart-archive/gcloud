@@ -118,6 +118,7 @@ main() {
   withAuthClient(PubSub.SCOPES, (String project, httpClient) async {
     // Share the same pubsub connection for all tests.
     bool leftovers = false;
+    bool cleanupErrors = false;
     var pubsub = new PubSub(httpClient, project);
     try {
       await runE2EUnittest(() {
@@ -138,11 +139,13 @@ main() {
             } catch (e) {
               print('Error during test cleanup of subscription '
                     '${subscription.name} ($e)');
+              cleanupErrors = true;
             }
           }
         }
       } catch (e) {
         print('Error checking for leftover subscriptions  ($e)');
+        cleanupErrors = true;
       }
 
       // Try to delete any leftover topics from the tests.
@@ -157,16 +160,22 @@ main() {
               await pubsub.deleteTopic(topic.name);
             } catch (e) {
               print('Error during test cleanup of topic ${topic.name} ($e)');
+              cleanupErrors = true;
             }
           }
         }
       } catch (e) {
         print('Error checking for leftover topics ($e)');
+        cleanupErrors = true;
       }
     }
 
     if (leftovers) {
       throw 'Test terminated with leftover topics and/or subscriptions';
+    }
+
+    if (cleanupErrors) {
+      throw 'Test encountered errors while checking for leftovers';
     }
   });
 }
