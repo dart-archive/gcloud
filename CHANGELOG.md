@@ -1,3 +1,7 @@
+## 0.2.0+2
+
+* Widen constraint on `googleapis/googleapis_beta`
+
 ## 0.2.0+1
 
 * Fix broken import of package:googleapis/common/common.dart.
