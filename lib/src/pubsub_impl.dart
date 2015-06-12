@@ -107,7 +107,7 @@ class _PubSubImpl implements PubSub {
         ..ackIds = [ ackId ];
     // The Pub/Sub acknowledge API returns an instance of Empty.
     return _api.projects.subscriptions.acknowledge(
-        request, subscription).then((_) => null);;
+        request, subscription).then((_) => null);
   }
 
   void _checkTopicName(name) {
