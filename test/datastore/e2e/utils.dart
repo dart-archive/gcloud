@@ -92,7 +92,6 @@ List<Entity> buildEntityWithAllProperties(
   for (var i = from; i < to; i++) {
     var key = buildKey(
         i, idFunction: (i) => 'allprop$i', kind: kind, p: partition);
-    var unIndexedCopy = new Set.from(unIndexed);
     var properties = buildProperties(i);
     entities.add(new Entity(key, properties, unIndexedProperties: unIndexed));
   }

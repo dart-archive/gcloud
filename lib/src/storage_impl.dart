@@ -535,7 +535,6 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
         // TODO: Avoid using another stream-controller.
         _resumableController = new StreamController(sync: true);
         buffer.forEach(_resumableController.add);
-        var media = new storage_api.Media(_resumableController.stream, null);
         _startResumableUpload(_resumableController.stream, _length);
         _state = _STATE_DECIDED_RESUMABLE;
       }

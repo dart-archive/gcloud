@@ -33,7 +33,6 @@ withMockClient(function) {
 main() {
   group('bucket', () {
     var bucketName = 'test-bucket';
-    var absoluteName = 'gs://test-bucket';
 
     test('create', () {
       withMockClient((mock, api) {
@@ -325,9 +324,7 @@ main() {
         new List.generate(minResumableUpload, (e) => e & 255);
 
     bool testArgumentError(e) => e is ArgumentError;
-    bool testApiError(e) => e is storage_api.ApiRequestError;
     bool testDetailedApiError(e) => e is storage_api.DetailedApiRequestError;
-    Function expectStatus(status) => (e) => expect(e.status, status);
     Function expectNotNull(status) => (o) => expect(o, isNotNull);
 
     expectNormalUpload(mock, data, objectName) {
@@ -554,7 +551,6 @@ main() {
     test('write-add-error', () {
       withMockClient((mock, api) {
         var bucket = api.bucket(bucketName);
-        var controller = new StreamController(sync: true);
         var sink = bucket.write(bucketName);
         sink.done
             .then((_) => throw 'Unexpected')
@@ -569,7 +565,6 @@ main() {
     });
 
     test('write-long-add-error', () {
-      int count = 0;
       withMockClient((mock, api) {
         mock.registerResumableUpload(
             'POST', 'b/$bucketName/o', expectAsync((request) {
@@ -673,8 +668,6 @@ main() {
           var object = new storage.Object.fromJson(JSON.decode(request.body));
           ObjectMetadata m = metadata[countInitial];
           expect(object.name, objectName);
-          var contentType = m.contentType != null
-              ? m.contentType : 'application/octet-stream';
           expect(object.cacheControl, m.cacheControl);
           expect(object.contentDisposition, m.contentDisposition);
           expect(object.contentEncoding, m.contentEncoding);

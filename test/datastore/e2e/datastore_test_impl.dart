@@ -402,8 +402,6 @@ runTests(Datastore datastore, String namespace) {
         return test(null);
       }
 
-      var unnamedEntities1 = buildEntities(42, 43, partition: partition);
-      var unnamedEntities5 = buildEntities(1, 6, partition: partition);
       var unnamedEntities99 = buildEntities(6, 106, partition: partition);
 
       test('delete', () {

@@ -74,8 +74,6 @@ runTests(Storage storage, Bucket testBucket) {
     });
 
     test('create-error', () {
-      var bucketName = generateBucketName();
-
       storage.createBucket('goog-reserved').catchError(expectAsync((e) {
         expect(e, isNotNull);
       }), test: testDetailedApiError);
@@ -118,7 +116,6 @@ runTests(Storage storage, Bucket testBucket) {
     test('create-with-predefined-acl-delete', () {
       return withTestBucket((Bucket bucket) {
         Future test(objectName, predefinedAcl, expectedLength) {
-          var bucketName = generateBucketName();
           return bucket.writeBytes(
               objectName, [1, 2, 3], predefinedAcl: predefinedAcl)
               .then(expectAsync((result) {
@@ -149,7 +146,6 @@ runTests(Storage storage, Bucket testBucket) {
     test('create-with-acl-delete', () {
       return withTestBucket((Bucket bucket) {
         Future test(objectName, acl, expectedLength) {
-          var bucketName = generateBucketName();
           return bucket.writeBytes(objectName, [1, 2, 3], acl: acl)
               .then(expectAsync((result) {
                 expect(result, isNotNull);
@@ -198,12 +194,10 @@ runTests(Storage storage, Bucket testBucket) {
     test('create-with-metadata-delete', () {
       return withTestBucket((Bucket bucket) {
         Future test(objectName, metadata, bytes) {
-          var bucketName = generateBucketName();
           return bucket.writeBytes(objectName, bytes, metadata: metadata)
               .then(expectAsync((result) {
                 expect(result, isNotNull);
                 return bucket.info(objectName).then(expectAsync((info) {
-                  var acl = info.metadata.acl;
                   expect(info.name, objectName);
                   expect(info.length, bytes.length);
                   expect(info.updated is DateTime, isTrue);

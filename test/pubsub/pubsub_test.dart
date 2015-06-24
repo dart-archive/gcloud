@@ -131,8 +131,6 @@ main() {
       });
 
       group('query', () {
-        var defaultPageSize = 50;
-
         addTopics(pubsub.ListTopicsResponse response, int first, int count) {
           response.topics = [];
           for (int i = 0; i < count; i++) {
@@ -504,8 +502,6 @@ main() {
       });
 
       group('query', () {
-        var defaultPageSize = 50;
-
         addSubscriptions(
             pubsub.ListSubscriptionsResponse response, int first, int count) {
           response.subscriptions = [];
@@ -934,8 +930,6 @@ main() {
   group('subscription', () {
     var name = 'test-subscription';
     var absoluteName = 'projects/$PROJECT/subscriptions/test-subscription';
-    var topicName = 'test-topic';
-    var absoluteTopicName = 'projects/$PROJECT/topics/test-topic';
 
     test('delete', () {
       var mock = mockClient();
