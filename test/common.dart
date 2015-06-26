@@ -19,6 +19,10 @@ const RESPONSE_HEADERS = const {
 };
 
 class MockClient extends http.BaseClient {
+  static const bytes = const [1, 2, 3, 4, 5];
+
+  final _bytesHeaderRegexp = new RegExp(r"bytes=(\d+)-(\d+)");
+
   final String hostname;
   final String rootPath;
   final Uri rootUri;
@@ -112,9 +116,25 @@ class MockClient extends http.BaseClient {
         new http.Response('', 308, headers: RESPONSE_HEADERS));
   }
 
-  Future<http.Response> respondBytes(List<int> bytes) {
-    return new Future.value(
-        new http.Response.bytes(bytes, 200, headers: RESPONSE_HEADERS));
+  Future<http.Response> respondBytes(http.Request request) async {
+    expect(request.url.queryParameters['alt'], 'media');
+
+    var myBytes = bytes;
+    var headers = new Map.from(RESPONSE_HEADERS);
+
+    var range = request.headers['range'];
+    if (range != null) {
+      var match = _bytesHeaderRegexp.allMatches(range).single;
+
+      var start = int.parse(match[1]);
+      var end = int.parse(match[2]);
+
+      myBytes = bytes.sublist(start, end + 1);
+      headers['content-length'] = myBytes.length.toString();
+      headers['content-range'] = 'bytes $start-$end/';
+    }
+
+    return new http.Response.bytes(myBytes, 200, headers: headers);
   }
 
   Future<http.Response> respondError(statusCode) {

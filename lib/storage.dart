@@ -735,10 +735,15 @@ abstract class Bucket {
       {ObjectMetadata metadata,
         Acl acl, PredefinedAcl predefinedAcl, String contentType});
 
-  /// Read object content.
+  /// Read object content as byte stream.
   ///
-  // TODO: More documentation
-  Stream<List<int>> read(String objectName, {int offset: 0, int length});
+  /// If [offset] is provided, [length] must also be provided.
+  ///
+  /// If [length] is provided, it must be greater than `0`.
+  ///
+  /// If there is a problem accessing the file, a [DetailedApiRequestError] is
+  /// thrown.
+  Stream<List<int>> read(String objectName, {int offset, int length});
 
   /// Lookup object metadata.
   ///

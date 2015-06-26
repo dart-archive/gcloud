@@ -194,14 +194,34 @@ class _BucketImpl implements Bucket {
     return sink.close();
   }
 
-  Stream read(String objectName, {int offset: 0, int length}) {
-    var controller = new StreamController();
-    _api.objects.get(
-        bucketName,
-        objectName,
-        downloadOptions: storage_api.DownloadOptions.FullMedia).then(
-        (media) => media.stream.pipe(controller.sink));
-    return controller.stream;
+  Stream<List<int>> read(String objectName, {int offset, int length}) async* {
+    if (offset == null) {
+      offset = 0;
+    }
+
+    if (offset != 0 && length == null) {
+      throw new ArgumentError(
+          'length must have a value if offset is non-zero.');
+    }
+
+    var options = storage_api.DownloadOptions.FullMedia;
+
+    if (length != null) {
+      if (length <= 0) {
+        throw new ArgumentError.value(length, 'length',
+            'If provided, length must greater than zero.');
+      }
+      // For ByteRange, end is *inclusive*.
+      var end = offset + length - 1;
+      var range = new storage_api.ByteRange(offset, end);
+      assert(range.length == length);
+      options = new storage_api.PartialDownloadOptions(range);
+    }
+
+    var media = await _api.objects.get(bucketName, objectName,
+        downloadOptions: options);
+
+    yield* media.stream;
   }
 
   Future<ObjectInfo> info(String objectName) {

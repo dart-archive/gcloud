@@ -7,7 +7,6 @@ library gcloud.storage;
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:googleapis/storage/v1.dart' as storage_api;
 import 'package:http/http.dart' as http;
 import 'package:unittest/unittest.dart';
 
@@ -25,9 +24,15 @@ const String ROOT_PATH = '/storage/v1/';
 
 http.Client mockClient() => new MockClient(HOSTNAME, ROOT_PATH);
 
-withMockClient(function) {
+withMockClient(function(MockClient client, Storage storage)) {
   var mock = mockClient();
   function(mock, new Storage(mock, PROJECT));
+}
+
+Future withMockClientAsync(
+    Future function(MockClient client, Storage storage)) async {
+  var mock = mockClient();
+  await function(mock, new Storage(mock, PROJECT));
 }
 
 main() {
@@ -324,7 +329,7 @@ main() {
         new List.generate(minResumableUpload, (e) => e & 255);
 
     bool testArgumentError(e) => e is ArgumentError;
-    bool testDetailedApiError(e) => e is storage_api.DetailedApiRequestError;
+    bool testDetailedApiError(e) => e is storage.DetailedApiRequestError;
     Function expectNotNull(status) => (o) => expect(o, isNotNull);
 
     expectNormalUpload(mock, data, objectName) {
@@ -533,13 +538,13 @@ main() {
               .then((_) => throw 'Unexpected')
               .catchError(
                   expectAsync(expectNotNull),
-                  test: (e) => e is String || e is storage_api.ApiRequestError);
+                  test: (e) => e is String || e is storage.ApiRequestError);
           return new Stream.fromIterable(data)
               .pipe(sink)
               .then((_) => throw 'Unexpected')
               .catchError(
                   expectAsync(expectNotNull),
-                  test: (e) => e is String || e is storage_api.ApiRequestError);
+                  test: (e) => e is String || e is storage.ApiRequestError);
         }
 
         test([bytesResumableUpload], bytesResumableUpload.length + 1)
@@ -881,21 +886,107 @@ main() {
       });
     });
 
+    group('read', () {
+      test('success', () async {
+        await withMockClientAsync((MockClient mock, Storage api) async {
+          mock.register('GET',
+              'b/$bucketName/o/$objectName',
+              expectAsync(mock.respondBytes));
 
+          var bucket = api.bucket(bucketName);
+          var data = [];
 
-    test('read', () {
-      var bytes = [1, 2, 3];
-      withMockClient((mock, api) {
-        mock.register(
-            'GET', 'b/$bucketName/o/$objectName', expectAsync((request) {
-          expect(request.url.queryParameters['alt'], 'media');
-          return mock.respondBytes(bytes);
-        }));
+          await bucket.read(objectName).forEach(data.addAll);
+          expect(data, MockClient.bytes);
+        });
+      });
 
-        var bucket = api.bucket(bucketName);
-        var data = [];
-        bucket.read(objectName).listen(data.addAll).asFuture()
-            .then(expectAsync((_) => expect(data, bytes)));
+      test('with offset, without length', () async {
+        await withMockClientAsync((MockClient mock, Storage api) async {
+          var bucket = api.bucket(bucketName);
+
+          try {
+            await bucket.read(objectName, offset: 1).toList();
+            fail('An exception should be thrown');
+          } on ArgumentError catch (e) {
+            expect(e.message,
+                "length must have a value if offset is non-zero.");
+          }
+        });
+      });
+
+      test('with offset and length zero', () async {
+        await withMockClientAsync((MockClient mock, Storage api) async {
+          var bucket = api.bucket(bucketName);
+
+          try {
+            await bucket.read(objectName, offset: 1, length: 0).toList();
+            fail('An exception should be thrown');
+          } on ArgumentError catch (e) {
+            expect(e.message, "If provided, length must greater than zero.");
+          }
+        });
+      });
+
+      test('with invalid length', () async {
+        await withMockClientAsync((MockClient mock, Storage api) async {
+          var bucket = api.bucket(bucketName);
+
+          try {
+            await bucket.read(objectName, length: -1).toList();
+            fail('An exception should be thrown');
+          } on ArgumentError catch (e) {
+            expect(e.message, "If provided, length must greater than zero.");
+          }
+        });
+      });
+
+      test('with length', () async {
+        await withMockClientAsync((MockClient mock, Storage api) async {
+          mock.register('GET',
+              'b/$bucketName/o/$objectName',
+              expectAsync(mock.respondBytes));
+
+          var bucket = api.bucket(bucketName);
+          var data = [];
+
+          await bucket.read(objectName, length: 4).forEach(data.addAll);
+          expect(data, MockClient.bytes.sublist(0, 4));
+        });
+      });
+
+      test('with offset and length', () async {
+        await withMockClientAsync((MockClient mock, Storage api) async {
+          mock.register('GET',
+              'b/$bucketName/o/$objectName',
+              expectAsync(mock.respondBytes));
+
+          var bucket = api.bucket(bucketName);
+          var data = [];
+
+          await bucket.read(objectName, offset: 1, length: 3)
+            .forEach(data.addAll);
+          expect(data, MockClient.bytes.sublist(1, 4));
+        });
+      });
+
+      test('file does not exist', () async {
+        await withMockClientAsync((MockClient mock, Storage api) async {
+          mock.register(
+              'GET', 'b/$bucketName/o/$objectName', expectAsync((request) {
+                expect(request.url.queryParameters['alt'], 'media');
+                return mock.respondError(404);
+              }));
+
+          var bucket = api.bucket(bucketName);
+
+          try {
+            await bucket.read(objectName).toList();
+            fail('An exception should be thrown');
+          } on storage.DetailedApiRequestError catch (e) {
+            expect(e.status, 404);
+          }
+        });
       });
     });
 
