@@ -30,7 +30,7 @@ import 'package:gcloud/db.dart';
 import 'package:gcloud/storage.dart';
 import 'package:gcloud/pubsub.dart';
 import 'package:gcloud/service_scope.dart' as ss;
-import 'package:gcloud/src/datastore_impl.dart';
+import 'package:gcloud/src/datastore_impl.dart' as datastore_impl;
 ```
 
 ### Getting access to the APIs
@@ -48,15 +48,15 @@ var credentials = new auth.ServiceAccountCredentials.fromJson(jsonCredentials);
 
 // Get an HTTP authenticated client using the service account credentials.
 var scopes = []
-    ..addAll(datastore_impl.DatastoreImpl.SCOPES);
+    ..addAll(datastore_impl.DatastoreImpl.SCOPES)
     ..addAll(Storage.SCOPES)
-    ..addAll(PubSub.SCOPES)
-var client = await auth.clientViaServiceAccount(creds, scopes);
+    ..addAll(PubSub.SCOPES);
+var client = await auth.clientViaServiceAccount(credentials, scopes);
 
 // Instantiate objects to access Cloud Datastore, Cloud Storage
 // and Cloud Pub/Sub APIs.
 var db = new DatastoreDB(
-    new dastore_impl.DatastoreImpl(client, 's~my-project'));
+    new datastore_impl.DatastoreImpl(client, 's~my-project'));
 var storage = new Storage(client, 'my-project');
 var pubsub = new PubSub(client, 'my-project');
 ```
