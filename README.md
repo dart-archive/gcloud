@@ -23,6 +23,7 @@ the following imports are present:
 
 ```dart
 import 'dart:io';
+import 'dart:async';
 
 import 'package:googleapis_auth/auth_io.dart' as auth;
 import 'package:http/http.dart' as http;
