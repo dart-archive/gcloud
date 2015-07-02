@@ -22,6 +22,8 @@ The code snippets below demonstrating the use of this package all assume that
 the following imports are present:
 
 ```dart
+import 'dart:io';
+
 import 'package:googleapis_auth/auth_io.dart' as auth;
 import 'package:http/http.dart' as http;
 import 'package:gcloud/db.dart';
@@ -46,7 +48,7 @@ var credentials = new auth.ServiceAccountCredentials.fromJson(jsonCredentials);
 
 // Get an HTTP authenticated client using the service account credentials.
 var scopes = []
-    ..addAll(dastore_impl.DatastoreImpl.SCOPES);
+    ..addAll(datastore_impl.DatastoreImpl.SCOPES);
     ..addAll(Storage.SCOPES)
     ..addAll(PubSub.SCOPES)
 var client = await auth.clientViaServiceAccount(creds, scopes);
