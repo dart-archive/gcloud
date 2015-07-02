@@ -22,7 +22,6 @@ The code snippets below demonstrating the use of this package all assume that
 the following imports are present:
 
 ```dart
-import 'dart:async';
 import 'dart:io';
 
 import 'package:googleapis_auth/auth_io.dart' as auth;
