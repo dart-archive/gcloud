@@ -181,7 +181,7 @@ consumer of a message.
 The following code creates a _topic_ and sends a simple test message:
 
 ```dart
-var topic = await pubsub.createTopic('my'topic');
+var topic = await pubsub.createTopic('my-topic');
 await topic.publishString('Hello, world!')
 ```
 
