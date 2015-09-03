@@ -80,8 +80,7 @@ runTests(Storage storage, Bucket testBucket) {
     });
   });
 
-  // TODO: Remove solo_ here when the rate-limit issue have been resolved.
-  solo_group('object', () {
+  group('object', () {
     // Run all object tests in the same bucket to try to avoid the rate-limit
     // for creating and deleting buckets while testing.
     Future withTestBucket(function) {
@@ -171,7 +170,7 @@ runTests(Storage storage, Bucket testBucket) {
             [new AclEntry(AclScope.allUsers, AclPermission.WRITE),
              new AclEntry(new AccountScope('sgjesse@google.com'),
                           AclPermission.WRITE),
-             new AclEntry(new AccountScope('misc@dartlang.org'),
+             new AclEntry(new GroupScope('misc@dartlang.org'),
                           AclPermission.READ)]);
         Acl acl4 = new Acl(
             [new AclEntry(AclScope.allUsers, AclPermission.WRITE),
@@ -182,11 +181,14 @@ runTests(Storage storage, Bucket testBucket) {
              new AclEntry(new DomainScope('dartlang.org'),
                           AclPermission.FULL_CONTROL)]);
 
+        // The expected length of the returned ACL is one longer than the one
+        // use during creation as an additional 'used-ID' ACL entry is added
+        // by cloud storage during creation.
         return Future.forEach([
-            () => test('test-1', acl1, 1),
-            () => test('test-2', acl2, 2),
-            () => test('test-3', acl3, 3),
-            () => test('test-4', acl4, 4)
+            () => test('test-1', acl1, acl1.entries.length + 1),
+            () => test('test-2', acl2, acl2.entries.length + 1),
+            () => test('test-3', acl3, acl3.entries.length + 1),
+            () => test('test-4', acl4, acl4.entries.length + 1)
         ], (f) => f().then(expectAsync((_) {})));
       });
     });
