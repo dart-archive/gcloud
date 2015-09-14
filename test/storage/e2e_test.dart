@@ -80,7 +80,7 @@ runTests(Storage storage, Bucket testBucket) {
     });
   });
 
-  group('object', () {
+  solo_group('object', () {
     // Run all object tests in the same bucket to try to avoid the rate-limit
     // for creating and deleting buckets while testing.
     Future withTestBucket(function) {
