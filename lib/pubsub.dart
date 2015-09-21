@@ -61,7 +61,7 @@ void registerPubSubService(PubSub pubsub) {
 ///     import 'package:gcloud/pubsub.dart';
 ///
 ///     Future<http.Client> createClient() {
-///       // Service account credentials retreived from Cloud Console.
+///       // Service account credentials retrieved from Cloud Console.
 ///       String creds =
 ///           r'''
 ///           {
@@ -363,7 +363,7 @@ abstract class Message {
   /// The binary body is decoded into a String using an UTF-8 decoder.
   ///
   /// If the body is not UTF-8 encoded use the [asBytes] getter and manually
-  /// apply the corect decoding.
+  /// apply the correct decoding.
   String get asString;
 
   /// The message body as bytes.

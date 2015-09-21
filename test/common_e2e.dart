@@ -15,7 +15,7 @@ import 'common.dart';
 
 const PROJECT = 'test-project';
 
-// Enviroment variables for specifying the cloud project to use and the
+// Environment variables for specifying the cloud project to use and the
 // location of the service account key for that project.
 const String PROJECT_ENV = 'GCLOUD_E2E_TEST_PROJECT';
 const String SERVICE_KEY_LOCATION_ENV = 'GCLOUD_E2E_TEST_KEY';

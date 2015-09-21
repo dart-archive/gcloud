@@ -46,7 +46,7 @@ class ModelDBImpl implements ModelDB {
 
   /// Initializes a new [ModelDB] from all libraries.
   ///
-  /// This will scan the given [librarySymnbol] for classes with a [Kind]
+  /// This will scan the given [librarySymbol] for classes with a [Kind]
   /// annotation.
   ///
   /// In case an error is encountered (e.g. two model classes with the same kind
@@ -268,7 +268,7 @@ class ModelDBImpl implements ModelDB {
     var properties = new Map<String, Property>();
     var propertyNames = new Set<String>();
 
-    // Loop over all classes in the inheritence path up to the Object class.
+    // Loop over all classes in the inheritance path up to the Object class.
     while (modelClassMirror.superclass != null) {
       var memberMap = modelClassMirror.instanceMembers;
       // Loop over all declarations (which includes fields)

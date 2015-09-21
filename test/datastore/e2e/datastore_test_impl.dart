@@ -457,7 +457,7 @@ runTests(Datastore datastore, String namespace) {
       Future testRollback(List<Key> keys, {bool xg: false}) {
         return withTransaction((Transaction transaction) {
           return datastore.lookup(keys, transaction: transaction)
-              .then((List<Entity> entitites) {
+              .then((List<Entity> entities) {
             return datastore.rollback(transaction);
           });
         }, xg: xg);
@@ -485,7 +485,7 @@ runTests(Datastore datastore, String namespace) {
           List<Key> keys, {bool transactional: false, bool xg: false}) {
         Future test(Transaction transaction) {
           return datastore.lookup(keys, transaction: transaction)
-              .then((List<Entity> entitites) {
+              .then((List<Entity> entities) {
             return datastore.commit(transaction: transaction);
           });
         }
@@ -869,7 +869,7 @@ runTests(Datastore datastore, String namespace) {
           });
         });
 
-        // TODO: query by multiple keys, multiple sort oders, ...
+        // TODO: query by multiple keys, multiple sort orders, ...
       });
 
       test('ancestor_query', () {

@@ -6,7 +6,7 @@
 ///
 /// Google Cloud Storage is an object store for binary objects. Each
 /// object has a set of metadata attached to it. For more information on
-/// Google Cloud Sorage see https://developers.google.com/storage/.
+/// Google Cloud Storage see https://developers.google.com/storage/.
 ///
 /// There are two main concepts in Google Cloud Storage: Buckets and Objects.
 /// A bucket is a container for objects and objects are the actual binary
@@ -17,7 +17,7 @@
 /// The class `Storage` is the main API class providing access to working
 /// with buckets. This is the 'bucket service' interface.
 ///
-/// The class `Bucket` provide access to working with objcts in a specific
+/// The class `Bucket` provide access to working with objects in a specific
 /// bucket. This is the 'object service' interface.
 ///
 /// Both buckets have objects, have names. The bucket namespace is flat and
@@ -25,8 +25,8 @@
 /// addressable using its name without requiring further context.
 ///
 /// Within buckets the object namespace is also flat. Object are *not*
-/// organized hierachical. However, as object names allow the slash `/`
-/// character this is often used to simulate a hierachical structure
+/// organized hierarchical. However, as object names allow the slash `/`
+/// character this is often used to simulate a hierarchical structure
 /// based on common prefixes.
 ///
 /// This package uses relative and absolute names to refer to objects. A
@@ -524,7 +524,7 @@ abstract class Storage {
 
   /// Access bucket object operations.
   ///
-  /// Instantiates a `Bucket` object refering to the bucket named [bucketName].
+  /// Instantiates a `Bucket` object referring to the bucket named [bucketName].
   ///
   /// When an object is created using the resulting `Bucket` an ACL will always
   /// be set. If the object creation does not pass any explicit ACL information
@@ -553,7 +553,7 @@ abstract class Storage {
   ///
   /// Provide metadata information for bucket named [bucketName].
   ///
-  /// Returns a [Future] which completes with a `BuckerInfo` object.
+  /// Returns a [Future] which completes with a `BucketInfo` object.
   Future<BucketInfo> bucketInfo(String bucketName);
 
   /// List names of all buckets.
@@ -685,7 +685,7 @@ class BucketEntry {
   bool get isDirectory => !isObject;
 }
 
-/// Access to operations on a specific cloud storage buket.
+/// Access to operations on a specific cloud storage bucket.
 abstract class Bucket {
   /// Name of this bucket.
   String get bucketName;

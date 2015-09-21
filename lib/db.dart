@@ -31,7 +31,7 @@ DatastoreDB get dbService => ss.lookup(_dbKey);
 
 /// Registers the [DatastoreDB] object within the current service scope.
 ///
-/// The provided `db` object will be avilable via the top-level `dbService`
+/// The provided `db` object will be available via the top-level `dbService`
 /// getter.
 ///
 /// Calling this function outside of a service scope will result in an error.

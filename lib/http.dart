@@ -24,7 +24,7 @@ http.Client get authClientService => ss.lookup(_authenticatedClientKey);
 
 /// Registers the [http.Client] object within the current service scope.
 ///
-/// The provided `client` object will be avilable via the top-level
+/// The provided `client` object will be available via the top-level
 /// `authenticatedHttp` getter.
 ///
 /// Calling this function outside of a service scope will result in an error.

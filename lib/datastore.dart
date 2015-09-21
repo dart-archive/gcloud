@@ -27,7 +27,7 @@ Datastore get datastoreService => ss.lookup(_datastoreKey);
 
 /// Registers the [Datastore] object within the current service scope.
 ///
-/// The provided `datastore` object will be avilable via the top-level
+/// The provided `datastore` object will be available via the top-level
 /// `datastore` getter.
 ///
 /// Calling this function outside of a service scope will result in an error.
@@ -114,10 +114,10 @@ class Entity {
 
 /// A complete or partial key.
 ///
-/// A key can uniquely identifiy a datastore `Entity`s. It consists of a
+/// A key can uniquely identify a datastore `Entity`s. It consists of a
 /// partition and path. The path consists of one or more `KeyElement`s.
 ///
-/// A key may be incomplete. This is usesfull when inserting `Entity`s which IDs
+/// A key may be incomplete. This is usesful when inserting `Entity`s which IDs
 /// should be automatically allocated.
 ///
 /// Example of a fully populated [Key]:
@@ -125,7 +125,7 @@ class Entity {
 ///     var fullKey = new Key([new KeyElement('Person', 1),
 ///                            new KeyElement('Address', 2)]);
 ///
-/// Example of a partially populated [Key] / an imcomplete [Key]:
+/// Example of a partially populated [Key] / an incomplete [Key]:
 ///
 ///     var partialKey = new Key([new KeyElement('Person', 1),
 ///                               new KeyElement('Address', null)]);
@@ -254,7 +254,7 @@ class Filter {
   /// The relation used for comparing `name` with `value`.
   final FilterRelation relation;
 
-  /// The name of the datastore property used in the comparision.
+  /// The name of the datastore property used in the comparison.
   final String name;
 
   /// The value used for comparing against the property named by `name`.
@@ -368,8 +368,9 @@ abstract class Datastore {
   ///    be either added to the datastore or updated.
   ///
   ///  - `autoIdInserts` are [Entity]s which do not have a fully populated [Key]
-  ///    and should be added to the dataset, automatically assiging integer IDs.
-  ///    The returned [CommitResult] will contain the fuly populated keys.
+  ///    and should be added to the dataset, automatically assigning integer
+  ///    IDs.
+  ///    The returned [CommitResult] will contain the fully populated keys.
   ///
   ///  - `deletes` are a list of fully populated [Key]s which uniquely identify
   ///    the [Entity]s which should be deleted.

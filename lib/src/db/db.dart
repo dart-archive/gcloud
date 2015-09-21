@@ -15,7 +15,7 @@ typedef Future TransactionHandler(Transaction transaction);
 /**
  * A datastore transaction.
  *
- * It can be used for making lookups/queries and queue modifcations
+ * It can be used for making lookups/queries and queue modifications
  * (inserts/updates/deletes). Finally the transaction can be either committed
  * or rolled back.
  */
@@ -42,7 +42,7 @@ class Transaction {
   }
 
   /**
-   * Enqueues [inserts] and [deletes] which should be commited at commit time.
+   * Enqueues [inserts] and [deletes] which should be committed at commit time.
    */
   void queueMutations({List<Model> inserts, List<Key> deletes}) {
     _checkSealed();
@@ -162,7 +162,7 @@ class Query {
           "Invalid filter string '$filterString'.");
     }
 
-    // TODO: do value transformation on [comparisionObject]
+    // TODO: do value transformation on [comparisonObject]
 
     var propertyName = _convertToDatastoreName(parts[0]);
     _filters.add(new datastore.Filter(
@@ -173,7 +173,7 @@ class Query {
    * Adds an order to this [Query].
    *
    * [orderString] has the form "-name" where 'name' is a fieldName of the model
-   * and the optional '-' says whether the order is decending or ascending.
+   * and the optional '-' says whether the order is descending or ascending.
    */
   void order(String orderString) {
     // TODO: validate [orderString] (e.g. is name valid)
@@ -363,7 +363,7 @@ Future _commitHelper(DatastoreDB db,
     autoIdModelInserts = [];
 
     for (var model in inserts) {
-      // If parent was not explicity set, we assume this model will map to
+      // If parent was not explicitly set, we assume this model will map to
       // it's own entity group.
       if (model.parentKey == null) {
         model.parentKey = db.defaultPartition.emptyKey;

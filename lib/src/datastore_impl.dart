@@ -634,7 +634,7 @@ class QueryPageImpl implements Page<datastore.Entity> {
 
       // In case a limit was specified, we need to subtraction the number of
       // entities we already got.
-      // (the checks above guarantee that this subraction is >= 0).
+      // (the checks above guarantee that this subtraction is >= 0).
       int remainingEntities;
       if (limit != null) {
         remainingEntities = limit - returnedEntities.length;

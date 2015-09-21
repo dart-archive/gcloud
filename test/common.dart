@@ -234,7 +234,7 @@ class TraceClient extends http.BaseClient {
   }
 }
 
-// http.BaseRequest implementationn used by the TraceClient.
+// http.BaseRequest implementation used by the TraceClient.
 class RequestImpl extends http.BaseRequest {
   final List<int> _body;
 

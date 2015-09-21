@@ -1,6 +1,6 @@
 ## Google Cloud Platform support package (gcloud)
 
-The `gcloud` package provides a high level "idomatic Dart" interface to
+The `gcloud` package provides a high level "idiomatic Dart" interface to
 some of the most widely used Google Cloud Platform services. Currently the
 following services are supported:
 
@@ -220,7 +220,7 @@ When running these tests the following environment variables need to be set:
     GCLOUD_E2E_TEST_PROJECT
     GCLOUD_E2E_TEST_KEY
 
-The vaule of the environment variable `GCLOUD_E2E_TEST_PROJECT` is the name
+The value of the environment variable `GCLOUD_E2E_TEST_PROJECT` is the name
 of the Google Cloud project to use. The value of the environment variable
 `GCLOUD_E2E_TEST_KEY` is a Google Cloud Storage path (starting with `gs://`)
 to a JSON key file for a service account providing access to the Cloud Project. 

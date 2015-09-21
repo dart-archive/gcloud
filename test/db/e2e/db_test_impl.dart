@@ -336,7 +336,7 @@ runTests(db.DatastoreDB store, String namespace) {
             ..age = 83
             ..name = 'user83');
         return store.commit(inserts: persons).then(expectAsync((_) {
-          // At this point, autoIds are allocated and are relfected in the
+          // At this point, autoIds are allocated and are reflected in the
           // models (as well as parentKey if it was empty).
 
           var keys = persons.map((db.Model obj) => obj.key).toList();
@@ -367,7 +367,7 @@ runTests(db.DatastoreDB store, String namespace) {
 
           return store.lookup(keys).then(expectAsync((List<Person> models) {
             // Since the id/parentKey fields are set after commit and a lookup
-            // returns new model instances, we can do full model comparision
+            // returns new model instances, we can do full model comparison
             // here.
             compareModels(persons, models);
             return store.commit(deletes: keys).then(expectAsync((_) {
