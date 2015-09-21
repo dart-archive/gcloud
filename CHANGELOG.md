@@ -1,3 +1,7 @@
+## 0.2.0+8
+
+* Widen constraint on `googleapis` and `googleapis_beta`.
+
 ## 0.2.0+4
 
 * `Storage.read` now honors `offset` and `length` arguments.
