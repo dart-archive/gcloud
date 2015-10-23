@@ -69,7 +69,7 @@ ss.fork(() {
   registerDbService(db);
   registerStorageService(storage);
   registerPubSubService(pubsub);
-  
+
   // Run application using these services.
 });
 ```
@@ -188,14 +188,14 @@ await topic.publishString('Hello, world!')
 
 With the following code a _subscription_ is created on the _topic_ and
 a message is pulled using the subscription. A received message must be
-acknowledged when the consumer has processed it. 
+acknowledged when the consumer has processed it.
 
 ```dart
 var subscription =
-    await pubsub.createSubscription('my-subscription', 'my-topic);
+    await pubsub.createSubscription('my-subscription', 'my-topic');
 var pullEvent = await subscription.pull();
 print(pullEvent.message.asString);
-await pullEvent.acknowledge()
+await pullEvent.acknowledge();
 ```
 
 It is also possible to receive messages using push events instead of pulling
@@ -224,7 +224,7 @@ When running these tests the following environment variables need to be set:
 The value of the environment variable `GCLOUD_E2E_TEST_PROJECT` is the name
 of the Google Cloud project to use. The value of the environment variable
 `GCLOUD_E2E_TEST_KEY` is a Google Cloud Storage path (starting with `gs://`)
-to a JSON key file for a service account providing access to the Cloud Project. 
+to a JSON key file for a service account providing access to the Cloud Project.
 
 [Datastore]: https://cloud.google.com/datastore/
 [GCS]: https://cloud.google.com/storage/
