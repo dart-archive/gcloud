@@ -1,3 +1,8 @@
+## 0.2.0+9
+
+* Support value transformation in `db.query().filter()`.
+* Widen constraint on `googleapis` and `googleapis_beta`.
+
 ## 0.2.0+8
 
 * Widen constraint on `googleapis` and `googleapis_beta`.

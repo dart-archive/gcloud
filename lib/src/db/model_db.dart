@@ -40,4 +40,9 @@ abstract class ModelDB {
    */
   // TODO: Get rid of this eventually.
   String fieldNameToPropertyName(String kind, String fieldName);
+
+  /**
+   * Converts [value] according to the [Property] named [fieldName] in [type].
+   */
+  Object toDatastoreValue(Type type, String fieldName, Object value);
 }

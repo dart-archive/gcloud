@@ -144,11 +144,19 @@ class ModelDBImpl implements ModelDB {
   String fieldNameToPropertyName(String kind, String fieldName) {
     var modelDescription = _kind2ModelDesc[kind];
     if (modelDescription == null) {
-      throw new ArgumentError('The kind $kind is unknown.');
+      throw new ArgumentError('The kind "$kind" is unknown.');
     }
     return modelDescription.fieldNameToPropertyName(fieldName);
   }
 
+  /// Converts [value] according to the [Property] named [name] in [type].
+  Object toDatastoreValue(String kind, String fieldName, Object value) {
+    var modelDescription = _kind2ModelDesc[kind];
+    if (modelDescription == null) {
+      throw new ArgumentError('The kind "$kind" is unknown.');
+    }
+    return modelDescription.encodeField(this, fieldName, value);
+  }
 
   Iterable<_ModelDescription> get _modelDescriptions {
     return _modelDesc2Type.values;
@@ -443,9 +451,16 @@ class _ModelDescription {
     return _property2FieldName[propertySearchName];
   }
 
-  Object encodeField(ModelDBImpl db, String fieldName, Object value) {
+  Object encodeField(ModelDBImpl db, String fieldName, Object value,
+                     {bool enforceFieldExists: true}) {
     Property property = db._propertiesForModel(this)[fieldName];
-    if (property != null) return property.encodeValue(db, value);
+    if (property != null) {
+      return property.encodeValue(db, value);
+    }
+    if (enforceFieldExists) {
+      throw new ArgumentError(
+          'A field named "$fieldName" does not exist in kind "$kind".');
+    }
     return null;
   }
 }
@@ -516,7 +531,8 @@ class _ExpandoModelDescription extends _ModelDescription {
   }
 
   Object encodeField(ModelDBImpl db, String fieldName, Object value) {
-    Object primitiveValue = super.encodeField(db, fieldName, value);
+    Object primitiveValue = super.encodeField(db, fieldName, value,
+        enforceFieldExists: false);
     // If superclass can't encode field, we return value here (and assume
     // it's primitive)
     // NOTE: Implicit assumption:

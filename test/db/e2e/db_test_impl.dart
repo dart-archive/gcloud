@@ -61,7 +61,7 @@ class Person extends db.Model {
   @db.IntProperty()
   int age;
 
-  @db.ModelKeyProperty()
+  @db.ModelKeyProperty(propertyName: 'mangledWife')
   db.Key wife;
 
   operator==(Object other) => sameAs(other);
@@ -138,11 +138,7 @@ class ExpandoPerson extends db.ExpandoModel {
 }
 
 
-Future sleep(Duration duration) {
-  var completer = new Completer();
-  new Timer(duration, completer.complete);
-  return completer.future;
-}
+Future sleep(Duration duration) => new Future.delayed(duration);
 
 runTests(db.DatastoreDB store, String namespace) {
   var partition = store.newPartition(namespace);
@@ -395,6 +391,7 @@ runTests(db.DatastoreDB store, String namespace) {
         users.add(new User()
             ..id = i
             ..parentKey = root
+            ..wife = root.append(User, id: 42 + i)
             ..age = 42 + i
             ..name = 'user$i'
             ..nickname = 'nickname${i%3}'
@@ -445,6 +442,8 @@ runTests(db.DatastoreDB store, String namespace) {
           (User u) => u.languages.contains('foo')).toList();
       var barUsers = users.where(
           (User u) => u.languages.contains('bar')).toList();
+      var usersWithWife = users.where(
+          (User u) => u.wife == root.append(User, id: 42 + 3));
 
       var allInserts = []
           ..addAll(users)
@@ -471,112 +470,127 @@ runTests(db.DatastoreDB store, String namespace) {
             },
 
             // Sorted query
-            () {
-              return store.query(User, partition: partition)
+            () async {
+              var query = store.query(User, partition: partition)
                   ..order('-name')
-                  ..order('nickname')
-                  ..run().toList().then((List<db.Model> models) {
-                compareModels(
-                    usersSortedNameDescNicknameAsc, models);
-              });
+                  ..order('nickname');
+              var models = await runQueryWithExponentialBackoff(
+                  query, usersSortedNameDescNicknameAsc.length);
+              compareModels(
+                  usersSortedNameDescNicknameAsc, models);
             },
-            () {
-              return store.query(User, partition: partition)
+            () async {
+              var query = store.query(User, partition: partition)
                   ..order('-name')
                   ..order('-nickname')
-                  ..run().toList().then((List<db.Model> models) {
-                compareModels(
-                    usersSortedNameDescNicknameDesc, models);
-              });
+                  ..run();
+              var models = await runQueryWithExponentialBackoff(
+                  query, usersSortedNameDescNicknameDesc.length);
+              compareModels(
+                  usersSortedNameDescNicknameDesc, models);
             },
 
             // Sorted query with filter
-            () {
-              return store.query(User, partition: partition)
+            () async {
+              var query = store.query(User, partition: partition)
                   ..filter('name >=', LOWER_BOUND)
                   ..order('-name')
-                  ..order('nickname')
-                  ..run().toList().then((List<db.Model> models) {
-                compareModels(usersSortedAndFilteredNameDescNicknameAsc,
-                    models);
-              });
+                  ..order('nickname');
+              var models = await runQueryWithExponentialBackoff(
+                  query, usersSortedAndFilteredNameDescNicknameAsc.length);
+              compareModels(usersSortedAndFilteredNameDescNicknameAsc,
+                  models);
             },
-            () {
-              return store.query(User, partition: partition)
+            () async {
+              var query = store.query(User, partition: partition)
                   ..filter('name >=', LOWER_BOUND)
                   ..order('-name')
                   ..order('-nickname')
-                  ..run().toList().then((List<db.Model> models) {
-                compareModels(usersSortedAndFilteredNameDescNicknameDesc,
-                    models);
-              });
+                  ..run();
+              var models = await runQueryWithExponentialBackoff(
+                  query, usersSortedAndFilteredNameDescNicknameDesc.length);
+              compareModels(usersSortedAndFilteredNameDescNicknameDesc,
+                  models);
             },
 
             // Filter lists
             /* FIXME: TODO: FIXME: "IN" not supported in public proto/apiary */
-            () {
-              return store.query(User, partition: partition)
+            () async {
+              var query = store.query(User, partition: partition)
                   ..filter('languages IN', ['foo'])
                   ..order('name')
-                  ..run().toList().then((List<db.Model> models) {
-                compareModels(fooUsers, models, anyOrder: true);
-              });
+                  ..run();
+              var models = await runQueryWithExponentialBackoff(
+                  query, fooUsers.length);
+              compareModels(fooUsers, models, anyOrder: true);
             },
-            () {
-              return store.query(User, partition: partition)
+            () async {
+              var query = store.query(User, partition: partition)
                   ..filter('languages IN', ['bar'])
                   ..order('name')
-                  ..run().toList().then((List<db.Model> models) {
-                compareModels(barUsers, models, anyOrder: true);
-              });
+                  ..run();
+              var models = await runQueryWithExponentialBackoff(
+                  query, barUsers.length);
+              compareModels(barUsers, models, anyOrder: true);
+            },
+
+            // Filter equals
+            () async {
+              var wifeKey = root.append(User, id: usersWithWife.first.wife.id);
+              var query = store.query(User, partition: partition)
+                  ..filter('wife =', wifeKey)
+                  ..run();
+              var models = await runQueryWithExponentialBackoff(
+                  query, usersWithWife.length);
+              compareModels(usersWithWife, models, anyOrder: true);
             },
 
             // Simple limit/offset test.
-            () {
-              return store.query(User, partition: partition)
+            () async {
+              var query = store.query(User, partition: partition)
                   ..order('-name')
                   ..order('nickname')
                   ..offset(3)
-                  ..limit(4)
-                  ..run().toList().then((List<db.Model> models) {
-                var expectedModels =
-                    usersSortedAndFilteredNameDescNicknameAsc.sublist(3, 7);
-                compareModels(expectedModels, models);
-              });
+                  ..limit(4);
+              var expectedModels =
+                  usersSortedAndFilteredNameDescNicknameAsc.sublist(3, 7);
+              var models = await runQueryWithExponentialBackoff(
+                  query, expectedModels.length);
+              compareModels(expectedModels, models);
             },
 
             // Expando queries: Filter on normal property.
-            () {
-              return store.query(ExpandoPerson, partition: partition)
+            () async {
+              var query = store.query(ExpandoPerson, partition: partition)
                   ..filter('name =', expandoPersons.last.name)
-                  ..run().toList().then((List<db.Model> models) {
-                compareModels([expandoPersons.last], models);
-              });
+                  ..run();
+              var models = await runQueryWithExponentialBackoff(query, 1);
+              compareModels([expandoPersons.last], models);
             },
             // Expando queries: Filter on expanded String property
-            () {
-              return store.query(ExpandoPerson, partition: partition)
+            () async {
+              var query = store.query(ExpandoPerson, partition: partition)
                   ..filter('foo =', expandoPersons.last.foo)
-                  ..run().toList().then((List<db.Model> models) {
-                compareModels([expandoPersons.last], models);
-              });
+                  ..run();
+              var models = await runQueryWithExponentialBackoff(query, 1);
+              compareModels([expandoPersons.last], models);
             },
             // Expando queries: Filter on expanded int property
-            () {
-              return store.query(ExpandoPerson, partition: partition)
+            () async {
+              var query = store.query(ExpandoPerson, partition: partition)
                   ..filter('bar =', expandoPersons.last.bar)
-                  ..run().toList().then((List<db.Model> models) {
-                compareModels([expandoPersons.last], models);
-              });
+                  ..run();
+              var models = await runQueryWithExponentialBackoff(query, 1);
+              compareModels([expandoPersons.last], models);
             },
             // Expando queries: Filter normal property with different
             // propertyName (datastore name is 'NN').
-            () {
-              return store.query(ExpandoPerson, partition: partition)
+            () async {
+              var query = store.query(ExpandoPerson, partition: partition)
                   ..filter('nickname =', expandoPersons.last.nickname)
-                  ..run().toList().then((List<db.Model> models) {
-                compareModels([expandoPersons.last], models);
-              });
+                  ..run();
+              var models = await runQueryWithExponentialBackoff(query, 1);
+              compareModels([expandoPersons.last], models);
             },
 
             // Delete results
@@ -598,6 +612,27 @@ runTests(db.DatastoreDB store, String namespace) {
       });
     });
   });
+}
+
+Future<List<db.Model>> runQueryWithExponentialBackoff(
+    db.Query query, int expectedResults) async {
+  for (int i = 0; i <= 6; i++) {
+    if (i > 0) {
+      // Wait for 0.1s, 0.2s, ..., 12.8s
+      var duration = new Duration(milliseconds: 100 * (2 << i));
+      print("Running query did return less results than expected."
+            "Using exponential backoff: Sleeping for $duration.");
+      await sleep(duration);
+    }
+
+    List<db.Model> models = await query.run().toList();
+    if (models.length >= expectedResults) {
+      return models;
+    }
+  }
+
+  throw new Exception(
+      "Tried running a query with exponential backoff, giving up now.");
 }
 
 Future waitUntilEntitiesReady(db.DatastoreDB mdb,

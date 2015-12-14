@@ -312,7 +312,7 @@ class DatastoreImpl implements datastore.Datastore {
       if (value is List && value.length == 1) {
         value = value.first;
       } else {
-        throw new ArgumentError('List values not supported');
+        throw new ArgumentError('List values not supported (was: $value).');
       }
     }
 

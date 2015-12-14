@@ -162,11 +162,30 @@ class Query {
           "Invalid filter string '$filterString'.");
     }
 
-    // TODO: do value transformation on [comparisonObject]
+    var name = parts[0];
+    var comparison = parts[1];
+    var propertyName = _convertToDatastoreName(name);
 
-    var propertyName = _convertToDatastoreName(parts[0]);
+    // This is for backwards compatibility: We allow [datastore.Key]s for now.
+    // TODO: We should remove the condition in a major version update of
+    // `package:gcloud`.
+    if (comparisonObject is! datastore.Key) {
+      var encoded = _db.modelDB.toDatastoreValue(_kind, name, comparisonObject);
+
+      // We encode Lists as repeated properties normally, and the encoding of
+      // `['abc']` will just be `'abc'` (see [ListProperty]).
+      // But for IN filters, we need to treat them as lists.
+      if (comparison == 'IN' &&
+          comparisonObject is List &&
+          comparisonObject.length == 1 &&
+          encoded is! List) {
+        encoded = [encoded];
+      }
+
+      comparisonObject = encoded;
+    }
     _filters.add(new datastore.Filter(
-        _relationMapping[parts[1]], propertyName, comparisonObject));
+        _relationMapping[comparison], propertyName, comparisonObject));
   }
 
   /**
