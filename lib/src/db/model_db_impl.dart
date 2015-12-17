@@ -530,7 +530,10 @@ class _ExpandoModelDescription extends _ModelDescription {
     return fieldName;
   }
 
-  Object encodeField(ModelDBImpl db, String fieldName, Object value) {
+  Object encodeField(ModelDBImpl db, String fieldName, Object value,
+                     {bool enforceFieldExists: true}) {
+    // The [enforceFieldExists] argument is intentionally ignored.
+
     Object primitiveValue = super.encodeField(db, fieldName, value,
         enforceFieldExists: false);
     // If superclass can't encode field, we return value here (and assume

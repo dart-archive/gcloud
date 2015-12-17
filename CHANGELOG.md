@@ -1,3 +1,7 @@
+## 0.2.0+10
+
+* Address analyzer warnings.
+
 ## 0.2.0+9
 
 * Support value transformation in `db.query().filter()`.
