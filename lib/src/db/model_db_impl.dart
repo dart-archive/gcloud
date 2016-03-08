@@ -61,7 +61,12 @@ class ModelDBImpl implements ModelDB {
     Key key = namespace.emptyKey;
     for (var element in datastoreKey.elements) {
       var type = _type2ModelDesc[_kind2ModelDesc[element.kind]];
-      assert (type != null);
+      if (type == null) {
+        throw new StateError(
+            'Could not find a model associated with kind "${element.kind}". '
+            'Please ensure a model class was annotated with '
+            '`@Kind(name: "${element.kind}")`.');
+      }
       key = key.append(type, id: element.id);
     }
     return key;

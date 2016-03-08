@@ -1,3 +1,8 @@
+## 0.2.0+11
+
+* Throw a [StateError] in case a query returned a kind for which there was no
+  model registered.
+
 ## 0.2.0+10
 
 * Address analyzer warnings.
