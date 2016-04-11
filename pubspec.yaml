@@ -10,7 +10,7 @@ dependencies:
   googleapis_beta: '>=0.10.0 <0.26.0'
   http: '>=0.11.0 <0.12.0'
 dev_dependencies:
-  googleapis_auth: '>=0.1.1 <0.3.0'
+  googleapis_auth: '>=0.3.0 <0.4.0'
   http_parser: '>=2.0.0 <3.0.0'
   mime: '>=0.9.0+3 <0.10.0'
   unittest: '>=0.11.0 <0.12.0'
