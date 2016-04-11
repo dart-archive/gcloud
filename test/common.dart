@@ -5,7 +5,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:crypto/crypto.dart' as crypto;
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart' as http_testing;
 import 'package:http_parser/http_parser.dart' as http_parser;
@@ -177,7 +176,7 @@ class MockClient extends http.BaseClient {
                 mimeMultipart
                     .transform(ASCII.decoder)
                     .fold('', (p, e) => '$p$e')
-                    .then(crypto.CryptoUtils.base64StringToBytes)
+                    .then(BASE64.decode)
                     .then((bytes) {
                       completer.complete(
                           new NormalMediaUpload(json, bytes, contentType));

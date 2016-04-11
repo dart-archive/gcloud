@@ -1,3 +1,9 @@
+## 0.2.0+12
+
+* Remove crypto dependency and upgrade dart dependency to >=1.13 since
+  this dart version provides the Base64 codec.
+
+
 ## 0.2.0+11
 
 * Throw a [StateError] in case a query returned a kind for which there was no
