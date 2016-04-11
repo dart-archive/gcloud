@@ -5,7 +5,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:crypto/crypto.dart' as crypto;
 import 'package:http/http.dart' as http;
 import 'package:unittest/unittest.dart';
 
@@ -812,7 +811,7 @@ main() {
     var absoluteName = 'projects/$PROJECT/topics/test-topic';
     var message = 'Hello, world!';
     var messageBytes = UTF8.encode(message);
-    var messageBase64 = crypto.CryptoUtils.bytesToBase64(messageBytes);
+    var messageBase64 = BASE64.encode(messageBytes);
     var attributes = {'a': '1', 'b': 'text'};
 
     registerLookup(mock) {
