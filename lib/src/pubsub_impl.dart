@@ -268,7 +268,7 @@ class _PushMessage implements Message {
 
   _PushMessage(this._base64Message, this.attributes);
 
-  List<int> get asBytes => CryptoUtils.base64StringToBytes(_base64Message);
+  List<int> get asBytes => BASE64.decode(_base64Message);
 
   String get asString => UTF8.decode(asBytes);
 }

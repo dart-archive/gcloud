@@ -7,7 +7,6 @@ library gcloud.pubsub;
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
-import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:googleapis_beta/pubsub/v1beta2.dart' as pubsub;

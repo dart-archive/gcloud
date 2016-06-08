@@ -49,11 +49,11 @@
 library gcloud.storage;
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:collection' show UnmodifiableListView, UnmodifiableMapView;
 
 import 'package:http/http.dart' as http;
 
-import 'package:crypto/crypto.dart' as crypto;
 import 'package:googleapis/storage/v1.dart' as storage_api;
 
 import 'service_scope.dart' as ss;
