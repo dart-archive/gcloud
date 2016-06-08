@@ -1,4 +1,4 @@
-## 0.2.0+12
+## 0.2.0+13
 
 * Remove crypto dependency and upgrade dart dependency to >=1.13 since
   this dart version provides the Base64 codec.
