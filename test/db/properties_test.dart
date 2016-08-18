@@ -238,4 +238,5 @@ class ModelDBMock implements ModelDB {
   datastore.Entity toDatastoreEntity(Model model) => null;
   String fieldNameToPropertyName(String kind, String fieldName) => null;
   String kindName(Type type) => null;
+  Object toDatastoreValue(String kind, String fieldName, Object value) => null;
 }

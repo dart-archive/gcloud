@@ -1,3 +1,7 @@
+## 0.2.0+14
+
+* Fix analyzer warning.
+
 ## 0.2.0+13
 
 * Remove crypto dependency and upgrade dart dependency to >=1.13 since
