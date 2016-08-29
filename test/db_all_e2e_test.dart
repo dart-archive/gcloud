@@ -25,7 +25,7 @@ main() {
   String namespace = '${Platform.operatingSystem}${now}';
 
   withAuthClient(scopes, (String project, httpClient) {
-    var datastore = new datastore_impl.DatastoreImpl(httpClient, 's~$project');
+    var datastore = new datastore_impl.DatastoreImpl(httpClient, project);
     var datastoreDB = new db.DatastoreDB(datastore);
 
     return runE2EUnittest(() {

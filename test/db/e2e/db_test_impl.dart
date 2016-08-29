@@ -443,7 +443,7 @@ runTests(db.DatastoreDB store, String namespace) {
       var barUsers = users.where(
           (User u) => u.languages.contains('bar')).toList();
       var usersWithWife = users.where(
-          (User u) => u.wife == root.append(User, id: 42 + 3));
+          (User u) => u.wife == root.append(User, id: 42 + 3)).toList();
 
       var allInserts = []
           ..addAll(users)

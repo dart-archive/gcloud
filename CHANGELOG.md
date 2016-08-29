@@ -1,3 +1,10 @@
+## 0.3.0
+
+* Upgrade to use stable `package:googleapis/datastore/v1.dart`.
+
+* The internal [DatastoreImpl] class takes now a project name without the `s~`
+  prefix.
+
 ## 0.2.0+14
 
 * Fix analyzer warning.

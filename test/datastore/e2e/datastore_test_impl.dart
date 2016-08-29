@@ -244,8 +244,8 @@ runTests(Datastore datastore, String namespace) {
       });
 
       test('negative_insert__incomplete_path', () {
-        expect(datastore.commit(inserts: unnamedEntities1),
-                                throwsA(isApplicationError));
+        expect(() => datastore.commit(inserts: unnamedEntities1),
+               throwsA(isApplicationError));
       });
 
       test('negative_insert_transactional_xg', () {

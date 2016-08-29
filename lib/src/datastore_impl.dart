@@ -10,7 +10,7 @@ import 'package:http/http.dart' as http;
 
 import '../datastore.dart' as datastore;
 import '../common.dart' show Page;
-import 'package:googleapis_beta/datastore/v1beta2.dart' as api;
+import 'package:googleapis/datastore/v1.dart' as api;
 
 class TransactionImpl implements datastore.Transaction {
   final String data;
@@ -20,24 +20,26 @@ class TransactionImpl implements datastore.Transaction {
 class DatastoreImpl implements datastore.Datastore {
   static const List<String> SCOPES = const <String>[
       api.DatastoreApi.DatastoreScope,
-      api.DatastoreApi.UserinfoEmailScope,
+      api.DatastoreApi.CloudPlatformScope,
   ];
 
   final api.DatastoreApi _api;
   final String _project;
 
-  DatastoreImpl(http.Client client, this._project)
-      : _api = new api.DatastoreApi(client);
+  /// The [project] parameter is the name of the cloud project (it should not
+  /// start with a `s~`).
+  DatastoreImpl(http.Client client, String project)
+      : _api = new api.DatastoreApi(client), _project = project;
 
   api.Key _convertDatastore2ApiKey(datastore.Key key, {bool enforceId: true}) {
     var apiKey = new api.Key();
 
     apiKey.partitionId = new api.PartitionId()
-        ..datasetId = _project
-        ..namespace = key.partition.namespace;
+        ..projectId = _project
+        ..namespaceId = key.partition.namespace;
 
     apiKey.path = key.elements.map((datastore.KeyElement element) {
-      var part = new api.KeyPathElement();
+      var part = new api.PathElement();
       part.kind = element.kind;
       if (element.id is int) {
         part.id = '${element.id}';
@@ -55,7 +57,7 @@ class DatastoreImpl implements datastore.Datastore {
   }
 
   static datastore.Key _convertApi2DatastoreKey(api.Key key) {
-    var elements = key.path.map((api.KeyPathElement element) {
+    var elements = key.path.map((api.PathElement element) {
       if (element.id != null) {
         return new datastore.KeyElement(element.kind, int.parse(element.id));
       } else if (element.name != null) {
@@ -68,7 +70,7 @@ class DatastoreImpl implements datastore.Datastore {
 
     var partition;
     if (key.partitionId != null) {
-      partition = new datastore.Partition(key.partitionId.namespace);
+      partition = new datastore.Partition(key.partitionId.namespaceId);
       // TODO: assert projectId.
     }
     return new datastore.Key(elements, partition: partition);
@@ -80,8 +82,8 @@ class DatastoreImpl implements datastore.Datastore {
     // FIXME(Issue #2): Is this comparison working correctly?
     if (a.partitionId != null) {
       if (b.partitionId == null) return false;
-      if (a.partitionId.datasetId != b.partitionId.datasetId) return false;
-      if (a.partitionId.namespace != b.partitionId.namespace) return false;
+      if (a.partitionId.projectId != b.partitionId.projectId) return false;
+      if (a.partitionId.namespaceId != b.partitionId.namespaceId) return false;
     } else {
       if (b.partitionId != null) return false;
     }
@@ -94,7 +96,52 @@ class DatastoreImpl implements datastore.Datastore {
     return true;
   }
 
-  static _convertApi2DatastorePropertyValue(api.Value value) {
+  api.Value _convertDatastore2ApiPropertyValue(
+      value, bool indexed, {bool lists: true}) {
+    var apiValue = new api.Value()
+        ..excludeFromIndexes = !indexed;
+    if (value == null) {
+      return apiValue
+          ..nullValue = "NULL_VALUE";
+    } else if (value is bool) {
+      return apiValue
+          ..booleanValue = value;
+    } else if (value is int) {
+      return apiValue
+          ..integerValue = '$value';
+    } else if (value is double) {
+      return apiValue
+          ..doubleValue = value;
+    } else if (value is String) {
+      return apiValue
+          ..stringValue = value;
+    } else if (value is DateTime) {
+      return apiValue
+          ..timestampValue = value.toIso8601String();
+    } else if (value is datastore.BlobValue) {
+      return apiValue
+          ..blobValueAsBytes = value.bytes;
+    } else if (value is datastore.Key) {
+      return apiValue
+          ..keyValue = _convertDatastore2ApiKey(value, enforceId: false);
+    } else if (value is List) {
+      if (!lists) {
+        // FIXME(Issue #3): Consistently handle exceptions.
+        throw new Exception('List values are not allowed.');
+      }
+
+      convertItem(i)
+          => _convertDatastore2ApiPropertyValue(i, indexed, lists: false);
+
+      return new api.Value()..arrayValue = (
+          new api.ArrayValue()..values = value.map(convertItem).toList());
+    } else {
+      throw new UnsupportedError(
+          'Types ${value.runtimeType} cannot be used for serializing.');
+    }
+  }
+
+  static dynamic _convertApi2DatastoreProperty(api.Value value) {
     if (value.booleanValue != null)
       return value.booleanValue;
     else if (value.integerValue != null)
@@ -103,130 +150,20 @@ class DatastoreImpl implements datastore.Datastore {
       return value.doubleValue;
     else if (value.stringValue != null)
       return value.stringValue;
-    else if (value.dateTimeValue != null)
-      return value.dateTimeValue;
+    else if (value.timestampValue != null)
+      return DateTime.parse(value.timestampValue);
     else if (value.blobValue != null)
       return new datastore.BlobValue(value.blobValueAsBytes);
     else if (value.keyValue != null)
       return _convertApi2DatastoreKey(value.keyValue);
-    else if (value.listValue != null)
-      // FIXME(Issue #3): Consistently handle exceptions.
-      throw new Exception('Cannot have lists inside lists.');
-    else if (value.blobKeyValue != null)
-      throw new UnsupportedError('Blob keys are not supported.');
+    else if (value.arrayValue != null && value.arrayValue.values != null)
+      return value
+          .arrayValue.values.map(_convertApi2DatastoreProperty).toList();
     else if (value.entityValue != null)
       throw new UnsupportedError('Entity values are not supported.');
+    else if (value.geoPointValue != null)
+      throw new UnsupportedError('GeoPoint values are not supported.');
     return null;
-  }
-
-  api.Value _convertDatastore2ApiPropertyValue(
-      value, bool indexed, {bool lists: true}) {
-    var apiValue = new api.Value()
-        ..indexed = indexed;
-    if (value == null) {
-      return apiValue;
-    } else if (value is bool) {
-      return apiValue
-          ..booleanValue = value;
-    } else if (value is int) {
-      return apiValue
-          ..integerValue = '$value';
-    } else if (value is double) {
-      return apiValue
-          ..doubleValue = value;
-    } else if (value is String) {
-      return apiValue
-          ..stringValue = value;
-    } else if (value is DateTime) {
-      return apiValue
-          ..dateTimeValue = value;
-    } else if (value is datastore.BlobValue) {
-      return apiValue
-          ..blobValueAsBytes = value.bytes;
-    } else if (value is datastore.Key) {
-      return apiValue
-          ..keyValue = _convertDatastore2ApiKey(value, enforceId: false);
-    } else if (value is List) {
-      if (!lists) {
-        // FIXME(Issue #3): Consistently handle exceptions.
-        throw new Exception('List values are not allowed.');
-      }
-
-      convertItem(i)
-          => _convertDatastore2ApiPropertyValue(i, indexed, lists: false);
-
-      return new api.Value()
-          ..listValue = value.map(convertItem).toList();
-    } else {
-      throw new UnsupportedError(
-          'Types ${value.runtimeType} cannot be used for serializing.');
-    }
-  }
-
-  static _convertApi2DatastoreProperty(api.Property property) {
-    if (property.booleanValue != null)
-      return property.booleanValue;
-    else if (property.integerValue != null)
-      return int.parse(property.integerValue);
-    else if (property.doubleValue != null)
-      return property.doubleValue;
-    else if (property.stringValue != null)
-      return property.stringValue;
-    else if (property.dateTimeValue != null)
-      return property.dateTimeValue;
-    else if (property.blobValue != null)
-      return new datastore.BlobValue(property.blobValueAsBytes);
-    else if (property.keyValue != null)
-      return _convertApi2DatastoreKey(property.keyValue);
-    else if (property.listValue != null)
-      return
-          property.listValue.map(_convertApi2DatastorePropertyValue).toList();
-    else if (property.blobKeyValue != null)
-      throw new UnsupportedError('Blob keys are not supported.');
-    else if (property.entityValue != null)
-      throw new UnsupportedError('Entity values are not supported.');
-    return null;
-  }
-
-  api.Property _convertDatastore2ApiProperty(
-      value, bool indexed, {bool lists: true}) {
-    var apiProperty = new api.Property()
-        ..indexed = indexed;
-    if (value == null) {
-      return null;
-    } else if (value is bool) {
-      return apiProperty
-          ..booleanValue = value;
-    } else if (value is int) {
-      return apiProperty
-          ..integerValue = '$value';
-    } else if (value is double) {
-      return apiProperty
-          ..doubleValue = value;
-    } else if (value is String) {
-      return apiProperty
-          ..stringValue = value;
-    } else if (value is DateTime) {
-      return apiProperty
-          ..dateTimeValue = value;
-    } else if (value is datastore.BlobValue) {
-      return apiProperty
-          ..blobValueAsBytes = value.bytes;
-    } else if (value is datastore.Key) {
-      return apiProperty
-          ..keyValue = _convertDatastore2ApiKey(value, enforceId: false);
-    } else if (value is List) {
-      if (!lists) {
-        // FIXME(Issue #3): Consistently handle exceptions.
-        throw new Exception('List values are not allowed.');
-      }
-      convertItem(i)
-          => _convertDatastore2ApiPropertyValue(i, indexed, lists: false);
-      return new api.Property()..listValue = value.map(convertItem).toList();
-    } else {
-      throw new UnsupportedError(
-          'Types ${value.runtimeType} cannot be used for serializing.');
-    }
   }
 
   static datastore.Entity _convertApi2DatastoreEntity(api.Entity entity) {
@@ -234,27 +171,11 @@ class DatastoreImpl implements datastore.Datastore {
     var properties = {};
 
     if (entity.properties != null) {
-      entity.properties.forEach((String name, api.Property property) {
-        properties[name] = _convertApi2DatastoreProperty(property);
-        if (property.indexed == false) {
-          // TODO(Issue #$4): Should we support mixed indexed/non-indexed list
-          // values?
-          if (property.listValue != null) {
-            if (property.listValue.length > 0) {
-              var firstIndexed = property.listValue.first.indexed;
-              for (int i = 1; i < property.listValue.length; i++) {
-                if (property.listValue[i].indexed != firstIndexed) {
-                  throw new Exception('Some list entries are indexed and some '
-                      'are not. This is currently not supported.');
-                }
-              }
-              if (firstIndexed == false) {
-                unindexedProperties.add(name);
-              }
-            }
-          } else {
-            unindexedProperties.add(name);
-          }
+      entity.properties.forEach((String name, api.Value value) {
+        properties[name] = _convertApi2DatastoreProperty(value);
+        if (value.excludeFromIndexes != null &&
+            value.excludeFromIndexes) {
+          unindexedProperties.add(name);
         }
       });
     }
@@ -303,7 +224,7 @@ class DatastoreImpl implements datastore.Datastore {
     if (operator == null) {
       throw new ArgumentError('Unknown filter relation: ${filter.relation}.');
     }
-    pf.operator = operator;
+    pf.op = operator;
     pf.property = new api.PropertyReference()..name = filter.name;
 
     // FIXME(Issue #5): Is this OK?
@@ -322,7 +243,7 @@ class DatastoreImpl implements datastore.Datastore {
 
   api.Filter _convertDatastoreAncestorKey2ApiFilter(datastore.Key key) {
     var pf = new api.PropertyFilter();
-    pf.operator = 'HAS_ANCESTOR';
+    pf.op = 'HAS_ANCESTOR';
     pf.property = new api.PropertyReference()..name = '__key__';
     pf.value = new api.Value()
         ..keyValue = _convertDatastore2ApiKey(key, enforceId: true);
@@ -347,7 +268,7 @@ class DatastoreImpl implements datastore.Datastore {
         compFilter.filters.add(filter);
       }
     }
-    compFilter.operator = 'AND';
+    compFilter.op = 'AND';
     return new api.Filter()..compositeFilter = compFilter;
   }
 
@@ -389,7 +310,7 @@ class DatastoreImpl implements datastore.Datastore {
     request..keys = keys.map((key) {
       return _convertDatastore2ApiKey(key, enforceId: false);
     }).toList();
-    return _api.datasets.allocateIds(request, _project).then((response) {
+    return _api.projects.allocateIds(request, _project).then((response) {
       return response.keys.map(_convertApi2DatastoreKey).toList();
     }, onError: _handleError);
   }
@@ -397,9 +318,7 @@ class DatastoreImpl implements datastore.Datastore {
   Future<datastore.Transaction> beginTransaction(
       {bool crossEntityGroup: false}) {
     var request = new api.BeginTransactionRequest();
-    // TODO: Should this be made configurable?
-    request.isolationLevel = 'SERIALIZABLE';
-    return _api.datasets.beginTransaction(request, _project).then((result) {
+    return _api.projects.beginTransaction(request, _project).then((result) {
       return new TransactionImpl(result.transaction);
     }, onError: _handleError);
   }
@@ -417,34 +336,42 @@ class DatastoreImpl implements datastore.Datastore {
       request.mode = 'NON_TRANSACTIONAL';
     }
 
-    request.mutation = new api.Mutation();
+    var mutations = request.mutations = [];
     if (inserts != null) {
-      request.mutation.upsert = new List(inserts.length);
       for (int i = 0; i < inserts.length; i++) {
-        request.mutation.upsert[i] = _convertDatastore2ApiEntity(inserts[i]);
+        mutations.add(
+            new api.Mutation()..upsert =
+              _convertDatastore2ApiEntity(inserts[i], enforceId: true));
       }
     }
+    int autoIdStartIndex = -1;
     if (autoIdInserts != null) {
-      request.mutation.insertAutoId = new List(autoIdInserts.length);
+      autoIdStartIndex = mutations.length;
       for (int i = 0; i < autoIdInserts.length; i++) {
-        request.mutation.insertAutoId[i] =
-            _convertDatastore2ApiEntity(autoIdInserts[i], enforceId: false);
+        mutations.add(
+            new api.Mutation()..insert =
+              _convertDatastore2ApiEntity(autoIdInserts[i], enforceId: false));
       }
     }
     if (deletes != null) {
-      request.mutation.delete = new List(deletes.length);
       for (int i = 0; i < deletes.length; i++) {
-        request.mutation.delete[i] =
-            _convertDatastore2ApiKey(deletes[i], enforceId: true);
+        mutations.add(
+            new api.Mutation()..delete =
+            _convertDatastore2ApiKey(deletes[i], enforceId: true));
       }
     }
-    return _api.datasets.commit(request, _project).then((result) {
+    return _api.projects.commit(request, _project).then((result) {
       var keys;
       if (autoIdInserts != null && autoIdInserts.length > 0) {
-        keys = result
-          .mutationResult
-          .insertAutoIdKeys
-          .map(_convertApi2DatastoreKey).toList();
+        List<api.MutationResult> mutationResults = result.mutationResults;
+        assert(autoIdStartIndex != -1);
+        assert(mutationResults.length >=
+               (autoIdStartIndex + autoIdInserts.length));
+        keys = mutationResults
+            .skip(autoIdStartIndex)
+            .take(autoIdInserts.length)
+            .map((api.MutationResult r) => _convertApi2DatastoreKey(r.key))
+            .toList();
       }
       return new datastore.CommitResult(keys);
     }, onError: _handleError);
@@ -462,7 +389,7 @@ class DatastoreImpl implements datastore.Datastore {
       request.readOptions = new api.ReadOptions();
       request.readOptions.transaction = (transaction as TransactionImpl).data;
     }
-    return _api.datasets.lookup(request, _project).then((response) {
+    return _api.projects.lookup(request, _project).then((response) {
       if (response.deferred != null && response.deferred.length > 0) {
         throw new datastore.DatastoreError(
             'Could not successfully look up all keys due to resource '
@@ -534,7 +461,7 @@ class DatastoreImpl implements datastore.Datastore {
         ..offset = query.offset;
 
     if (query.kind != null) {
-      apiQuery.kinds = [new api.KindExpression()..name = query.kind];
+      apiQuery.kind = [new api.KindExpression()..name = query.kind];
     }
 
     var request = new api.RunQueryRequest();
@@ -546,7 +473,7 @@ class DatastoreImpl implements datastore.Datastore {
     }
     if (partition != null) {
       request.partitionId = new api.PartitionId()
-          ..namespace = partition.namespace;
+          ..namespaceId = partition.namespace;
     }
 
     return QueryPageImpl.runQuery(_api, _project, request, query.limit)
@@ -557,7 +484,7 @@ class DatastoreImpl implements datastore.Datastore {
     // TODO: Handle [transaction]
     var request = new api.RollbackRequest()
         ..transaction = (transaction as TransactionImpl).data;
-    return _api.datasets.rollback(request, _project).catchError(_handleError);
+    return _api.projects.rollback(request, _project).catchError(_handleError);
   }
 }
 
@@ -592,7 +519,7 @@ class QueryPageImpl implements Page<datastore.Entity> {
 
     request.query.limit = batchLimit;
 
-    return api.datasets.runQuery(request, project).then((response) {
+    return api.projects.runQuery(request, project).then((response) {
       var returnedEntities = const [];
 
       var batch = response.batch;

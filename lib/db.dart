@@ -8,7 +8,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:mirrors' as mirrors;
 
-import 'common.dart' show Page, StreamFromPages;
+import 'common.dart' show StreamFromPages;
 import 'service_scope.dart' as ss;
 import 'datastore.dart' as datastore;
 
