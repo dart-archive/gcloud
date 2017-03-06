@@ -737,7 +737,7 @@ runTests(Datastore datastore, String namespace) {
           new Filter(FilterRelation.LessThan, QUERY_KEY, QUERY_UPPER_BOUND),
       ];
       var listFilters = [
-          new Filter(FilterRelation.In, TEST_LIST_PROPERTY, [QUERY_LIST_ENTRY])
+          new Filter(FilterRelation.Equal, TEST_LIST_PROPERTY, QUERY_LIST_ENTRY)
       ];
       var indexedPropertyFilter = [
         new Filter(FilterRelation.Equal,

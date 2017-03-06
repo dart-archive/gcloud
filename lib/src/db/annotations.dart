@@ -88,7 +88,7 @@ abstract class Property {
     return true;
   }
 
-  Object encodeValue(ModelDB db, Object value);
+  Object encodeValue(ModelDB db, Object value, {bool forComparison: false});
 
   Object decodePrimitiveValue(ModelDB db, Object value);
 }
@@ -100,7 +100,7 @@ abstract class PrimitiveProperty extends Property {
       {String propertyName, bool required: false, bool indexed: true})
       : super(propertyName: propertyName, required: required, indexed: indexed);
 
-  Object encodeValue(ModelDB db, Object value) => value;
+  Object encodeValue(ModelDB db, Object value, {bool forComparison: false}) => value;
 
   Object decodePrimitiveValue(ModelDB db, Object value) => value;
 }
@@ -169,7 +169,7 @@ class ModelKeyProperty extends PrimitiveProperty {
   bool validate(ModelDB db, Object value)
       => super.validate(db, value) && (value == null || value is Key);
 
-  Object encodeValue(ModelDB db, Object value) {
+  Object encodeValue(ModelDB db, Object value, {bool forComparison: false}) {
     if (value == null) return null;
     return db.toDatastoreKey(value);
   }
@@ -196,7 +196,7 @@ class BlobProperty extends PrimitiveProperty {
   bool validate(ModelDB db, Object value)
       => super.validate(db, value) && (value == null || value is List<int>);
 
-  Object encodeValue(ModelDB db, Object value) {
+  Object encodeValue(ModelDB db, Object value, {bool forComparison: false}) {
       if (value == null) return null;
       return new datastore.BlobValue(value);
   }
@@ -254,7 +254,28 @@ class ListProperty extends Property {
     return true;
   }
 
-  Object encodeValue(ModelDB db, Object value) {
+  Object encodeValue(ModelDB db, Object value, {bool forComparison: false}) {
+    if (forComparison) {
+      // If we have comparison of list properties (i.e. repeated property names)
+      // the comparison object must not be a list, but the value itself.
+      // i.e.
+      //
+      //   class Article {
+      //      ...
+      //      @ListProperty(StringProperty())
+      //      List<String> tags;
+      //      ...
+      //   }
+      //
+      // should be queried via
+      //
+      //   await db.query(Article, 'tags=', "Dart").toList();
+      //
+      // So the [value] for the comparison is of type `String` and not
+      // `List<String>`!
+      return subProperty.encodeValue(db, value, forComparison: true);
+    }
+
     if (value == null) return null;
     List list = value;
     if (list.length == 0) return null;

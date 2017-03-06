@@ -514,10 +514,9 @@ runTests(db.DatastoreDB store, String namespace) {
             },
 
             // Filter lists
-            /* FIXME: TODO: FIXME: "IN" not supported in public proto/apiary */
             () async {
               var query = store.query(User, partition: partition)
-                  ..filter('languages IN', ['foo'])
+                  ..filter('languages =', 'foo')
                   ..order('name')
                   ..run();
               var models = await runQueryWithExponentialBackoff(
@@ -526,7 +525,7 @@ runTests(db.DatastoreDB store, String namespace) {
             },
             () async {
               var query = store.query(User, partition: partition)
-                  ..filter('languages IN', ['bar'])
+                  ..filter('languages =', 'bar')
                   ..order('name')
                   ..run();
               var models = await runQueryWithExponentialBackoff(

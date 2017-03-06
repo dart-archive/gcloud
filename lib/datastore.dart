@@ -240,7 +240,6 @@ class FilterRelation {
   static const FilterRelation GreatherThanOrEqual =
       const FilterRelation._('>=');
   static const FilterRelation Equal = const FilterRelation._('==');
-  static const FilterRelation In = const FilterRelation._('IN');
 
   final String name;
 

@@ -117,7 +117,6 @@ class Query {
     '>': datastore.FilterRelation.GreatherThan,
     '>=': datastore.FilterRelation.GreatherThanOrEqual,
     '=': datastore.FilterRelation.Equal,
-    'IN': datastore.FilterRelation.In,
   };
 
   final DatastoreDB _db;
@@ -151,7 +150,6 @@ class Query {
    *   * '>' (greater than)
    *   * '>=' (greater than or equal)
    *   * '=' (equal)
-   *   * 'IN' (in - `comparisonObject` must be a list)
    *
    * [comparisonObject] is the object for comparison.
    */
@@ -170,19 +168,8 @@ class Query {
     // TODO: We should remove the condition in a major version update of
     // `package:gcloud`.
     if (comparisonObject is! datastore.Key) {
-      var encoded = _db.modelDB.toDatastoreValue(_kind, name, comparisonObject);
-
-      // We encode Lists as repeated properties normally, and the encoding of
-      // `['abc']` will just be `'abc'` (see [ListProperty]).
-      // But for IN filters, we need to treat them as lists.
-      if (comparison == 'IN' &&
-          comparisonObject is List &&
-          comparisonObject.length == 1 &&
-          encoded is! List) {
-        encoded = [encoded];
-      }
-
-      comparisonObject = encoded;
+      comparisonObject = _db.modelDB.toDatastoreValue(_kind, name,
+          comparisonObject, forComparison: true);
     }
     _filters.add(new datastore.Filter(
         _relationMapping[comparison], propertyName, comparisonObject));

@@ -51,7 +51,7 @@ bool onBot() {
 // Get the service key from the specified location.
 Future<String> serviceKeyJson(String serviceKeyLocation) {
   if (!serviceKeyLocation.startsWith('gs://')) {
-    throw new Exception('Service key location must start with gs://');
+    return new File(serviceKeyLocation).readAsString();
   }
   var future;
   if (onBot()) {

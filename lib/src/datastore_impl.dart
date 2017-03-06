@@ -210,34 +210,18 @@ class DatastoreImpl implements datastore.Datastore {
     datastore.FilterRelation.Equal: 'EQUAL',
     datastore.FilterRelation.GreatherThan: 'GREATER_THAN',
     datastore.FilterRelation.GreatherThanOrEqual: 'GREATER_THAN_OR_EQUAL',
-    // TODO(Issue #5): IN operator not supported currently.
   };
 
   api.Filter _convertDatastore2ApiFilter(datastore.Filter filter) {
     var pf = new api.PropertyFilter();
     var operator = relationMapping[filter.relation];
-    // FIXME(Issue #5): Is this OK?
-    if (filter.relation == datastore.FilterRelation.In) {
-      operator = 'EQUAL';
-    }
-
     if (operator == null) {
       throw new ArgumentError('Unknown filter relation: ${filter.relation}.');
     }
     pf.op = operator;
     pf.property = new api.PropertyReference()..name = filter.name;
-
-    // FIXME(Issue #5): Is this OK?
-    var value = filter.value;
-    if (filter.relation == datastore.FilterRelation.In) {
-      if (value is List && value.length == 1) {
-        value = value.first;
-      } else {
-        throw new ArgumentError('List values not supported (was: $value).');
-      }
-    }
-
-    pf.value = _convertDatastore2ApiPropertyValue(value, true, lists: false);
+    pf.value = _convertDatastore2ApiPropertyValue(
+        filter.value, true, lists: false);
     return new api.Filter()..propertyFilter = pf;
   }
 

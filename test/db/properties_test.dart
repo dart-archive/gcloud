@@ -117,6 +117,9 @@ main() {
       expect(prop.encodeValue(null, []), equals(null));
       expect(prop.encodeValue(null, [true]), equals(true));
       expect(prop.encodeValue(null, [true, false]), equals([true, false]));
+      expect(prop.encodeValue(null, true, forComparison: true), equals(true));
+      expect(prop.encodeValue(null, false, forComparison: true), equals(false));
+      expect(prop.encodeValue(null, null, forComparison: true), equals(null));
       expect(prop.decodePrimitiveValue(null, null), equals([]));
       expect(prop.decodePrimitiveValue(null, []), equals([]));
       expect(prop.decodePrimitiveValue(null, true), equals([true]));
@@ -238,5 +241,5 @@ class ModelDBMock implements ModelDB {
   datastore.Entity toDatastoreEntity(Model model) => null;
   String fieldNameToPropertyName(String kind, String fieldName) => null;
   String kindName(Type type) => null;
-  Object toDatastoreValue(String kind, String fieldName, Object value) => null;
+  Object toDatastoreValue(String kind, String fieldName, Object value, {bool forComparison: false}) => null;
 }

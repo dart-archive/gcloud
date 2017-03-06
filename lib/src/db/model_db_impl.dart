@@ -155,12 +155,14 @@ class ModelDBImpl implements ModelDB {
   }
 
   /// Converts [value] according to the [Property] named [name] in [type].
-  Object toDatastoreValue(String kind, String fieldName, Object value) {
+  Object toDatastoreValue(String kind, String fieldName, Object value,
+      {bool forComparison: false}) {
     var modelDescription = _kind2ModelDesc[kind];
     if (modelDescription == null) {
       throw new ArgumentError('The kind "$kind" is unknown.');
     }
-    return modelDescription.encodeField(this, fieldName, value);
+    return modelDescription.encodeField(
+        this, fieldName, value, forComparison: forComparison);
   }
 
   Iterable<_ModelDescription> get _modelDescriptions {
@@ -457,10 +459,11 @@ class _ModelDescription {
   }
 
   Object encodeField(ModelDBImpl db, String fieldName, Object value,
-                     {bool enforceFieldExists: true}) {
+                     {bool enforceFieldExists: true,
+                      bool forComparison: false}) {
     Property property = db._propertiesForModel(this)[fieldName];
     if (property != null) {
-      return property.encodeValue(db, value);
+      return property.encodeValue(db, value, forComparison: forComparison);
     }
     if (enforceFieldExists) {
       throw new ArgumentError(
@@ -536,11 +539,12 @@ class _ExpandoModelDescription extends _ModelDescription {
   }
 
   Object encodeField(ModelDBImpl db, String fieldName, Object value,
-                     {bool enforceFieldExists: true}) {
+                     {bool enforceFieldExists: true,
+                      bool forComparison: false}) {
     // The [enforceFieldExists] argument is intentionally ignored.
 
     Object primitiveValue = super.encodeField(db, fieldName, value,
-        enforceFieldExists: false);
+        enforceFieldExists: false, forComparison: forComparison);
     // If superclass can't encode field, we return value here (and assume
     // it's primitive)
     // NOTE: Implicit assumption:
