@@ -444,7 +444,7 @@ class _ModelDescription {
     if (!prop.validate(db, value)) {
       throw new StateError('Property validation failed while '
           'trying to deserialize entity of kind '
-          '${entity.key.elements.last.kind} (property name: $prop)');
+          '${entity.key.elements.last.kind} (property name: $propertyName)');
     }
 
     mirror.setField(mirrors.MirrorSystem.getSymbol(fieldName), value);
