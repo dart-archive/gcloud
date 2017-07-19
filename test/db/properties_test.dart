@@ -214,7 +214,7 @@ class KeyMock implements Key {
   KeyMock(this._datastoreKey);
 
   Object id = 1;
-  Type type = null;
+  Type type;
   Key get parent => this;
   bool get isEmpty => false;
   Partition get partition => null;

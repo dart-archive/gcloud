@@ -33,10 +33,9 @@ import 'package:gcloud/src/datastore_impl.dart' as datastore_impl;
 import 'package:gcloud/common.dart';
 import 'package:unittest/unittest.dart';
 
+import '../../common_e2e.dart';
 import '../error_matchers.dart';
 import 'utils.dart';
-
-import '../../common_e2e.dart';
 
 Future sleep(Duration duration) {
   var completer = new Completer();

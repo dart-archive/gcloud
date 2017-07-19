@@ -50,8 +50,8 @@ import 'package:unittest/unittest.dart';
 import 'package:gcloud/db.dart' as db;
 import 'package:gcloud/src/datastore_impl.dart' as datastore_impl;
 
-import '../../datastore/e2e/datastore_test_impl.dart' as datastore_test;
 import '../../common_e2e.dart';
+import '../../datastore/e2e/datastore_test_impl.dart' as datastore_test;
 
 @db.Kind()
 class Person extends db.Model {

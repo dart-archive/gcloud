@@ -6,11 +6,11 @@ library gcloud.datastore_impl;
 
 import 'dart:async';
 
+import 'package:googleapis/datastore/v1.dart' as api;
 import 'package:http/http.dart' as http;
 
-import '../datastore.dart' as datastore;
 import '../common.dart' show Page;
-import 'package:googleapis/datastore/v1.dart' as api;
+import '../datastore.dart' as datastore;
 
 class TransactionImpl implements datastore.Transaction {
   final String data;

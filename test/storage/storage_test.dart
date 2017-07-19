@@ -436,8 +436,6 @@ main() {
           .then(expectAsync((_) => upload(addToSink, false)));
     }
 
-    ;
-
     test('write-short-1', () {
       withMockClient((mock, api) {
         runTest(mock, api, [bytesNormalUpload], bytesNormalUpload.length);

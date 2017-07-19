@@ -15,8 +15,8 @@ import 'dart:core' as core;
 import 'dart:mirrors' as mirrors;
 
 import 'common.dart' show StreamFromPages;
-import 'service_scope.dart' as ss;
 import 'datastore.dart' as datastore;
+import 'service_scope.dart' as ss;
 
 part 'src/db/annotations.dart';
 part 'src/db/db.dart';

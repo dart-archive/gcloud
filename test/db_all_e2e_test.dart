@@ -4,18 +4,17 @@
 
 library gcloud.test.db_all_test;
 
-import 'dart:io';
 import 'dart:async';
+import 'dart:io';
 
 import 'package:gcloud/db.dart' as db;
 import 'package:gcloud/src/datastore_impl.dart' as datastore_impl;
 import 'package:unittest/unittest.dart';
 
+import 'common_e2e.dart';
+import 'datastore/e2e/datastore_test_impl.dart' as datastore_test;
 import 'db/e2e/db_test_impl.dart' as db_test;
 import 'db/e2e/metamodel_test_impl.dart' as db_metamodel_test;
-import 'datastore/e2e/datastore_test_impl.dart' as datastore_test;
-
-import 'common_e2e.dart';
 
 main() {
   var scopes = datastore_impl.DatastoreImpl.SCOPES;
