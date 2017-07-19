@@ -23,8 +23,8 @@ bool testDetailedApiError(e) => e is storage_api.DetailedApiRequestError;
 const int MB = 1024 * 1024;
 const int maxNormalUpload = 1 * MB;
 const int minResumableUpload = maxNormalUpload + 1;
-var bytesResumableUpload =
-    new List.generate(minResumableUpload, (e) => e & 255);
+final bytesResumableUpload =
+    new List<int>.generate(minResumableUpload, (e) => e & 255);
 
 runTests(Storage storage, Bucket testBucket) {
   group('bucket', () {

@@ -6,6 +6,12 @@ library gcloud.db;
 
 import 'dart:async';
 import 'dart:collection';
+// dart:core is imported explicitly so it is available at top-level without
+//   the `core` prefix defined below.
+import 'dart:core';
+// Importing `dart:core` as `core` to allow access to `String` in `IdType`
+//   without conflicts.
+import 'dart:core' as core;
 import 'dart:mirrors' as mirrors;
 
 import 'common.dart' show StreamFromPages;

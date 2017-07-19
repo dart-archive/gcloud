@@ -61,8 +61,9 @@ runTests(datastore, db.DatastoreDB store) {
           var namespaceQuery = store.query(Namespace);
           return namespaceQuery
               .run()
+              .map((m) => m as Namespace)
               .toList()
-              .then((List<Namespace> namespaces) {
+              .then((namespaces) {
             expect(namespaces.length, greaterThanOrEqualTo(3));
             expect(namespaces, contains(cond((ns) => ns.name == null)));
             expect(
@@ -70,7 +71,7 @@ runTests(datastore, db.DatastoreDB store) {
             expect(
                 namespaces, contains(cond((ns) => ns.name == 'BarNamespace')));
 
-            var futures = [];
+            var futures = <Future>[];
             for (var namespace in namespaces) {
               if (!(namespace == null ||
                   namespace == 'FooNamespace' ||
@@ -79,7 +80,7 @@ runTests(datastore, db.DatastoreDB store) {
               }
               var partition = store.newPartition(namespace.name);
               var kindQuery = store.query(Kind, partition: partition);
-              futures.add(kindQuery.run().toList().then((List<Kind> kinds) {
+              futures.add(kindQuery.run().toList().then((List<db.Model> kinds) {
                 expect(kinds.length, greaterThanOrEqualTo(2));
                 if (namespace.name == null) {
                   expect(kinds, contains(cond((k) => k.name == 'NullKind')));

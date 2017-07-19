@@ -279,7 +279,7 @@ runTests(db.DatastoreDB store, String namespace) {
 
       test('parent_key', () {
         var root = partition.emptyKey;
-        var users = [];
+        var users = <db.Model>[];
         for (var i = 333; i <= 334; i++) {
           users.add(new User()
             ..id = i
@@ -288,7 +288,7 @@ runTests(db.DatastoreDB store, String namespace) {
             ..name = 'user$i'
             ..nickname = 'nickname${i%3}');
         }
-        var persons = [];
+        var persons = <db.Model>[];
         for (var i = 335; i <= 336; i++) {
           persons.add(new Person()
             ..id = i
@@ -646,7 +646,7 @@ Future waitUntilEntitiesGone(
 
 Future waitUntilEntitiesHelper(db.DatastoreDB mdb, List<db.Key> keys,
     bool positive, db.Partition partition) {
-  var keysByKind = {};
+  var keysByKind = <Type, dynamic>{};
   for (var key in keys) {
     keysByKind.putIfAbsent(key.type, () => []).add(key);
   }

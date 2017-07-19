@@ -49,14 +49,16 @@ class Kind {
 /// The type used for id's of an entity.
 class IdType {
   /// Use integer ids for identifying entities.
-  static const IdType Integer = const IdType(1);
+  static const IdType Integer = const IdType('Integer');
 
   /// Use string ids for identifying entities.
-  static const IdType String = const IdType(2);
+  static const IdType String = const IdType('String');
 
-  final int _type;
+  final core.String _type;
 
   const IdType(this._type);
+
+  core.String toString() => "IdType: $_type";
 }
 
 /// Describes a property of an Entity.
@@ -205,8 +207,7 @@ class BlobProperty extends PrimitiveProperty {
   Object decodePrimitiveValue(ModelDB db, Object value) {
     if (value == null) return null;
 
-    datastore.BlobValue blobValue = value;
-    return blobValue.bytes;
+    return (value as datastore.BlobValue).bytes;
   }
 }
 

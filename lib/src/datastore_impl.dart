@@ -390,7 +390,7 @@ class DatastoreImpl implements datastore.Datastore {
       //    // A list of keys that were not looked up due to resource constraints.
       //    repeated Key deferred = 3;
       //  }
-      var entities = new List(apiKeys.length);
+      var entities = new List<datastore.Entity>(apiKeys.length);
       for (int i = 0; i < apiKeys.length; i++) {
         var apiKey = apiKeys[i];
 

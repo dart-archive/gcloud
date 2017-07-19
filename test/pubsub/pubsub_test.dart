@@ -5,7 +5,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
 import 'package:unittest/unittest.dart';
 
 import 'package:gcloud/pubsub.dart';
@@ -18,7 +17,7 @@ import '../common_e2e.dart';
 const String HOSTNAME = 'pubsub.googleapis.com';
 const String ROOT_PATH = '/v1beta2/';
 
-http.Client mockClient() => new MockClient(HOSTNAME, ROOT_PATH);
+MockClient mockClient() => new MockClient(HOSTNAME, ROOT_PATH);
 
 main() {
   group('api', () {
@@ -882,7 +881,7 @@ main() {
           expect(request.messages.length, 1);
           expect(request.messages[0].data, messageBase64);
           expect(request.messages[0].attributes, isNull);
-          return mock.respond(new pubsub.PublishResponse()..messageIds = [0]);
+          return mock.respond(new pubsub.PublishResponse()..messageIds = ['0']);
         }));
 
         return topic.publishString(message).then(expectAsync((result) {
@@ -917,7 +916,7 @@ main() {
           expect(request.messages[0].attributes, isNotNull);
           expect(request.messages[0].attributes.length, attributes.length);
           expect(request.messages[0].attributes, attributes);
-          return mock.respond(new pubsub.PublishResponse()..messageIds = [0]);
+          return mock.respond(new pubsub.PublishResponse()..messageIds = ['0']);
         }));
 
         return topic
