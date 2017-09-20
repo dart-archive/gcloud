@@ -599,7 +599,7 @@ runTests(Datastore datastore, String namespace) {
       });
     });
     group('query', () {
-      Future testQuery(String kind,
+      Future<List<Entity>> testQuery(String kind,
           {List<Filter> filters,
           List<Order> orders,
           bool transactional: false,

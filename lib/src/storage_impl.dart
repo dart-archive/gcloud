@@ -494,7 +494,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
   final int _maxNormalUploadLength;
   int _bufferLength = 0;
   final List<List<int>> buffer = new List<List<int>>();
-  final StreamController _controller = new StreamController(sync: true);
+  final _controller = new StreamController<List<int>>(sync: true);
   StreamSubscription _subscription;
   StreamController _resumableController;
   final _doneCompleter = new Completer<_ObjectInfoImpl>();

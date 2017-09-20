@@ -190,7 +190,7 @@ class Custom {
 
 class CustomProperty extends StringProperty {
   const CustomProperty(
-      {String propertyName: null, bool required: false, bool indexed: true});
+      {String propertyName, bool required: false, bool indexed: true});
 
   bool validate(ModelDB db, Object value) {
     if (required && value == null) return false;
