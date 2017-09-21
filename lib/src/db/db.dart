@@ -70,11 +70,10 @@ class Transaction {
           'as the partition where the query executes in.');
     }
     _checkSealed();
-    return new Query(db,
-                     kind,
-                     partition: partition,
-                     ancestorKey: ancestorKey,
-                     datastoreTransaction: _datastoreTransaction);
+    return new Query(db, kind,
+        partition: partition,
+        ancestorKey: ancestorKey,
+        datastoreTransaction: _datastoreTransaction);
   }
 
   /**
@@ -91,18 +90,16 @@ class Transaction {
   Future commit() {
     _checkSealed(changeState: _TRANSACTION_COMMITTED);
     return _commitHelper(db,
-                         inserts: _inserts,
-                         deletes: _deletes,
-                         datastoreTransaction: _datastoreTransaction);
+        inserts: _inserts,
+        deletes: _deletes,
+        datastoreTransaction: _datastoreTransaction);
   }
 
   _checkSealed({int changeState}) {
     if (_transactionState == _TRANSACTION_COMMITTED) {
-      throw new StateError(
-          'The transaction has already been committed.');
+      throw new StateError('The transaction has already been committed.');
     } else if (_transactionState == _TRANSACTION_ROLLED_BACK) {
-      throw new StateError(
-          'The transaction has already been rolled back.');
+      throw new StateError('The transaction has already been rolled back.');
     }
     if (changeState != null) {
       _transactionState = changeState;
@@ -111,7 +108,7 @@ class Transaction {
 }
 
 class Query {
-  final _relationMapping = const <String, datastore.FilterRelation> {
+  final _relationMapping = const <String, datastore.FilterRelation>{
     '<': datastore.FilterRelation.LessThan,
     '<=': datastore.FilterRelation.LessThanOrEqual,
     '>': datastore.FilterRelation.GreatherThan,
@@ -132,12 +129,14 @@ class Query {
   int _limit;
 
   Query(DatastoreDB dbImpl, Type kind,
-        {Partition partition, Key ancestorKey,
-         datastore.Transaction datastoreTransaction})
+      {Partition partition,
+      Key ancestorKey,
+      datastore.Transaction datastoreTransaction})
       : _db = dbImpl,
         _kind = dbImpl.modelDB.kindName(kind),
         _partition = partition,
-        _ancestorKey = ancestorKey, _transaction = datastoreTransaction;
+        _ancestorKey = ancestorKey,
+        _transaction = datastoreTransaction;
 
   /**
    * Adds a filter to this [Query].
@@ -156,8 +155,7 @@ class Query {
   void filter(String filterString, Object comparisonObject) {
     var parts = filterString.split(' ');
     if (parts.length != 2 || !_relationMapping.containsKey(parts[1])) {
-      throw new ArgumentError(
-          "Invalid filter string '$filterString'.");
+      throw new ArgumentError("Invalid filter string '$filterString'.");
     }
 
     var name = parts[0];
@@ -168,8 +166,8 @@ class Query {
     // TODO: We should remove the condition in a major version update of
     // `package:gcloud`.
     if (comparisonObject is! datastore.Key) {
-      comparisonObject = _db.modelDB.toDatastoreValue(_kind, name,
-          comparisonObject, forComparison: true);
+      comparisonObject = _db.modelDB
+          .toDatastoreValue(_kind, name, comparisonObject, forComparison: true);
     }
     _filters.add(new datastore.Filter(
         _relationMapping[comparison], propertyName, comparisonObject));
@@ -184,12 +182,10 @@ class Query {
   void order(String orderString) {
     // TODO: validate [orderString] (e.g. is name valid)
     if (orderString.startsWith('-')) {
-      _orders.add(new datastore.Order(
-          datastore.OrderDirection.Decending,
+      _orders.add(new datastore.Order(datastore.OrderDirection.Decending,
           _convertToDatastoreName(orderString.substring(1))));
     } else {
-      _orders.add(new datastore.Order(
-          datastore.OrderDirection.Ascending,
+      _orders.add(new datastore.Order(datastore.OrderDirection.Ascending,
           _convertToDatastoreName(orderString)));
     }
   }
@@ -225,9 +221,12 @@ class Query {
       ancestorKey = _db.modelDB.toDatastoreKey(_ancestorKey);
     }
     var query = new datastore.Query(
-        ancestorKey: ancestorKey, kind: _kind,
-        filters: _filters, orders: _orders,
-        offset: _offset, limit: _limit);
+        ancestorKey: ancestorKey,
+        kind: _kind,
+        filters: _filters,
+        orders: _orders,
+        offset: _offset,
+        limit: _limit);
 
     var partition;
     if (_partition != null) {
@@ -235,8 +234,8 @@ class Query {
     }
 
     return new StreamFromPages((int pageSize) {
-      return _db.datastore.query(
-          query, transaction: _transaction, partition: partition);
+      return _db.datastore
+          .query(query, transaction: _transaction, partition: partition);
     }).stream.map(_db.modelDB.fromDatastoreEntity);
   }
 
@@ -246,11 +245,9 @@ class Query {
   //   API.
 
   String _convertToDatastoreName(String name) {
-    var propertyName =
-        _db.modelDB.fieldNameToPropertyName(_kind, name);
+    var propertyName = _db.modelDB.fieldNameToPropertyName(_kind, name);
     if (propertyName == null) {
-      throw new ArgumentError(
-          "Field $name is not available for kind $_kind");
+      throw new ArgumentError("Field $name is not available for kind $_kind");
     }
     return propertyName;
   }
@@ -261,10 +258,10 @@ class DatastoreDB {
   final ModelDB _modelDB;
   Partition _defaultPartition;
 
-  DatastoreDB(this.datastore, {ModelDB modelDB, Partition defaultPartition}) :
-      _modelDB = modelDB != null ? modelDB : new ModelDBImpl() {
-      _defaultPartition =
-          defaultPartition != null ? defaultPartition : new Partition(null);
+  DatastoreDB(this.datastore, {ModelDB modelDB, Partition defaultPartition})
+      : _modelDB = modelDB != null ? modelDB : new ModelDBImpl() {
+    _defaultPartition =
+        defaultPartition != null ? defaultPartition : new Partition(null);
   }
 
   /**
@@ -300,7 +297,8 @@ class DatastoreDB {
    */
   // TODO: Add retries and/or auto commit/rollback.
   Future withTransaction(TransactionHandler transactionHandler) {
-    return datastore.beginTransaction(crossEntityGroup: true)
+    return datastore
+        .beginTransaction(crossEntityGroup: true)
         .then((datastoreTransaction) {
       var transaction = new Transaction(this, datastoreTransaction);
       return transactionHandler(transaction);
@@ -326,10 +324,8 @@ class DatastoreDB {
           'Ancestor queries must have the same partition in the ancestor key '
           'as the partition where the query executes in.');
     }
-    return new Query(this,
-                     kind,
-                     partition: partition,
-                     ancestorKey: ancestorKey);
+    return new Query(this, kind,
+        partition: partition, ancestorKey: ancestorKey);
   }
 
   /**
@@ -358,9 +354,9 @@ class DatastoreDB {
 }
 
 Future _commitHelper(DatastoreDB db,
-                     {List<Model> inserts,
-                      List<Key> deletes,
-                      datastore.Transaction datastoreTransaction}) {
+    {List<Model> inserts,
+    List<Key> deletes,
+    datastore.Transaction datastoreTransaction}) {
   var entityInserts, entityAutoIdInserts, entityDeletes;
   var autoIdModelInserts;
   if (inserts != null) {
@@ -386,10 +382,12 @@ Future _commitHelper(DatastoreDB db,
     entityDeletes = deletes.map(db.modelDB.toDatastoreKey).toList();
   }
 
-  return db.datastore.commit(inserts: entityInserts,
-                           autoIdInserts: entityAutoIdInserts,
-                           deletes: entityDeletes,
-                           transaction: datastoreTransaction)
+  return db.datastore
+      .commit(
+          inserts: entityInserts,
+          autoIdInserts: entityAutoIdInserts,
+          deletes: entityDeletes,
+          transaction: datastoreTransaction)
       .then((datastore.CommitResult result) {
     if (entityAutoIdInserts != null && entityAutoIdInserts.length > 0) {
       for (var i = 0; i < result.autoIdInsertKeys.length; i++) {
@@ -401,11 +399,11 @@ Future _commitHelper(DatastoreDB db,
   });
 }
 
-Future<List<Model>> _lookupHelper(
-    DatastoreDB db, List<Key> keys,
+Future<List<Model>> _lookupHelper(DatastoreDB db, List<Key> keys,
     {datastore.Transaction datastoreTransaction}) {
   var entityKeys = keys.map(db.modelDB.toDatastoreKey).toList();
-  return db.datastore.lookup(entityKeys, transaction: datastoreTransaction)
+  return db.datastore
+      .lookup(entityKeys, transaction: datastoreTransaction)
       .then((List<datastore.Entity> entities) {
     return entities.map(db.modelDB.fromDatastoreEntity).toList();
   });

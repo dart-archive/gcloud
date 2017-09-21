@@ -191,8 +191,8 @@ class _ServiceScope {
     _ensureNotInDestroyingState();
 
     if (onScopeExitCallback != null) {
-      _registeredEntries.add(
-          new _RegisteredEntry(null, null, onScopeExitCallback));
+      _registeredEntries
+          .add(new _RegisteredEntry(null, null, onScopeExitCallback));
     }
   }
 
@@ -202,12 +202,12 @@ class _ServiceScope {
     _ensureNotInDestroyingState();
 
     var serviceScope = _copy();
-    var map = { _ServiceScopeKey: serviceScope };
+    var map = {_ServiceScopeKey: serviceScope};
     return runZoned(() {
       var f = func();
       if (f is! Future) {
         throw new ArgumentError('Forking a service scope zone requires the '
-                                'callback function to return a future.');
+            'callback function to return a future.');
       }
       return f.whenComplete(serviceScope._runScopeExitHandlers);
     }, zoneValues: map, onError: onError);
@@ -251,7 +251,7 @@ class _ServiceScope {
     // Even if one fails, we continue cleaning up and report then the list of
     // errors (if there were any).
     return Future.forEach(_registeredEntries.reversed,
-                          (_RegisteredEntry registeredEntry) {
+        (_RegisteredEntry registeredEntry) {
       if (registeredEntry.key != null) {
         _key2Values.remove(registeredEntry.key);
       }

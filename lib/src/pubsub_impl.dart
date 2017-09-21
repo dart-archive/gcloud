@@ -11,21 +11,19 @@ class _PubSubImpl implements PubSub {
   final String _topicPrefix;
   final String _subscriptionPrefix;
 
-  _PubSubImpl(client, project) :
-    this._client = client,
-    this.project = project,
-    _api = new pubsub.PubsubApi(client),
-    _topicPrefix = 'projects/$project/topics/',
-    _subscriptionPrefix = 'projects/$project/subscriptions/';
-
+  _PubSubImpl(client, project)
+      : this._client = client,
+        this.project = project,
+        _api = new pubsub.PubsubApi(client),
+        _topicPrefix = 'projects/$project/topics/',
+        _subscriptionPrefix = 'projects/$project/subscriptions/';
 
   String _fullTopicName(String name) {
     return name.startsWith('projects/') ? name : '${_topicPrefix}$name';
   }
 
   String _fullSubscriptionName(name) {
-    return name.startsWith('projects/') ? name
-                                        : '${_subscriptionPrefix}$name';
+    return name.startsWith('projects/') ? name : '${_subscriptionPrefix}$name';
   }
 
   Future<pubsub.Topic> _createTopic(String name) {
@@ -43,18 +41,18 @@ class _PubSubImpl implements PubSub {
 
   Future<pubsub.ListTopicsResponse> _listTopics(
       int pageSize, String nextPageToken) {
-    return _api.projects.topics.list(
-        'projects/$project', pageSize: pageSize, pageToken: nextPageToken);
+    return _api.projects.topics.list('projects/$project',
+        pageSize: pageSize, pageToken: nextPageToken);
   }
 
   Future<pubsub.Subscription> _createSubscription(
       String name, String topic, Uri endpoint) {
     var subscription = new pubsub.Subscription()
-        ..name = name
-        ..topic = topic;
+      ..name = name
+      ..topic = topic;
     if (endpoint != null) {
-      var pushConfig =
-          new pubsub.PushConfig()..pushEndpoint = endpoint.toString();
+      var pushConfig = new pubsub.PushConfig()
+        ..pushEndpoint = endpoint.toString();
       subscription.pushConfig = pushConfig;
     }
     return _api.projects.subscriptions.create(subscription, name);
@@ -62,7 +60,8 @@ class _PubSubImpl implements PubSub {
 
   Future _deleteSubscription(String name) {
     // The Pub/Sub delete API returns an instance of Empty.
-    return _api.projects.subscriptions.delete(_fullSubscriptionName(name))
+    return _api.projects.subscriptions
+        .delete(_fullSubscriptionName(name))
         .then((_) => null);
   }
 
@@ -72,24 +71,25 @@ class _PubSubImpl implements PubSub {
 
   Future<pubsub.ListSubscriptionsResponse> _listSubscriptions(
       String topic, int pageSize, String nextPageToken) {
-    return _api.projects.subscriptions.list(
-        'projects/$project', pageSize: pageSize, pageToken: nextPageToken);
+    return _api.projects.subscriptions.list('projects/$project',
+        pageSize: pageSize, pageToken: nextPageToken);
   }
 
   Future _modifyPushConfig(String subscription, Uri endpoint) {
     var pushConfig = new pubsub.PushConfig()
-         ..pushEndpoint = endpoint != null ? endpoint.toString() : null;
-    var request = new pubsub.ModifyPushConfigRequest()
-        ..pushConfig = pushConfig;
+      ..pushEndpoint = endpoint != null ? endpoint.toString() : null;
+    var request = new pubsub.ModifyPushConfigRequest()..pushConfig = pushConfig;
     return _api.projects.subscriptions.modifyPushConfig(request, subscription);
   }
 
   Future _publish(
       String topic, List<int> message, Map<String, String> attributes) {
     var request = new pubsub.PublishRequest()
-        ..messages = [(new pubsub.PubsubMessage()
-            ..dataAsBytes = message
-            ..attributes = attributes)];
+      ..messages = [
+        (new pubsub.PubsubMessage()
+          ..dataAsBytes = message
+          ..attributes = attributes)
+      ];
     // TODO(sgjesse): Handle PublishResponse containing message ids.
     return _api.projects.topics.publish(request, topic).then((_) => null);
   }
@@ -97,17 +97,17 @@ class _PubSubImpl implements PubSub {
   Future<pubsub.PullResponse> _pull(
       String subscription, bool returnImmediately) {
     var request = new pubsub.PullRequest()
-        ..maxMessages = 1
-        ..returnImmediately = returnImmediately;
+      ..maxMessages = 1
+      ..returnImmediately = returnImmediately;
     return _api.projects.subscriptions.pull(request, subscription);
   }
 
   Future _ack(String ackId, String subscription) {
-    var request = new pubsub.AcknowledgeRequest()
-        ..ackIds = [ ackId ];
+    var request = new pubsub.AcknowledgeRequest()..ackIds = [ackId];
     // The Pub/Sub acknowledge API returns an instance of Empty.
-    return _api.projects.subscriptions.acknowledge(
-        request, subscription).then((_) => null);
+    return _api.projects.subscriptions
+        .acknowledge(request, subscription)
+        .then((_) => null);
   }
 
   void _checkTopicName(name) {
@@ -155,8 +155,9 @@ class _PubSubImpl implements PubSub {
   Stream<Topic> listTopics() {
     Future<Page<Topic>> firstPage(pageSize) {
       return _listTopics(pageSize, null)
-        .then((response) => new _TopicPageImpl(this, pageSize, response));
+          .then((response) => new _TopicPageImpl(this, pageSize, response));
     }
+
     return new StreamFromPages<Topic>(firstPage).stream;
   }
 
@@ -166,13 +167,12 @@ class _PubSubImpl implements PubSub {
     });
   }
 
-  Future<Subscription> createSubscription(
-      String name, String topic, {Uri endpoint}) {
+  Future<Subscription> createSubscription(String name, String topic,
+      {Uri endpoint}) {
     _checkSubscriptionName(name);
     _checkTopicName(topic);
-    return _createSubscription(_fullSubscriptionName(name),
-                               _fullTopicName(topic),
-                               endpoint)
+    return _createSubscription(
+            _fullSubscriptionName(name), _fullTopicName(topic), endpoint)
         .then((sub) => new _SubscriptionImpl(this, sub));
   }
 
@@ -189,10 +189,10 @@ class _PubSubImpl implements PubSub {
 
   Stream<Subscription> listSubscriptions([String query]) {
     Future<Page<Subscription>> firstPage(pageSize) {
-      return _listSubscriptions(query, pageSize, null)
-        .then((response) =>
-            new _SubscriptionPageImpl(this, query, pageSize, response));
+      return _listSubscriptions(query, pageSize, null).then((response) =>
+          new _SubscriptionPageImpl(this, query, pageSize, response));
     }
+
     return new StreamFromPages<Subscription>(firstPage).stream;
   }
 
@@ -279,8 +279,10 @@ class _PushMessage implements Message {
 class _PullEventImpl implements PullEvent {
   /// Pub/Sub API object.
   final _PubSubImpl _api;
+
   /// Subscription this was received from.
   final String _subscriptionName;
+
   /// Low level response received from Pub/Sub.
   final pubsub.PullResponse _response;
   final Message message;
@@ -293,7 +295,6 @@ class _PullEventImpl implements PullEvent {
   Future acknowledge() {
     return _api._ack(_response.receivedMessages[0].ackId, _subscriptionName);
   }
-
 }
 
 /// Push event received from Pub/Sub push delivery.
@@ -389,19 +390,17 @@ class _SubscriptionImpl implements Subscription {
   Future delete() => _api._deleteSubscription(_subscription.name);
 
   Future<PullEvent> pull({bool wait: true}) {
-    return _api._pull(_subscription.name, !wait)
-        .then((response) {
-          // The documentation says 'Returns an empty list if there are no
-          // messages available in the backlog'. However the receivedMessages
-          // property can also be null in that case.
-          if (response.receivedMessages == null ||
-              response.receivedMessages.length == 0) {
-            return null;
-          }
-          return new _PullEventImpl(_api, _subscription.name, response);
-        }).catchError((e) => null,
-                      test: (e) => e is pubsub.DetailedApiRequestError &&
-                                   e.status == 400);
+    return _api._pull(_subscription.name, !wait).then((response) {
+      // The documentation says 'Returns an empty list if there are no
+      // messages available in the backlog'. However the receivedMessages
+      // property can also be null in that case.
+      if (response.receivedMessages == null ||
+          response.receivedMessages.length == 0) {
+        return null;
+      }
+      return new _PullEventImpl(_api, _subscription.name, response);
+    }).catchError((e) => null,
+        test: (e) => e is pubsub.DetailedApiRequestError && e.status == 400);
   }
 
   Uri get endpoint => null;
@@ -421,9 +420,7 @@ class _TopicPageImpl implements Page<Topic> {
   final String _nextPageToken;
   final List<Topic> items;
 
-  _TopicPageImpl(this._api,
-                this._pageSize,
-                pubsub.ListTopicsResponse response)
+  _TopicPageImpl(this._api, this._pageSize, pubsub.ListTopicsResponse response)
       : items = new List(response.topics.length),
         _nextPageToken = response.nextPageToken {
     for (int i = 0; i < response.topics.length; i++) {
@@ -450,14 +447,11 @@ class _SubscriptionPageImpl implements Page<Subscription> {
   final String _nextPageToken;
   final List<Subscription> items;
 
-  _SubscriptionPageImpl(this._api,
-                        this._topic,
-                        this._pageSize,
-                        pubsub.ListSubscriptionsResponse response)
-      : items = new List(response.subscriptions != null
-                                               ? response.subscriptions.length
-                                               : 0),
-        _nextPageToken = response.nextPageToken{
+  _SubscriptionPageImpl(this._api, this._topic, this._pageSize,
+      pubsub.ListSubscriptionsResponse response)
+      : items = new List(
+            response.subscriptions != null ? response.subscriptions.length : 0),
+        _nextPageToken = response.nextPageToken {
     if (response.subscriptions != null) {
       for (int i = 0; i < response.subscriptions.length; i++) {
         items[i] = new _SubscriptionImpl(_api, response.subscriptions[i]);
@@ -471,8 +465,9 @@ class _SubscriptionPageImpl implements Page<Subscription> {
     if (_nextPageToken == null) return new Future.value(null);
     if (pageSize == null) pageSize = this._pageSize;
 
-    return _api._listSubscriptions(
-        _topic, pageSize, _nextPageToken).then((response) {
+    return _api
+        ._listSubscriptions(_topic, pageSize, _nextPageToken)
+        .then((response) {
       return new _SubscriptionPageImpl(_api, _topic, pageSize, response);
     });
   }

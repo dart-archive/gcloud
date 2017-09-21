@@ -9,7 +9,6 @@ import 'dart:async';
 import 'package:gcloud/db.dart';
 import 'package:unittest/unittest.dart';
 
-
 // These unused imports make sure that [ModelDBImpl.fromLibrary()] will find
 // all the Model/ModelDescription classes.
 import 'model_dbs/duplicate_kind.dart' as test1;
@@ -19,7 +18,7 @@ import 'model_dbs/duplicate_fieldname.dart' as test4;
 import 'model_dbs/no_default_constructor.dart' as test5;
 
 main() {
-  newModelDB(Symbol symbol)=> new ModelDBImpl.fromLibrary(symbol);
+  newModelDB(Symbol symbol) => new ModelDBImpl.fromLibrary(symbol);
 
   group('model_db', () {
     group('from_library', () {

@@ -23,7 +23,7 @@ abstract class ModelDB {
   /**
    * Converts a [Model] instance to a [datastore.Entity].
    */
-  datastore.Entity toDatastoreEntity(Model model) ;
+  datastore.Entity toDatastoreEntity(Model model);
 
   /**
    * Converts a [datastore.Entity] to a [Model] instance.

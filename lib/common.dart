@@ -39,9 +39,12 @@ class StreamFromPages<T> {
   StreamController _controller;
 
   StreamFromPages(this._firstPageProvider) {
-    _controller = new StreamController(sync: true, onListen: _onListen,
-                                      onPause: _onPause, onResume: _onResume,
-                                      onCancel: _onCancel);
+    _controller = new StreamController(
+        sync: true,
+        onListen: _onListen,
+        onPause: _onPause,
+        onResume: _onResume,
+        onCancel: _onCancel);
   }
 
   Stream<T> get stream => _controller.stream;
@@ -69,7 +72,9 @@ class StreamFromPages<T> {
     _firstPageProvider(pageSize).then(_handlePage, onError: _handleError);
   }
 
-  _onPause() { _paused = true; }
+  _onPause() {
+    _paused = true;
+  }
 
   _onResume() {
     _paused = false;
@@ -81,5 +86,4 @@ class StreamFromPages<T> {
   _onCancel() {
     _cancelled = true;
   }
-
 }

@@ -12,7 +12,6 @@ class _ApplicationError extends TypeMatcher {
   bool matches(item, Map matchState) => item is ApplicationError;
 }
 
-
 class _DataStoreError extends TypeMatcher {
   const _DataStoreError() : super("DataStoreError");
   bool matches(item, Map matchState) => item is DatastoreError;
@@ -32,7 +31,6 @@ class _TimeoutError extends TypeMatcher {
   const _TimeoutError() : super("TimeoutError");
   bool matches(item, Map matchState) => item is TimeoutError;
 }
-
 
 class _IntMatcher extends TypeMatcher {
   const _IntMatcher() : super("IntMatcher");

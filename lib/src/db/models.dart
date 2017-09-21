@@ -28,7 +28,9 @@ class Key {
   }
 
   Key.emptyKey(Partition partition)
-      : _parent = partition, type = null, id = null;
+      : _parent = partition,
+        type = null,
+        id = null;
 
   /**
    * Parent of this [Key].
@@ -57,9 +59,8 @@ class Key {
 
   bool get isEmpty => _parent is Partition;
 
-  operator==(Object other) {
-    return
-        other is Key &&
+  operator ==(Object other) {
+    return other is Key &&
         _parent == other._parent &&
         type == other.type &&
         id == other.id;
@@ -79,8 +80,7 @@ class Partition {
 
   Partition(this.namespace) {
     if (namespace == '') {
-      throw new ArgumentError(
-          'The namespace must not be an empty string');
+      throw new ArgumentError('The namespace must not be an empty string');
     }
   }
 
@@ -92,7 +92,7 @@ class Partition {
    */
   Key get emptyKey => new Key.emptyKey(this);
 
-  operator==(Object other) {
+  operator ==(Object other) {
     return other is Partition && namespace == other.namespace;
   }
 

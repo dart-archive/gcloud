@@ -30,8 +30,8 @@ main() {
     });
 
     test('non-default-partition', () {
-      var nsDb = new DatastoreDB(
-          null, defaultPartition: new Partition('foobar-namespace'));
+      var nsDb = new DatastoreDB(null,
+          defaultPartition: new Partition('foobar-namespace'));
 
       // Test defaultPartition
       expect(nsDb.defaultPartition.namespace, 'foobar-namespace');

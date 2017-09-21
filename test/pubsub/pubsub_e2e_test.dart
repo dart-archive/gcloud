@@ -60,7 +60,7 @@ runTests(PubSub pubsub, String project, String prefix) {
       expect(subscription.name, subscriptionName);
       expect(subscription.project, project);
       expect(subscription.absoluteName,
-             'projects/$project/subscriptions/$subscriptionName');
+          'projects/$project/subscriptions/$subscriptionName');
       expect(subscription.isPull, isTrue);
       expect(subscription.isPush, isFalse);
       expect(await pubsub.deleteSubscription(subscriptionName), isNull);
@@ -131,12 +131,12 @@ main() {
           if (subscription.name.startsWith(prefix)) {
             try {
               print('WARNING: Removing leftover subscription '
-                    '${subscription.name}');
+                  '${subscription.name}');
               leftovers = true;
               await pubsub.deleteSubscription(subscription.name);
             } catch (e) {
               print('Error during test cleanup of subscription '
-                    '${subscription.name} ($e)');
+                  '${subscription.name} ($e)');
               cleanupErrors = true;
             }
           }

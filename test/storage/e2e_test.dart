@@ -37,10 +37,9 @@ runTests(Storage storage, Bucket testBucket) {
           expect(info.etag, isNotNull);
           expect(info.created is DateTime, isTrue);
           expect(info.id, isNotNull);
-          return storage.deleteBucket(bucketName)
-              .then(expectAsync((result) {
-                expect(result, isNull);
-              }));
+          return storage.deleteBucket(bucketName).then(expectAsync((result) {
+            expect(result, isNull);
+          }));
         }));
       }));
     });
@@ -48,28 +47,28 @@ runTests(Storage storage, Bucket testBucket) {
     test('create-with-predefined-acl-delete', () {
       Future<Acl> test(predefinedAcl, expectedLength) {
         var bucketName = generateBucketName();
-        return storage.createBucket(bucketName, predefinedAcl: predefinedAcl)
+        return storage
+            .createBucket(bucketName, predefinedAcl: predefinedAcl)
             .then(expectAsync((result) {
+          expect(result, isNull);
+          return storage.bucketInfo(bucketName).then(expectAsync((info) {
+            var acl = info.acl;
+            expect(info.bucketName, bucketName);
+            expect(acl.entries.length, expectedLength);
+            return storage.deleteBucket(bucketName).then(expectAsync((result) {
               expect(result, isNull);
-              return storage.bucketInfo(bucketName).then(expectAsync((info) {
-                var acl = info.acl;
-                expect(info.bucketName, bucketName);
-                expect(acl.entries.length, expectedLength);
-                return storage.deleteBucket(bucketName)
-                    .then(expectAsync((result) {
-                      expect(result, isNull);
-                    }));
-              }));
+            }));
+          }));
         }));
       }
 
       return Future.forEach([
-          // TODO: Figure out why some returned ACLs are empty.
-          () => test(PredefinedAcl.authenticatedRead, 0),
-          // [test, [PredefinedAcl.private, 0]],  // TODO: Cannot delete.
-          () => test(PredefinedAcl.projectPrivate, 3),
-          () => test(PredefinedAcl.publicRead, 0),
-          () => test(PredefinedAcl.publicReadWrite, 0)
+        // TODO: Figure out why some returned ACLs are empty.
+        () => test(PredefinedAcl.authenticatedRead, 0),
+        // [test, [PredefinedAcl.private, 0]],  // TODO: Cannot delete.
+        () => test(PredefinedAcl.projectPrivate, 3),
+        () => test(PredefinedAcl.publicRead, 0),
+        () => test(PredefinedAcl.publicReadWrite, 0)
       ], (f) => f().then(expectAsync((_) {})));
     });
 
@@ -91,53 +90,53 @@ runTests(Storage storage, Bucket testBucket) {
 
     test('create-read-delete', () {
       Future test(name, bytes) {
-      return withTestBucket((Bucket bucket) {
-        return bucket.writeBytes('test', bytes).then(expectAsync((info) {
-          expect(info, isNotNull);
-          return bucket.read('test')
-              .fold([], (p, e) => p..addAll(e))
-              .then(expectAsync((result) {
-                expect(result, bytes);
-                return bucket.delete('test').then(expectAsync((result) {
-                  expect(result, isNull);
+        return withTestBucket((Bucket bucket) {
+          return bucket.writeBytes('test', bytes).then(expectAsync((info) {
+            expect(info, isNotNull);
+            return bucket
+                .read('test')
+                .fold([], (p, e) => p..addAll(e)).then(expectAsync((result) {
+              expect(result, bytes);
+              return bucket.delete('test').then(expectAsync((result) {
+                expect(result, isNull);
               }));
+            }));
           }));
-        }));
-      });
+        });
       }
 
       return Future.forEach([
-          () => test('test-1', [1, 2, 3]),
-          () => test('test-2', bytesResumableUpload)
-     ], (f) => f().then(expectAsync((_) {})));
+        () => test('test-1', [1, 2, 3]),
+        () => test('test-2', bytesResumableUpload)
+      ], (f) => f().then(expectAsync((_) {})));
     });
 
     test('create-with-predefined-acl-delete', () {
       return withTestBucket((Bucket bucket) {
         Future test(objectName, predefinedAcl, expectedLength) {
-          return bucket.writeBytes(
-              objectName, [1, 2, 3], predefinedAcl: predefinedAcl)
+          return bucket
+              .writeBytes(objectName, [1, 2, 3], predefinedAcl: predefinedAcl)
               .then(expectAsync((result) {
-                expect(result, isNotNull);
-                return bucket.info(objectName).then(expectAsync((info) {
-                  var acl = info.metadata.acl;
-                  expect(info.name, objectName);
-                  expect(info.etag, isNotNull);
-                  expect(acl.entries.length, expectedLength);
-                  return bucket.delete(objectName).then(expectAsync((result) {
-                    expect(result, isNull);
-                  }));
-                }));
+            expect(result, isNotNull);
+            return bucket.info(objectName).then(expectAsync((info) {
+              var acl = info.metadata.acl;
+              expect(info.name, objectName);
+              expect(info.etag, isNotNull);
+              expect(acl.entries.length, expectedLength);
+              return bucket.delete(objectName).then(expectAsync((result) {
+                expect(result, isNull);
+              }));
+            }));
           }));
         }
 
         return Future.forEach([
-            () => test('test-1', PredefinedAcl.authenticatedRead, 2),
-            () => test('test-2', PredefinedAcl.private, 1),
-            () => test('test-3', PredefinedAcl.projectPrivate, 4),
-            () => test('test-4', PredefinedAcl.publicRead, 2),
-            () => test('test-5', PredefinedAcl.bucketOwnerFullControl, 2),
-            () => test('test-6', PredefinedAcl.bucketOwnerRead, 2)
+          () => test('test-1', PredefinedAcl.authenticatedRead, 2),
+          () => test('test-2', PredefinedAcl.private, 1),
+          () => test('test-3', PredefinedAcl.projectPrivate, 4),
+          () => test('test-4', PredefinedAcl.publicRead, 2),
+          () => test('test-5', PredefinedAcl.bucketOwnerFullControl, 2),
+          () => test('test-6', PredefinedAcl.bucketOwnerRead, 2)
         ], (f) => f().then(expectAsync((_) {})));
       });
     });
@@ -145,50 +144,52 @@ runTests(Storage storage, Bucket testBucket) {
     test('create-with-acl-delete', () {
       return withTestBucket((Bucket bucket) {
         Future test(objectName, acl, expectedLength) {
-          return bucket.writeBytes(objectName, [1, 2, 3], acl: acl)
+          return bucket
+              .writeBytes(objectName, [1, 2, 3], acl: acl)
               .then(expectAsync((result) {
-                expect(result, isNotNull);
-                return bucket.info(objectName).then(expectAsync((info) {
-                  var acl = info.metadata.acl;
-                  expect(info.name, objectName);
-                  expect(info.etag, isNotNull);
-                  expect(acl.entries.length, expectedLength);
-                  return bucket.delete(objectName).then(expectAsync((result) {
-                    expect(result, isNull);
-                  }));
-                }));
+            expect(result, isNotNull);
+            return bucket.info(objectName).then(expectAsync((info) {
+              var acl = info.metadata.acl;
+              expect(info.name, objectName);
+              expect(info.etag, isNotNull);
+              expect(acl.entries.length, expectedLength);
+              return bucket.delete(objectName).then(expectAsync((result) {
+                expect(result, isNull);
+              }));
+            }));
           }));
         }
 
         Acl acl1 = new Acl(
             [new AclEntry(AclScope.allAuthenticated, AclPermission.WRITE)]);
-        Acl acl2 = new Acl(
-            [new AclEntry(AclScope.allUsers, AclPermission.WRITE),
-             new AclEntry(new AccountScope('sgjesse@google.com'),
-                          AclPermission.WRITE)]);
-        Acl acl3 = new Acl(
-            [new AclEntry(AclScope.allUsers, AclPermission.WRITE),
-             new AclEntry(new AccountScope('sgjesse@google.com'),
-                          AclPermission.WRITE),
-             new AclEntry(new GroupScope('misc@dartlang.org'),
-                          AclPermission.READ)]);
-        Acl acl4 = new Acl(
-            [new AclEntry(AclScope.allUsers, AclPermission.WRITE),
-             new AclEntry(new AccountScope('sgjesse@google.com'),
-                          AclPermission.WRITE),
-             new AclEntry(new GroupScope('misc@dartlang.org'),
-                          AclPermission.READ),
-             new AclEntry(new DomainScope('dartlang.org'),
-                          AclPermission.FULL_CONTROL)]);
+        Acl acl2 = new Acl([
+          new AclEntry(AclScope.allUsers, AclPermission.WRITE),
+          new AclEntry(
+              new AccountScope('sgjesse@google.com'), AclPermission.WRITE)
+        ]);
+        Acl acl3 = new Acl([
+          new AclEntry(AclScope.allUsers, AclPermission.WRITE),
+          new AclEntry(
+              new AccountScope('sgjesse@google.com'), AclPermission.WRITE),
+          new AclEntry(new GroupScope('misc@dartlang.org'), AclPermission.READ)
+        ]);
+        Acl acl4 = new Acl([
+          new AclEntry(AclScope.allUsers, AclPermission.WRITE),
+          new AclEntry(
+              new AccountScope('sgjesse@google.com'), AclPermission.WRITE),
+          new AclEntry(new GroupScope('misc@dartlang.org'), AclPermission.READ),
+          new AclEntry(
+              new DomainScope('dartlang.org'), AclPermission.FULL_CONTROL)
+        ]);
 
         // The expected length of the returned ACL is one longer than the one
         // use during creation as an additional 'used-ID' ACL entry is added
         // by cloud storage during creation.
         return Future.forEach([
-            () => test('test-1', acl1, acl1.entries.length + 1),
-            () => test('test-2', acl2, acl2.entries.length + 1),
-            () => test('test-3', acl3, acl3.entries.length + 1),
-            () => test('test-4', acl4, acl4.entries.length + 1)
+          () => test('test-1', acl1, acl1.entries.length + 1),
+          () => test('test-2', acl2, acl2.entries.length + 1),
+          () => test('test-3', acl3, acl3.entries.length + 1),
+          () => test('test-4', acl4, acl4.entries.length + 1)
         ], (f) => f().then(expectAsync((_) {})));
       });
     });
@@ -196,31 +197,30 @@ runTests(Storage storage, Bucket testBucket) {
     test('create-with-metadata-delete', () {
       return withTestBucket((Bucket bucket) {
         Future test(objectName, metadata, bytes) {
-          return bucket.writeBytes(objectName, bytes, metadata: metadata)
+          return bucket
+              .writeBytes(objectName, bytes, metadata: metadata)
               .then(expectAsync((result) {
-                expect(result, isNotNull);
-                return bucket.info(objectName).then(expectAsync((info) {
-                  expect(info.name, objectName);
-                  expect(info.length, bytes.length);
-                  expect(info.updated is DateTime, isTrue);
-                  expect(info.md5Hash, isNotNull);
-                  expect(info.crc32CChecksum, isNotNull);
-                  expect(info.downloadLink is Uri, isTrue);
-                  expect(info.generation.objectGeneration, isNotNull);
-                  expect(info.generation.metaGeneration, 1);
-                  expect(info.metadata.contentType, metadata.contentType);
-                  expect(info.metadata.cacheControl, metadata.cacheControl);
-                  expect(info.metadata.contentDisposition,
-                         metadata.contentDisposition);
-                  expect(info.metadata.contentEncoding,
-                         metadata.contentEncoding);
-                  expect(info.metadata.contentLanguage,
-                         metadata.contentLanguage);
-                  expect(info.metadata.custom, metadata.custom);
-                  return bucket.delete(objectName).then(expectAsync((result) {
-                    expect(result, isNull);
-                  }));
-                }));
+            expect(result, isNotNull);
+            return bucket.info(objectName).then(expectAsync((info) {
+              expect(info.name, objectName);
+              expect(info.length, bytes.length);
+              expect(info.updated is DateTime, isTrue);
+              expect(info.md5Hash, isNotNull);
+              expect(info.crc32CChecksum, isNotNull);
+              expect(info.downloadLink is Uri, isTrue);
+              expect(info.generation.objectGeneration, isNotNull);
+              expect(info.generation.metaGeneration, 1);
+              expect(info.metadata.contentType, metadata.contentType);
+              expect(info.metadata.cacheControl, metadata.cacheControl);
+              expect(info.metadata.contentDisposition,
+                  metadata.contentDisposition);
+              expect(info.metadata.contentEncoding, metadata.contentEncoding);
+              expect(info.metadata.contentLanguage, metadata.contentLanguage);
+              expect(info.metadata.custom, metadata.custom);
+              return bucket.delete(objectName).then(expectAsync((result) {
+                expect(result, isNull);
+              }));
+            }));
           }));
         }
 
@@ -234,10 +234,10 @@ runTests(Storage storage, Bucket testBucket) {
             custom: {'a': 'b', 'c': 'd'});
 
         return Future.forEach([
-            () => test('test-1', metadata1, [65, 66, 67]),
-            () => test('test-2', metadata2, [65, 66, 67]),
-            () => test('test-3', metadata1, bytesResumableUpload),
-            () => test('test-4', metadata2, bytesResumableUpload)
+          () => test('test-1', metadata1, [65, 66, 67]),
+          () => test('test-2', metadata2, [65, 66, 67]),
+          () => test('test-3', metadata1, bytesResumableUpload),
+          () => test('test-4', metadata2, bytesResumableUpload)
         ], (f) => f().then(expectAsync((_) {})));
       });
     });

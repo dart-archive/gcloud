@@ -73,20 +73,21 @@ main() {
 
       prop = const BlobProperty(required: false);
       expect(prop.validate(null, null), isTrue);
-      expect(prop.validate(null, [1,2]), isTrue);
+      expect(prop.validate(null, [1, 2]), isTrue);
       expect(prop.encodeValue(null, null), equals(null));
       expect(prop.encodeValue(null, []).bytes, equals([]));
-      expect(prop.encodeValue(null, [1,2]).bytes, equals([1,2]));
-      expect(prop.encodeValue(null, new Uint8List.fromList([1,2])).bytes,
-             equals([1,2]));
+      expect(prop.encodeValue(null, [1, 2]).bytes, equals([1, 2]));
+      expect(prop.encodeValue(null, new Uint8List.fromList([1, 2])).bytes,
+          equals([1, 2]));
       expect(prop.decodePrimitiveValue(null, null), equals(null));
       expect(prop.decodePrimitiveValue(null, new datastore.BlobValue([])),
           equals([]));
-      expect(prop.decodePrimitiveValue(null, new datastore.BlobValue([5,6])),
-          equals([5,6]));
-      expect(prop.decodePrimitiveValue(
-          null, new datastore.BlobValue(new Uint8List.fromList([5,6]))),
-             equals([5,6]));
+      expect(prop.decodePrimitiveValue(null, new datastore.BlobValue([5, 6])),
+          equals([5, 6]));
+      expect(
+          prop.decodePrimitiveValue(
+              null, new datastore.BlobValue(new Uint8List.fromList([5, 6]))),
+          equals([5, 6]));
     });
 
     test('datetime_property', () {
@@ -101,8 +102,8 @@ main() {
       expect(prop.encodeValue(null, null), equals(null));
       expect(prop.encodeValue(null, utc99), equals(utc99));
       expect(prop.decodePrimitiveValue(null, null), equals(null));
-      expect(prop.decodePrimitiveValue(null, 99*1000), equals(utc99));
-      expect(prop.decodePrimitiveValue(null, 99*1000 + 1), equals(utc99));
+      expect(prop.decodePrimitiveValue(null, 99 * 1000), equals(utc99));
+      expect(prop.decodePrimitiveValue(null, 99 * 1000 + 1), equals(utc99));
       expect(prop.decodePrimitiveValue(null, utc99), equals(utc99));
     });
 
@@ -124,7 +125,7 @@ main() {
       expect(prop.decodePrimitiveValue(null, []), equals([]));
       expect(prop.decodePrimitiveValue(null, true), equals([true]));
       expect(prop.decodePrimitiveValue(null, [true, false]),
-             equals([true, false]));
+          equals([true, false]));
     });
 
     test('composed_list_property', () {
@@ -141,12 +142,12 @@ main() {
       expect(prop.encodeValue(null, []), equals(null));
       expect(prop.encodeValue(null, [c1]), equals(c1.customValue));
       expect(prop.encodeValue(null, [c1, c2]),
-             equals([c1.customValue, c2.customValue]));
+          equals([c1.customValue, c2.customValue]));
       expect(prop.decodePrimitiveValue(null, null), equals([]));
       expect(prop.decodePrimitiveValue(null, []), equals([]));
       expect(prop.decodePrimitiveValue(null, c1.customValue), equals([c1]));
       expect(prop.decodePrimitiveValue(null, [c1.customValue, c2.customValue]),
-             equals([c1, c2]));
+          equals([c1, c2]));
     });
 
     test('modelkey_property', () {
@@ -166,8 +167,8 @@ main() {
       expect(prop.encodeValue(modelDBMock, null), equals(null));
       expect(prop.encodeValue(modelDBMock, dbKey), equals(datastoreKey));
       expect(prop.decodePrimitiveValue(modelDBMock, null), equals(null));
-      expect(prop.decodePrimitiveValue(modelDBMock, datastoreKey),
-             equals(dbKey));
+      expect(
+          prop.decodePrimitiveValue(modelDBMock, datastoreKey), equals(dbKey));
     });
   });
 }
@@ -177,7 +178,7 @@ class Custom {
 
   int get hashCode => customValue.hashCode;
 
-  bool operator==(other) {
+  bool operator ==(other) {
     return other is Custom && other.customValue == customValue;
   }
 }
@@ -231,7 +232,7 @@ class ModelDBMock implements ModelDB {
 
   datastore.Key toDatastoreKey(Key key) {
     if (!identical(_dbKey, key)) {
-     throw "Broken test";
+      throw "Broken test";
     }
     return _datastoreKey;
   }
@@ -241,5 +242,7 @@ class ModelDBMock implements ModelDB {
   datastore.Entity toDatastoreEntity(Model model) => null;
   String fieldNameToPropertyName(String kind, String fieldName) => null;
   String kindName(Type type) => null;
-  Object toDatastoreValue(String kind, String fieldName, Object value, {bool forComparison: false}) => null;
+  Object toDatastoreValue(String kind, String fieldName, Object value,
+          {bool forComparison: false}) =>
+      null;
 }

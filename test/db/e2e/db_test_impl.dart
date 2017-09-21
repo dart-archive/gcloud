@@ -64,7 +64,7 @@ class Person extends db.Model {
   @db.ModelKeyProperty(propertyName: 'mangledWife')
   db.Key wife;
 
-  operator==(Object other) => sameAs(other);
+  operator ==(Object other) => sameAs(other);
 
   sameAs(Object other) {
     return other is Person &&
@@ -77,7 +77,6 @@ class Person extends db.Model {
 
   String toString() => 'Person(id: $id, name: $name, age: $age)';
 }
-
 
 @db.Kind()
 class User extends Person {
@@ -112,7 +111,6 @@ class User extends Person {
       'User(${super.toString()}, nickname: $nickname, languages: $languages';
 }
 
-
 @db.Kind()
 class ExpandoPerson extends db.ExpandoModel {
   @db.StringProperty()
@@ -121,7 +119,7 @@ class ExpandoPerson extends db.ExpandoModel {
   @db.StringProperty(propertyName: 'NN')
   String nickname;
 
-  operator==(Object other) {
+  operator ==(Object other) {
     if (other is ExpandoPerson && id == other.id && name == other.name) {
       if (additionalProperties.length != other.additionalProperties.length) {
         return false;
@@ -137,15 +135,13 @@ class ExpandoPerson extends db.ExpandoModel {
   }
 }
 
-
 Future sleep(Duration duration) => new Future.delayed(duration);
 
 runTests(db.DatastoreDB store, String namespace) {
   var partition = store.newPartition(namespace);
 
-  void compareModels(List<db.Model> expectedModels,
-                     List<db.Model> models,
-                     {bool anyOrder: false}) {
+  void compareModels(List<db.Model> expectedModels, List<db.Model> models,
+      {bool anyOrder: false}) {
     expect(models.length, equals(expectedModels.length));
     if (anyOrder) {
       // Do expensive O(n^2) search.
@@ -166,8 +162,8 @@ runTests(db.DatastoreDB store, String namespace) {
     }
   }
 
-  Future testInsertLookupDelete(
-      List<db.Model> objects, {bool transactional: false}) {
+  Future testInsertLookupDelete(List<db.Model> objects,
+      {bool transactional: false}) {
     var keys = objects.map((db.Model obj) => obj.key).toList();
 
     if (transactional) {
@@ -202,8 +198,11 @@ runTests(db.DatastoreDB store, String namespace) {
   group('key', () {
     test('equal_and_hashcode', () {
       var k1 = store.emptyKey.append(User, id: 10).append(Person, id: 12);
-      var k2 = store.newPartition(null)
-          .emptyKey.append(User, id: 10).append(Person, id: 12);
+      var k2 = store
+          .newPartition(null)
+          .emptyKey
+          .append(User, id: 10)
+          .append(Person, id: 12);
       expect(k1, equals(k2));
       expect(k1.hashCode, equals(k2.hashCode));
     });
@@ -216,10 +215,10 @@ runTests(db.DatastoreDB store, String namespace) {
         var persons = [];
         for (var i = 1; i <= 10; i++) {
           persons.add(new Person()
-              ..id = i
-              ..parentKey = root
-              ..age = 42 + i
-              ..name = 'user$i');
+            ..id = i
+            ..parentKey = root
+            ..age = 42 + i
+            ..name = 'user$i');
         }
         persons.first.wife = persons.last.key;
         return testInsertLookupDelete(persons);
@@ -229,11 +228,11 @@ runTests(db.DatastoreDB store, String namespace) {
         var users = [];
         for (var i = 1; i <= 10; i++) {
           users.add(new User()
-              ..id = i
-              ..parentKey = root
-              ..age = 42 + i
-              ..name = 'user$i'
-              ..nickname = 'nickname${i%3}');
+            ..id = i
+            ..parentKey = root
+            ..age = 42 + i
+            ..name = 'user$i'
+            ..nickname = 'nickname${i%3}');
         }
         return testInsertLookupDelete(users);
       });
@@ -242,9 +241,9 @@ runTests(db.DatastoreDB store, String namespace) {
         var expandoPersons = [];
         for (var i = 1; i <= 10; i++) {
           var expandoPerson = new ExpandoPerson()
-              ..parentKey = root
-              ..id = i
-              ..name = 'user$i';
+            ..parentKey = root
+            ..id = i
+            ..name = 'user$i';
           expandoPerson.foo = 'foo$i';
           expandoPerson.bar = i;
           expect(expandoPerson.additionalProperties['foo'], equals('foo$i'));
@@ -258,20 +257,20 @@ runTests(db.DatastoreDB store, String namespace) {
         var models = [];
 
         models.add(new Person()
-            ..id = 1
-            ..parentKey = root
-            ..age = 1
-            ..name = 'user1');
+          ..id = 1
+          ..parentKey = root
+          ..age = 1
+          ..name = 'user1');
         models.add(new User()
-            ..id = 2
-            ..parentKey = root
-            ..age = 2
-            ..name = 'user2'
-            ..nickname = 'nickname2');
+          ..id = 2
+          ..parentKey = root
+          ..age = 2
+          ..name = 'user2'
+          ..nickname = 'nickname2');
         var expandoPerson = new ExpandoPerson()
-            ..parentKey = root
-            ..id = 3
-            ..name = 'user1';
+          ..parentKey = root
+          ..id = 3
+          ..name = 'user1';
         expandoPerson.foo = 'foo1';
         expandoPerson.bar = 2;
 
@@ -283,19 +282,19 @@ runTests(db.DatastoreDB store, String namespace) {
         var users = [];
         for (var i = 333; i <= 334; i++) {
           users.add(new User()
-              ..id = i
-              ..parentKey = root
-              ..age = 42 + i
-              ..name = 'user$i'
-              ..nickname = 'nickname${i%3}');
+            ..id = i
+            ..parentKey = root
+            ..age = 42 + i
+            ..name = 'user$i'
+            ..nickname = 'nickname${i%3}');
         }
         var persons = [];
         for (var i = 335; i <= 336; i++) {
           persons.add(new Person()
-              ..id = i
-              ..parentKey = root
-              ..age = 42 + i
-              ..name = 'person$i');
+            ..id = i
+            ..parentKey = root
+            ..age = 42 + i
+            ..name = 'person$i');
         }
 
         // We test that we can insert + lookup
@@ -311,26 +310,26 @@ runTests(db.DatastoreDB store, String namespace) {
         var root = partition.emptyKey;
         var persons = [];
         persons.add(new Person()
-            ..id = 42
-            ..parentKey = root
-            ..age = 80
-            ..name = 'user80');
+          ..id = 42
+          ..parentKey = root
+          ..age = 80
+          ..name = 'user80');
         // Auto id person with parentKey
         persons.add(new Person()
-            ..parentKey = root
-            ..age = 81
-            ..name = 'user81');
+          ..parentKey = root
+          ..age = 81
+          ..name = 'user81');
         // Auto id person with non-root parentKey
         var fatherKey = persons.first.parentKey;
         persons.add(new Person()
-            ..parentKey = fatherKey
-            ..age = 82
-            ..name = 'user82');
+          ..parentKey = fatherKey
+          ..age = 82
+          ..name = 'user82');
         persons.add(new Person()
-            ..id = 43
-            ..parentKey = root
-            ..age = 83
-            ..name = 'user83');
+          ..id = 43
+          ..parentKey = root
+          ..age = 83
+          ..name = 'user83');
         return store.commit(inserts: persons).then(expectAsync((_) {
           // At this point, autoIds are allocated and are reflected in the
           // models (as well as parentKey if it was empty).
@@ -389,22 +388,22 @@ runTests(db.DatastoreDB store, String namespace) {
           languages = ['foo', 'bar'];
         }
         users.add(new User()
-            ..id = i
-            ..parentKey = root
-            ..wife = root.append(User, id: 42 + i)
-            ..age = 42 + i
-            ..name = 'user$i'
-            ..nickname = 'nickname${i%3}'
-            ..languages = languages);
+          ..id = i
+          ..parentKey = root
+          ..wife = root.append(User, id: 42 + i)
+          ..age = 42 + i
+          ..name = 'user$i'
+          ..nickname = 'nickname${i%3}'
+          ..languages = languages);
       }
 
       var expandoPersons = [];
       for (var i = 1; i <= 3; i++) {
         var expandoPerson = new ExpandoPerson()
-            ..parentKey = root
-            ..id = i
-            ..name = 'user$i'
-            ..nickname = 'nickuser$i';
+          ..parentKey = root
+          ..id = i
+          ..name = 'user$i'
+          ..nickname = 'nickuser$i';
         expandoPerson.foo = 'foo$i';
         expandoPerson.bar = i;
         expect(expandoPerson.additionalProperties['foo'], equals('foo$i'));
@@ -438,16 +437,15 @@ runTests(db.DatastoreDB store, String namespace) {
         return LOWER_BOUND.compareTo(u.name) <= 0;
       }).toList();
 
-      var fooUsers = users.where(
-          (User u) => u.languages.contains('foo')).toList();
-      var barUsers = users.where(
-          (User u) => u.languages.contains('bar')).toList();
-      var usersWithWife = users.where(
-          (User u) => u.wife == root.append(User, id: 42 + 3)).toList();
+      var fooUsers =
+          users.where((User u) => u.languages.contains('foo')).toList();
+      var barUsers =
+          users.where((User u) => u.languages.contains('bar')).toList();
+      var usersWithWife = users
+          .where((User u) => u.wife == root.append(User, id: 42 + 3))
+          .toList();
 
-      var allInserts = []
-          ..addAll(users)
-          ..addAll(expandoPersons);
+      var allInserts = []..addAll(users)..addAll(expandoPersons);
       var allKeys = allInserts.map((db.Model model) => model.key).toList();
       return store.commit(inserts: allInserts).then((_) {
         return waitUntilEntitiesReady(store, allKeys, partition).then((_) {
@@ -455,7 +453,10 @@ runTests(db.DatastoreDB store, String namespace) {
             // Queries for [Person] return no results, we only have [User]
             // objects.
             () {
-              return store.query(Person, partition: partition).run().toList()
+              return store
+                  .query(Person, partition: partition)
+                  .run()
+                  .toList()
                   .then((List<db.Model> models) {
                 compareModels([], models);
               });
@@ -463,7 +464,10 @@ runTests(db.DatastoreDB store, String namespace) {
 
             // All users query
             () {
-              return store.query(User, partition: partition).run().toList()
+              return store
+                  .query(User, partition: partition)
+                  .run()
+                  .toList()
                   .then((List<db.Model> models) {
                 compareModels(users, models, anyOrder: true);
               });
@@ -472,64 +476,60 @@ runTests(db.DatastoreDB store, String namespace) {
             // Sorted query
             () async {
               var query = store.query(User, partition: partition)
-                  ..order('-name')
-                  ..order('nickname');
+                ..order('-name')
+                ..order('nickname');
               var models = await runQueryWithExponentialBackoff(
                   query, usersSortedNameDescNicknameAsc.length);
-              compareModels(
-                  usersSortedNameDescNicknameAsc, models);
+              compareModels(usersSortedNameDescNicknameAsc, models);
             },
             () async {
               var query = store.query(User, partition: partition)
-                  ..order('-name')
-                  ..order('-nickname')
-                  ..run();
+                ..order('-name')
+                ..order('-nickname')
+                ..run();
               var models = await runQueryWithExponentialBackoff(
                   query, usersSortedNameDescNicknameDesc.length);
-              compareModels(
-                  usersSortedNameDescNicknameDesc, models);
+              compareModels(usersSortedNameDescNicknameDesc, models);
             },
 
             // Sorted query with filter
             () async {
               var query = store.query(User, partition: partition)
-                  ..filter('name >=', LOWER_BOUND)
-                  ..order('-name')
-                  ..order('nickname');
+                ..filter('name >=', LOWER_BOUND)
+                ..order('-name')
+                ..order('nickname');
               var models = await runQueryWithExponentialBackoff(
                   query, usersSortedAndFilteredNameDescNicknameAsc.length);
-              compareModels(usersSortedAndFilteredNameDescNicknameAsc,
-                  models);
+              compareModels(usersSortedAndFilteredNameDescNicknameAsc, models);
             },
             () async {
               var query = store.query(User, partition: partition)
-                  ..filter('name >=', LOWER_BOUND)
-                  ..order('-name')
-                  ..order('-nickname')
-                  ..run();
+                ..filter('name >=', LOWER_BOUND)
+                ..order('-name')
+                ..order('-nickname')
+                ..run();
               var models = await runQueryWithExponentialBackoff(
                   query, usersSortedAndFilteredNameDescNicknameDesc.length);
-              compareModels(usersSortedAndFilteredNameDescNicknameDesc,
-                  models);
+              compareModels(usersSortedAndFilteredNameDescNicknameDesc, models);
             },
 
             // Filter lists
             () async {
               var query = store.query(User, partition: partition)
-                  ..filter('languages =', 'foo')
-                  ..order('name')
-                  ..run();
-              var models = await runQueryWithExponentialBackoff(
-                  query, fooUsers.length);
+                ..filter('languages =', 'foo')
+                ..order('name')
+                ..run();
+              var models =
+                  await runQueryWithExponentialBackoff(query, fooUsers.length);
               compareModels(fooUsers, models, anyOrder: true);
             },
             () async {
               var query = store.query(User, partition: partition)
-                  ..filter('languages =', 'bar')
-                  ..order('name')
-                  ..run();
-              var models = await runQueryWithExponentialBackoff(
-                  query, barUsers.length);
+                ..filter('languages =', 'bar')
+                ..order('name')
+                ..run();
+              var models =
+                  await runQueryWithExponentialBackoff(query, barUsers.length);
               compareModels(barUsers, models, anyOrder: true);
             },
 
@@ -537,8 +537,8 @@ runTests(db.DatastoreDB store, String namespace) {
             () async {
               var wifeKey = root.append(User, id: usersWithWife.first.wife.id);
               var query = store.query(User, partition: partition)
-                  ..filter('wife =', wifeKey)
-                  ..run();
+                ..filter('wife =', wifeKey)
+                ..run();
               var models = await runQueryWithExponentialBackoff(
                   query, usersWithWife.length);
               compareModels(usersWithWife, models, anyOrder: true);
@@ -547,10 +547,10 @@ runTests(db.DatastoreDB store, String namespace) {
             // Simple limit/offset test.
             () async {
               var query = store.query(User, partition: partition)
-                  ..order('-name')
-                  ..order('nickname')
-                  ..offset(3)
-                  ..limit(4);
+                ..order('-name')
+                ..order('nickname')
+                ..offset(3)
+                ..limit(4);
               var expectedModels =
                   usersSortedAndFilteredNameDescNicknameAsc.sublist(3, 7);
               var models = await runQueryWithExponentialBackoff(
@@ -561,24 +561,24 @@ runTests(db.DatastoreDB store, String namespace) {
             // Expando queries: Filter on normal property.
             () async {
               var query = store.query(ExpandoPerson, partition: partition)
-                  ..filter('name =', expandoPersons.last.name)
-                  ..run();
+                ..filter('name =', expandoPersons.last.name)
+                ..run();
               var models = await runQueryWithExponentialBackoff(query, 1);
               compareModels([expandoPersons.last], models);
             },
             // Expando queries: Filter on expanded String property
             () async {
               var query = store.query(ExpandoPerson, partition: partition)
-                  ..filter('foo =', expandoPersons.last.foo)
-                  ..run();
+                ..filter('foo =', expandoPersons.last.foo)
+                ..run();
               var models = await runQueryWithExponentialBackoff(query, 1);
               compareModels([expandoPersons.last], models);
             },
             // Expando queries: Filter on expanded int property
             () async {
               var query = store.query(ExpandoPerson, partition: partition)
-                  ..filter('bar =', expandoPersons.last.bar)
-                  ..run();
+                ..filter('bar =', expandoPersons.last.bar)
+                ..run();
               var models = await runQueryWithExponentialBackoff(query, 1);
               compareModels([expandoPersons.last], models);
             },
@@ -586,8 +586,8 @@ runTests(db.DatastoreDB store, String namespace) {
             // propertyName (datastore name is 'NN').
             () async {
               var query = store.query(ExpandoPerson, partition: partition)
-                  ..filter('nickname =', expandoPersons.last.nickname)
-                  ..run();
+                ..filter('nickname =', expandoPersons.last.nickname)
+                ..run();
               var models = await runQueryWithExponentialBackoff(query, 1);
               compareModels([expandoPersons.last], models);
             },
@@ -600,11 +600,11 @@ runTests(db.DatastoreDB store, String namespace) {
 
             // Make sure queries don't return results
             () => store.lookup(allKeys).then((List<db.Model> models) {
-              expect(models.length, equals(allKeys.length));
-              for (var model in models) {
-                expect(model, isNull);
-              }
-            }),
+                  expect(models.length, equals(allKeys.length));
+                  for (var model in models) {
+                    expect(model, isNull);
+                  }
+                }),
           ];
           return Future.forEach(tests, (f) => f());
         });
@@ -620,7 +620,7 @@ Future<List<db.Model>> runQueryWithExponentialBackoff(
       // Wait for 0.1s, 0.2s, ..., 12.8s
       var duration = new Duration(milliseconds: 100 * (2 << i));
       print("Running query did return less results than expected."
-            "Using exponential backoff: Sleeping for $duration.");
+          "Using exponential backoff: Sleeping for $duration.");
       await sleep(duration);
     }
 
@@ -634,30 +634,29 @@ Future<List<db.Model>> runQueryWithExponentialBackoff(
       "Tried running a query with exponential backoff, giving up now.");
 }
 
-Future waitUntilEntitiesReady(db.DatastoreDB mdb,
-                              List<db.Key> keys,
-                              db.Partition partition) {
+Future waitUntilEntitiesReady(
+    db.DatastoreDB mdb, List<db.Key> keys, db.Partition partition) {
   return waitUntilEntitiesHelper(mdb, keys, true, partition);
 }
 
-Future waitUntilEntitiesGone(db.DatastoreDB mdb,
-                             List<db.Key> keys,
-                             db.Partition partition) {
+Future waitUntilEntitiesGone(
+    db.DatastoreDB mdb, List<db.Key> keys, db.Partition partition) {
   return waitUntilEntitiesHelper(mdb, keys, false, partition);
 }
 
-Future waitUntilEntitiesHelper(db.DatastoreDB mdb,
-                               List<db.Key> keys,
-                               bool positive,
-                               db.Partition partition) {
+Future waitUntilEntitiesHelper(db.DatastoreDB mdb, List<db.Key> keys,
+    bool positive, db.Partition partition) {
   var keysByKind = {};
   for (var key in keys) {
     keysByKind.putIfAbsent(key.type, () => []).add(key);
   }
 
   Future waitForKeys(Type kind, List<db.Key> keys) {
-    return mdb.query(kind, partition: partition)
-        .run().toList().then((List<db.Model> models) {
+    return mdb
+        .query(kind, partition: partition)
+        .run()
+        .toList()
+        .then((List<db.Model> models) {
       for (var key in keys) {
         bool found = false;
         for (var model in models) {

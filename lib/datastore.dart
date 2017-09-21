@@ -44,12 +44,13 @@ class ApplicationError implements Exception {
   String toString() => "ApplicationError: $message";
 }
 
-
 class DatastoreError implements Exception {
   final String message;
 
-  DatastoreError([String message]) : message =
-      (message != null ?message : 'DatastoreError: An unknown error occured');
+  DatastoreError([String message])
+      : message = (message != null
+            ? message
+            : 'DatastoreError: An unknown error occured');
 
   String toString() => '$message';
 }
@@ -71,8 +72,7 @@ class TimeoutError extends DatastoreError {
 /// An application needs to specify indices in a `index.yaml` file and needs to
 /// create indices using the `gcloud preview datastore create-indexes` command.
 class NeedIndexError extends DatastoreError {
-  NeedIndexError()
-      : super("An index is needed for the query to succeed.");
+  NeedIndexError() : super("An index is needed for the query to succeed.");
 }
 
 class PermissionDeniedError extends DatastoreError {
@@ -153,7 +153,7 @@ class Key {
   int get hashCode =>
       elements.fold(partition.hashCode, (a, b) => a ^ b.hashCode);
 
-  bool operator==(Object other) {
+  bool operator ==(Object other) {
     if (identical(this, other)) return true;
 
     if (other is Key &&
@@ -197,7 +197,7 @@ class Partition {
 
   int get hashCode => namespace.hashCode;
 
-  bool operator==(Object other) =>
+  bool operator ==(Object other) =>
       other is Partition && namespace == other.namespace;
 }
 
@@ -226,7 +226,7 @@ class KeyElement {
 
   int get hashCode => kind.hashCode ^ id.hashCode;
 
-  bool operator==(Object other) =>
+  bool operator ==(Object other) =>
       other is KeyElement && kind == other.kind && id == other.id;
 
   String toString() => "$kind.$id";
@@ -317,8 +317,13 @@ class Query {
   /// Limit the number of entities returned to [limit].
   final int limit;
 
-  Query({this.ancestorKey, this.kind, this.filters, this.orders,
-         this.offset, this.limit});
+  Query(
+      {this.ancestorKey,
+      this.kind,
+      this.filters,
+      this.orders,
+      this.offset,
+      this.limit});
 }
 
 /// The result of a commit.
@@ -342,7 +347,7 @@ class BlobValue {
 ///
 /// This token can be passed to the `commit` and `lookup` calls if they should
 /// operate within this transaction.
-abstract class Transaction { }
+abstract class Transaction {}
 
 /// Interface used to talk to the Google Cloud Datastore service.
 ///
@@ -380,10 +385,11 @@ abstract class Datastore {
   /// This method might complete with a [TransactionAbortedError] error.
   /// Users must take care of retrying transactions.
   // TODO(Issue #6): Consider splitting `inserts` into insert/update/upsert.
-  Future<CommitResult> commit({List<Entity> inserts,
-                               List<Entity> autoIdInserts,
-                               List<Key> deletes,
-                               Transaction transaction});
+  Future<CommitResult> commit(
+      {List<Entity> inserts,
+      List<Entity> autoIdInserts,
+      List<Key> deletes,
+      Transaction transaction});
 
   /// Roll a started transaction back.
   Future rollback(Transaction transaction);
@@ -415,6 +421,6 @@ abstract class Datastore {
   ///
   /// Outside of transactions, the result set might be stale. Queries are by
   /// default eventually consistent.
-  Future<Page<Entity>> query(
-      Query query, {Partition partition, Transaction transaction});
+  Future<Page<Entity>> query(Query query,
+      {Partition partition, Transaction transaction});
 }

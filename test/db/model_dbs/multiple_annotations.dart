@@ -8,4 +8,4 @@ import 'package:gcloud/db.dart' as db;
 
 @db.Kind()
 @db.Kind()
-class A extends db.Model { }
+class A extends db.Model {}

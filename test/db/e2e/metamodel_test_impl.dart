@@ -28,12 +28,10 @@ List<Entity> buildEntitiesWithDifferentNamespaces() {
     newEntity(null, 'NullKind', id: 2),
     newEntity(null, 'NullKind2', id: 1),
     newEntity(null, 'NullKind2', id: 2),
-
     newEntity('FooNamespace', 'FooKind', id: 1),
     newEntity('FooNamespace', 'FooKind', id: 2),
     newEntity('FooNamespace', 'FooKind2', id: 1),
     newEntity('FooNamespace', 'FooKind2', id: 2),
-
     newEntity('BarNamespace', 'BarKind', id: 1),
     newEntity('BarNamespace', 'BarKind', id: 2),
     newEntity('BarNamespace', 'BarKind2', id: 1),
@@ -61,20 +59,22 @@ runTests(datastore, db.DatastoreDB store) {
       return datastore.commit(inserts: entities).then((_) {
         return sleep(const Duration(seconds: 10)).then((_) {
           var namespaceQuery = store.query(Namespace);
-          return namespaceQuery.run().toList()
+          return namespaceQuery
+              .run()
+              .toList()
               .then((List<Namespace> namespaces) {
             expect(namespaces.length, greaterThanOrEqualTo(3));
             expect(namespaces, contains(cond((ns) => ns.name == null)));
-            expect(namespaces,
-                   contains(cond((ns) => ns.name == 'FooNamespace')));
-            expect(namespaces,
-                   contains(cond((ns) => ns.name == 'BarNamespace')));
+            expect(
+                namespaces, contains(cond((ns) => ns.name == 'FooNamespace')));
+            expect(
+                namespaces, contains(cond((ns) => ns.name == 'BarNamespace')));
 
             var futures = [];
             for (var namespace in namespaces) {
               if (!(namespace == null ||
-                    namespace == 'FooNamespace' ||
-                    namespace == 'BarNamespace')) {
+                  namespace == 'FooNamespace' ||
+                  namespace == 'BarNamespace')) {
                 continue;
               }
               var partition = store.newPartition(namespace.name);
@@ -102,4 +102,3 @@ runTests(datastore, db.DatastoreDB store) {
     });
   });
 }
-

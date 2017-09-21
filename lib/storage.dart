@@ -122,7 +122,7 @@ class Acl {
     if (bucket.acl != null) {
       for (int i = 0; i < bucket.acl.length; i++) {
         _entries[i] = new AclEntry(_aclScopeFromEntity(bucket.acl[i].entity),
-                                   _aclPermissionFromRole(bucket.acl[i].role));
+            _aclPermissionFromRole(bucket.acl[i].role));
       }
     }
   }
@@ -132,7 +132,7 @@ class Acl {
     if (object.acl != null) {
       for (int i = 0; i < object.acl.length; i++) {
         _entries[i] = new AclEntry(_aclScopeFromEntity(object.acl[i].entity),
-                                   _aclPermissionFromRole(object.acl[i].role));
+            _aclPermissionFromRole(object.acl[i].role));
       }
     }
   }
@@ -158,8 +158,8 @@ class Acl {
       String tmp = entity.substring(8);
       int dash = tmp.indexOf('-');
       if (dash != -1) {
-        return new ProjectScope(tmp.substring(dash + 1),
-                                tmp.substring(0, dash));
+        return new ProjectScope(
+            tmp.substring(dash + 1), tmp.substring(0, dash));
       }
     }
     return new OpaqueScope(entity);
@@ -187,7 +187,7 @@ class Acl {
         : _cachedHashCode = _jenkinsHash(_entries);
   }
 
-  bool operator==(Object other) {
+  bool operator ==(Object other) {
     if (other is Acl) {
       List entries = _entries;
       List otherEntries = other._entries;
@@ -234,10 +234,10 @@ class AclEntry {
         : _cachedHashCode = _jenkinsHash([scope, permission]);
   }
 
-  bool operator==(Object other) {
+  bool operator ==(Object other) {
     return other is AclEntry &&
-           scope == other.scope &&
-           permission == other.permission;
+        scope == other.scope &&
+        permission == other.permission;
   }
 
   String toString() => 'AclEntry($scope, $permission)';
@@ -303,7 +303,7 @@ abstract class AclScope {
         : _cachedHashCode = _jenkinsHash([_type, _id]);
   }
 
-  bool operator==(Object other) {
+  bool operator ==(Object other) {
     return other is AclScope && _type == other._type && _id == other._id;
   }
 
@@ -328,7 +328,7 @@ class StorageIdScope extends AclScope {
 
 /// An ACL scope for an entity identified by an individual email address.
 class AccountScope extends AclScope {
-  AccountScope(String email): super._(AclScope._TYPE_ACCOUNT, email);
+  AccountScope(String email) : super._(AclScope._TYPE_ACCOUNT, email);
 
   /// Email address.
   String get email => _id;
@@ -338,7 +338,7 @@ class AccountScope extends AclScope {
 
 /// An ACL scope for an entity identified by an Google Groups email.
 class GroupScope extends AclScope {
-  GroupScope(String group): super._(AclScope._TYPE_GROUP, group);
+  GroupScope(String group) : super._(AclScope._TYPE_GROUP, group);
 
   /// Group name.
   String get group => _id;
@@ -348,7 +348,7 @@ class GroupScope extends AclScope {
 
 /// An ACL scope for an entity identified by a domain name.
 class DomainScope extends AclScope {
-  DomainScope(String domain): super._(AclScope._TYPE_DOMAIN, domain);
+  DomainScope(String domain) : super._(AclScope._TYPE_DOMAIN, domain);
 
   /// Domain name.
   String get domain => _id;
@@ -381,15 +381,14 @@ class OpaqueScope extends AclScope {
 
 /// ACL scope for a all authenticated users.
 class AllAuthenticatedScope extends AclScope {
-  AllAuthenticatedScope()
-      : super._(AclScope._TYPE_ALL_AUTHENTICATED, null);
+  AllAuthenticatedScope() : super._(AclScope._TYPE_ALL_AUTHENTICATED, null);
 
   String get _storageEntity => 'allAuthenticatedUsers';
 }
 
 /// ACL scope for a all users.
 class AllUsersScope extends AclScope {
-  AllUsersScope(): super._(AclScope._TYPE_ALL_USERS, null);
+  AllUsersScope() : super._(AclScope._TYPE_ALL_USERS, null);
 
   String get _storageEntity => 'allUsers';
 }
@@ -419,7 +418,7 @@ class AclPermission {
 
   int get hashCode => _id.hashCode;
 
-  bool operator==(Object other) {
+  bool operator ==(Object other) {
     return other is AclPermission && _id == other._id;
   }
 
@@ -495,8 +494,9 @@ abstract class BucketInfo {
 /// Access to Cloud Storage
 abstract class Storage {
   /// List of required OAuth2 scopes for Cloud Storage operation.
-  static const List<String> SCOPES =
-      const <String>[storage_api.StorageApi.DevstorageFullControlScope];
+  static const List<String> SCOPES = const <String>[
+    storage_api.StorageApi.DevstorageFullControlScope
+  ];
 
   /// Initializes access to cloud storage.
   factory Storage(http.Client client, String project) = _StorageImpl;
@@ -511,7 +511,7 @@ abstract class Storage {
   ///
   /// Returns a [Future] which completes when the bucket has been created.
   Future createBucket(String bucketName,
-                      {PredefinedAcl predefinedAcl, Acl acl});
+      {PredefinedAcl predefinedAcl, Acl acl});
 
   /// Delete a cloud storage bucket.
   ///
@@ -539,8 +539,7 @@ abstract class Storage {
   ///
   /// Returns a `Bucket` instance.
   Bucket bucket(String bucketName,
-                {PredefinedAcl defaultPredefinedObjectAcl,
-                 Acl defaultObjectAcl});
+      {PredefinedAcl defaultPredefinedObjectAcl, Acl defaultObjectAcl});
 
   /// Check whether a cloud storage bucket exists.
   ///
@@ -629,9 +628,15 @@ class ObjectGeneration {
 
 /// Access to object metadata.
 abstract class ObjectMetadata {
-  factory ObjectMetadata({Acl acl, String contentType, String contentEncoding,
-      String cacheControl, String contentDisposition, String contentLanguage,
+  factory ObjectMetadata(
+      {Acl acl,
+      String contentType,
+      String contentEncoding,
+      String cacheControl,
+      String contentDisposition,
+      String contentLanguage,
       Map<String, String> custom}) = _ObjectMetadata;
+
   /// ACL.
   Acl get acl;
 
@@ -658,8 +663,13 @@ abstract class ObjectMetadata {
   /// Create a copy of this object with some values replaced.
   ///
   // TODO: This cannot be used to set values to null.
-  ObjectMetadata replace({Acl acl, String contentType, String contentEncoding,
-      String cacheControl, String contentDisposition, String contentLanguage,
+  ObjectMetadata replace(
+      {Acl acl,
+      String contentType,
+      String contentEncoding,
+      String cacheControl,
+      String contentDisposition,
+      String contentLanguage,
       Map<String, String> custom});
 }
 
@@ -720,8 +730,11 @@ abstract class Bucket {
   /// The object content has been written the `StreamSink` completes with
   /// an `ObjectInfo` instance with the information on the object created.
   StreamSink<List<int>> write(String objectName,
-      {int length, ObjectMetadata metadata,
-       Acl acl, PredefinedAcl predefinedAcl, String contentType});
+      {int length,
+      ObjectMetadata metadata,
+      Acl acl,
+      PredefinedAcl predefinedAcl,
+      String contentType});
 
   /// Create an new object in the bucket with specified content.
   ///
@@ -733,7 +746,9 @@ abstract class Bucket {
   /// the object is written.
   Future<ObjectInfo> writeBytes(String name, List<int> bytes,
       {ObjectMetadata metadata,
-        Acl acl, PredefinedAcl predefinedAcl, String contentType});
+      Acl acl,
+      PredefinedAcl predefinedAcl,
+      String contentType});
 
   /// Read object content as byte stream.
   ///

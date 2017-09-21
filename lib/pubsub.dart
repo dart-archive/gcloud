@@ -111,7 +111,7 @@ void registerPubSubService(PubSub pubsub) {
 ///
 abstract class PubSub {
   /// List of required OAuth2 scopes for Pub/Sub operation.
-  static const SCOPES = const [ pubsub.PubsubApi.PubsubScope ];
+  static const SCOPES = const [pubsub.PubsubApi.PubsubScope];
 
   /// Access Pub/Sub using an authenticated client.
   ///
@@ -171,8 +171,8 @@ abstract class PubSub {
   /// The [name] can be either an absolute name or a relative name.
   ///
   /// Returns a `Future` which completes with the newly created subscription.
-  Future<Subscription> createSubscription(
-      String name, String topic, {Uri endpoint});
+  Future<Subscription> createSubscription(String name, String topic,
+      {Uri endpoint});
 
   /// Delete subscription named [name].
   ///
@@ -323,7 +323,6 @@ abstract class Subscription {
   /// Returns a `Future` which completes when the operation completes.
   Future delete();
 
-
   /// Pull a message from the subscription.
   ///
   /// If `wait` is `true` (the default), the method will wait for a message
@@ -354,8 +353,8 @@ abstract class Message {
   /// Creates a new message with a binary body.
   ///
   /// Message attributes can be passed in the [attributes] Map.
-  factory Message.withBytes(List<int> message, {Map<String, String> attributes}) =
-      _MessageImpl.withBytes;
+  factory Message.withBytes(List<int> message,
+      {Map<String, String> attributes}) = _MessageImpl.withBytes;
 
   /// The message body as a String.
   ///

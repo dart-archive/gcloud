@@ -26,7 +26,8 @@ part of gcloud.db;
 /// they must have an empty default constructor which can be used to construct
 /// model objects when doing lookups/queries from datastore.
 class ModelDBImpl implements ModelDB {
-  final Map<_ModelDescription, Map<String, Property>> _modelDesc2Properties = {};
+  final Map<_ModelDescription, Map<String, Property>> _modelDesc2Properties =
+      {};
   final Map<String, _ModelDescription> _kind2ModelDesc = {};
   final Map<_ModelDescription, mirrors.ClassMirror> _modelDesc2ClassMirror = {};
   final Map<_ModelDescription, Type> _type2ModelDesc = {};
@@ -97,8 +98,7 @@ class ModelDBImpl implements ModelDB {
       currentKey = currentKey.parent;
     }
     Partition partition = currentKey._parent;
-    return new datastore.Key(
-        elements.reversed.toList(),
+    return new datastore.Key(elements.reversed.toList(),
         partition: new datastore.Partition(partition.namespace));
   }
 
@@ -108,8 +108,7 @@ class ModelDBImpl implements ModelDB {
       var modelDescription = _modelDescriptionForType(model.runtimeType);
       return modelDescription.encodeModel(this, model);
     } catch (error, stack) {
-      throw
-          new ArgumentError('Error while encoding entity ($error, $stack).');
+      throw new ArgumentError('Error while encoding entity ($error, $stack).');
     }
   }
 
@@ -161,8 +160,8 @@ class ModelDBImpl implements ModelDB {
     if (modelDescription == null) {
       throw new ArgumentError('The kind "$kind" is unknown.');
     }
-    return modelDescription.encodeField(
-        this, fieldName, value, forComparison: forComparison);
+    return modelDescription.encodeField(this, fieldName, value,
+        forComparison: forComparison);
   }
 
   Iterable<_ModelDescription> get _modelDescriptions {
@@ -181,7 +180,6 @@ class ModelDBImpl implements ModelDB {
   mirrors.ClassMirror _modelClass(_ModelDescription md) {
     return _modelDesc2ClassMirror[md];
   }
-
 
   void _initialize(Iterable<mirrors.LibraryMirror> libraries) {
     libraries.forEach((mirrors.LibraryMirror lm) {
@@ -203,8 +201,7 @@ class ModelDBImpl implements ModelDB {
     for (var modelDescription in _modelDescriptions) {
       var kindName = modelDescription.kindName(this);
       if (_kind2ModelDesc.containsKey(kindName)) {
-        throw new StateError(
-            'Cannot have two ModelDescriptions '
+        throw new StateError('Cannot have two ModelDescriptions '
             'with the same kind ($kindName)');
       }
       _kind2ModelDesc[kindName] = modelDescription;
@@ -235,16 +232,15 @@ class ModelDBImpl implements ModelDB {
       }
 
       // This constraint should be guaranteed by the Kind() const constructor.
-      assert ((integerId && !stringId) || (!integerId && stringId));
+      assert((integerId && !stringId) || (!integerId && stringId));
 
       _tryLoadNewModelClassFull(classMirror, name, integerId);
     }
   }
 
-  void _tryLoadNewModelClassFull(mirrors.ClassMirror modelClass,
-                                 String name,
-                                 bool useIntegerId) {
-    assert (!_modelDesc2Type.containsKey(modelClass.reflectedType));
+  void _tryLoadNewModelClassFull(
+      mirrors.ClassMirror modelClass, String name, bool useIntegerId) {
+    assert(!_modelDesc2Type.containsKey(modelClass.reflectedType));
 
     var modelDesc;
     if (_isExpandoClass(modelClass)) {
@@ -287,8 +283,8 @@ class ModelDBImpl implements ModelDB {
     while (modelClassMirror.superclass != null) {
       var memberMap = modelClassMirror.instanceMembers;
       // Loop over all declarations (which includes fields)
-      modelClassMirror.declarations.forEach((Symbol fieldSymbol,
-                                             mirrors.DeclarationMirror decl) {
+      modelClassMirror.declarations
+          .forEach((Symbol fieldSymbol, mirrors.DeclarationMirror decl) {
         // Look if the symbol is a getter and we have metadata attached to it.
         if (memberMap.containsKey(fieldSymbol) &&
             memberMap[fieldSymbol].isGetter &&
@@ -397,17 +393,17 @@ class _ModelDescription {
       _encodeProperty(db, model, mirror, properties, fieldName, prop);
     });
 
-    return new datastore.Entity(
-        key, properties, unIndexedProperties: _unIndexedProperties);
+    return new datastore.Entity(key, properties,
+        unIndexedProperties: _unIndexedProperties);
   }
 
   _encodeProperty(ModelDBImpl db, Model model, mirrors.InstanceMirror mirror,
-                  Map properties, String fieldName, Property prop) {
+      Map properties, String fieldName, Property prop) {
     String propertyName = prop.propertyName;
     if (propertyName == null) propertyName = fieldName;
 
-    var value = mirror.getField(
-        mirrors.MirrorSystem.getSymbol(fieldName)).reflectee;
+    var value =
+        mirror.getField(mirrors.MirrorSystem.getSymbol(fieldName)).reflectee;
     if (!prop.validate(db, value)) {
       throw new StateError('Property validation failed for '
           'property $fieldName while trying to serialize entity of kind '
@@ -434,8 +430,7 @@ class _ModelDescription {
   }
 
   _decodeProperty(ModelDBImpl db, datastore.Entity entity,
-                  mirrors.InstanceMirror mirror, String fieldName,
-                  Property prop) {
+      mirrors.InstanceMirror mirror, String fieldName, Property prop) {
     String propertyName = fieldNameToPropertyName(fieldName);
 
     var rawValue = entity.properties[propertyName];
@@ -459,8 +454,7 @@ class _ModelDescription {
   }
 
   Object encodeField(ModelDBImpl db, String fieldName, Object value,
-                     {bool enforceFieldExists: true,
-                      bool forComparison: false}) {
+      {bool enforceFieldExists: true, bool forComparison: false}) {
     Property property = db._propertiesForModel(this)[fieldName];
     if (property != null) {
       return property.encodeValue(db, value, forComparison: forComparison);
@@ -539,8 +533,7 @@ class _ExpandoModelDescription extends _ModelDescription {
   }
 
   Object encodeField(ModelDBImpl db, String fieldName, Object value,
-                     {bool enforceFieldExists: true,
-                      bool forComparison: false}) {
+      {bool enforceFieldExists: true, bool forComparison: false}) {
     // The [enforceFieldExists] argument is intentionally ignored.
 
     Object primitiveValue = super.encodeField(db, fieldName, value,

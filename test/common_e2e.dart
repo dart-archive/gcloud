@@ -36,7 +36,6 @@ const String DEFAULT_KEY_LOCATION =
 // attempt to account for that.
 const STORAGE_LIST_DELAY = const Duration(seconds: 5);
 
-
 bool onBot() {
   // When running on the package-bot the current user is chrome-bot.
   var envName;
@@ -72,9 +71,8 @@ Future<String> serviceKeyJson(String serviceKeyLocation) {
 
 typedef Future AuthCallback(String project, http.Client client);
 
-Future withAuthClient(List<String> scopes,
-                      AuthCallback callback,
-                      {bool trace: false}) {
+Future withAuthClient(List<String> scopes, AuthCallback callback,
+    {bool trace: false}) {
   String project = Platform.environment[PROJECT_ENV];
   String serviceKeyLocation = Platform.environment[SERVICE_KEY_LOCATION_ENV];
 
@@ -114,7 +112,8 @@ class E2EConfiguration extends SimpleConfiguration {
   onDone(success) {
     new Future.sync(() {
       super.onDone(success);
-    }).then((_) => _completer.complete(_))
-    .catchError((error, stack) => _completer.completeError(error, stack));
+    })
+        .then((_) => _completer.complete(_))
+        .catchError((error, stack) => _completer.completeError(error, stack));
   }
 }

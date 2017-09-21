@@ -7,7 +7,7 @@ library gcloud.db.model_test.duplicate_kind;
 import 'package:gcloud/db.dart' as db;
 
 @db.Kind()
-class A extends db.Model { }
+class A extends db.Model {}
 
 @db.Kind(name: 'A')
-class B extends db.Model { }
+class B extends db.Model {}

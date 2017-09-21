@@ -19,8 +19,8 @@ class TransactionImpl implements datastore.Transaction {
 
 class DatastoreImpl implements datastore.Datastore {
   static const List<String> SCOPES = const <String>[
-      api.DatastoreApi.DatastoreScope,
-      api.DatastoreApi.CloudPlatformScope,
+    api.DatastoreApi.DatastoreScope,
+    api.DatastoreApi.CloudPlatformScope,
   ];
 
   final api.DatastoreApi _api;
@@ -29,14 +29,15 @@ class DatastoreImpl implements datastore.Datastore {
   /// The [project] parameter is the name of the cloud project (it should not
   /// start with a `s~`).
   DatastoreImpl(http.Client client, String project)
-      : _api = new api.DatastoreApi(client), _project = project;
+      : _api = new api.DatastoreApi(client),
+        _project = project;
 
   api.Key _convertDatastore2ApiKey(datastore.Key key, {bool enforceId: true}) {
     var apiKey = new api.Key();
 
     apiKey.partitionId = new api.PartitionId()
-        ..projectId = _project
-        ..namespaceId = key.partition.namespace;
+      ..projectId = _project
+      ..namespaceId = key.partition.namespace;
 
     apiKey.path = key.elements.map((datastore.KeyElement element) {
       var part = new api.PathElement();
@@ -96,45 +97,38 @@ class DatastoreImpl implements datastore.Datastore {
     return true;
   }
 
-  api.Value _convertDatastore2ApiPropertyValue(
-      value, bool indexed, {bool lists: true}) {
-    var apiValue = new api.Value()
-        ..excludeFromIndexes = !indexed;
+  api.Value _convertDatastore2ApiPropertyValue(value, bool indexed,
+      {bool lists: true}) {
+    var apiValue = new api.Value()..excludeFromIndexes = !indexed;
     if (value == null) {
-      return apiValue
-          ..nullValue = "NULL_VALUE";
+      return apiValue..nullValue = "NULL_VALUE";
     } else if (value is bool) {
-      return apiValue
-          ..booleanValue = value;
+      return apiValue..booleanValue = value;
     } else if (value is int) {
-      return apiValue
-          ..integerValue = '$value';
+      return apiValue..integerValue = '$value';
     } else if (value is double) {
-      return apiValue
-          ..doubleValue = value;
+      return apiValue..doubleValue = value;
     } else if (value is String) {
-      return apiValue
-          ..stringValue = value;
+      return apiValue..stringValue = value;
     } else if (value is DateTime) {
-      return apiValue
-          ..timestampValue = value.toIso8601String();
+      return apiValue..timestampValue = value.toIso8601String();
     } else if (value is datastore.BlobValue) {
-      return apiValue
-          ..blobValueAsBytes = value.bytes;
+      return apiValue..blobValueAsBytes = value.bytes;
     } else if (value is datastore.Key) {
       return apiValue
-          ..keyValue = _convertDatastore2ApiKey(value, enforceId: false);
+        ..keyValue = _convertDatastore2ApiKey(value, enforceId: false);
     } else if (value is List) {
       if (!lists) {
         // FIXME(Issue #3): Consistently handle exceptions.
         throw new Exception('List values are not allowed.');
       }
 
-      convertItem(i)
-          => _convertDatastore2ApiPropertyValue(i, indexed, lists: false);
+      convertItem(i) =>
+          _convertDatastore2ApiPropertyValue(i, indexed, lists: false);
 
-      return new api.Value()..arrayValue = (
-          new api.ArrayValue()..values = value.map(convertItem).toList());
+      return new api.Value()
+        ..arrayValue =
+            (new api.ArrayValue()..values = value.map(convertItem).toList());
     } else {
       throw new UnsupportedError(
           'Types ${value.runtimeType} cannot be used for serializing.');
@@ -157,8 +151,9 @@ class DatastoreImpl implements datastore.Datastore {
     else if (value.keyValue != null)
       return _convertApi2DatastoreKey(value.keyValue);
     else if (value.arrayValue != null && value.arrayValue.values != null)
-      return value
-          .arrayValue.values.map(_convertApi2DatastoreProperty).toList();
+      return value.arrayValue.values
+          .map(_convertApi2DatastoreProperty)
+          .toList();
     else if (value.entityValue != null)
       throw new UnsupportedError('Entity values are not supported.');
     else if (value.geoPointValue != null)
@@ -173,22 +168,21 @@ class DatastoreImpl implements datastore.Datastore {
     if (entity.properties != null) {
       entity.properties.forEach((String name, api.Value value) {
         properties[name] = _convertApi2DatastoreProperty(value);
-        if (value.excludeFromIndexes != null &&
-            value.excludeFromIndexes) {
+        if (value.excludeFromIndexes != null && value.excludeFromIndexes) {
           unindexedProperties.add(name);
         }
       });
     }
-    return new datastore.Entity(_convertApi2DatastoreKey(entity.key),
-                                properties,
-                                unIndexedProperties: unindexedProperties);
+    return new datastore.Entity(
+        _convertApi2DatastoreKey(entity.key), properties,
+        unIndexedProperties: unindexedProperties);
   }
 
   api.Entity _convertDatastore2ApiEntity(datastore.Entity entity,
-                                         {bool enforceId: false}) {
+      {bool enforceId: false}) {
     var apiEntity = new api.Entity();
 
-    apiEntity.key  = _convertDatastore2ApiKey(entity.key, enforceId: enforceId);
+    apiEntity.key = _convertDatastore2ApiKey(entity.key, enforceId: enforceId);
     apiEntity.properties = {};
     if (entity.properties != null) {
       for (var key in entity.properties.keys) {
@@ -220,8 +214,8 @@ class DatastoreImpl implements datastore.Datastore {
     }
     pf.op = operator;
     pf.property = new api.PropertyReference()..name = filter.name;
-    pf.value = _convertDatastore2ApiPropertyValue(
-        filter.value, true, lists: false);
+    pf.value =
+        _convertDatastore2ApiPropertyValue(filter.value, true, lists: false);
     return new api.Filter()..propertyFilter = pf;
   }
 
@@ -230,12 +224,12 @@ class DatastoreImpl implements datastore.Datastore {
     pf.op = 'HAS_ANCESTOR';
     pf.property = new api.PropertyReference()..name = '__key__';
     pf.value = new api.Value()
-        ..keyValue = _convertDatastore2ApiKey(key, enforceId: true);
+      ..keyValue = _convertDatastore2ApiKey(key, enforceId: true);
     return new api.Filter()..propertyFilter = pf;
   }
 
-  api.Filter _convertDatastore2ApiFilters(List<datastore.Filter> filters,
-                                          datastore.Key ancestorKey) {
+  api.Filter _convertDatastore2ApiFilters(
+      List<datastore.Filter> filters, datastore.Key ancestorKey) {
     if ((filters == null || filters.length == 0) && ancestorKey == null) {
       return null;
     }
@@ -259,10 +253,11 @@ class DatastoreImpl implements datastore.Datastore {
   api.PropertyOrder _convertDatastore2ApiOrder(datastore.Order order) {
     var property = new api.PropertyReference()..name = order.propertyName;
     var direction = order.direction == datastore.OrderDirection.Ascending
-        ? 'ASCENDING' : 'DESCENDING';
+        ? 'ASCENDING'
+        : 'DESCENDING';
     return new api.PropertyOrder()
-        ..direction = direction
-        ..property = property;
+      ..direction = direction
+      ..property = property;
   }
 
   List<api.PropertyOrder> _convertDatastore2ApiOrders(
@@ -283,7 +278,7 @@ class DatastoreImpl implements datastore.Datastore {
         // TODO:
         return new Future.error(new datastore.TransactionAbortedError(), stack);
       } else if (error.status == 412) {
-        return  new Future.error(new datastore.NeedIndexError(), stack);
+        return new Future.error(new datastore.NeedIndexError(), stack);
       }
     }
     return new Future.error(error, stack);
@@ -291,9 +286,10 @@ class DatastoreImpl implements datastore.Datastore {
 
   Future<List<datastore.Key>> allocateIds(List<datastore.Key> keys) {
     var request = new api.AllocateIdsRequest();
-    request..keys = keys.map((key) {
-      return _convertDatastore2ApiKey(key, enforceId: false);
-    }).toList();
+    request
+      ..keys = keys.map((key) {
+        return _convertDatastore2ApiKey(key, enforceId: false);
+      }).toList();
     return _api.projects.allocateIds(request, _project).then((response) {
       return response.keys.map(_convertApi2DatastoreKey).toList();
     }, onError: _handleError);
@@ -307,10 +303,11 @@ class DatastoreImpl implements datastore.Datastore {
     }, onError: _handleError);
   }
 
-  Future<datastore.CommitResult> commit({List<datastore.Entity> inserts,
-                                         List<datastore.Entity> autoIdInserts,
-                                         List<datastore.Key> deletes,
-                                         datastore.Transaction transaction}) {
+  Future<datastore.CommitResult> commit(
+      {List<datastore.Entity> inserts,
+      List<datastore.Entity> autoIdInserts,
+      List<datastore.Key> deletes,
+      datastore.Transaction transaction}) {
     var request = new api.CommitRequest();
 
     if (transaction != null) {
@@ -323,25 +320,23 @@ class DatastoreImpl implements datastore.Datastore {
     var mutations = request.mutations = [];
     if (inserts != null) {
       for (int i = 0; i < inserts.length; i++) {
-        mutations.add(
-            new api.Mutation()..upsert =
-              _convertDatastore2ApiEntity(inserts[i], enforceId: true));
+        mutations.add(new api.Mutation()
+          ..upsert = _convertDatastore2ApiEntity(inserts[i], enforceId: true));
       }
     }
     int autoIdStartIndex = -1;
     if (autoIdInserts != null) {
       autoIdStartIndex = mutations.length;
       for (int i = 0; i < autoIdInserts.length; i++) {
-        mutations.add(
-            new api.Mutation()..insert =
+        mutations.add(new api.Mutation()
+          ..insert =
               _convertDatastore2ApiEntity(autoIdInserts[i], enforceId: false));
       }
     }
     if (deletes != null) {
       for (int i = 0; i < deletes.length; i++) {
-        mutations.add(
-            new api.Mutation()..delete =
-            _convertDatastore2ApiKey(deletes[i], enforceId: true));
+        mutations.add(new api.Mutation()
+          ..delete = _convertDatastore2ApiKey(deletes[i], enforceId: true));
       }
     }
     return _api.projects.commit(request, _project).then((result) {
@@ -350,7 +345,7 @@ class DatastoreImpl implements datastore.Datastore {
         List<api.MutationResult> mutationResults = result.mutationResults;
         assert(autoIdStartIndex != -1);
         assert(mutationResults.length >=
-               (autoIdStartIndex + autoIdInserts.length));
+            (autoIdStartIndex + autoIdInserts.length));
         keys = mutationResults
             .skip(autoIdStartIndex)
             .take(autoIdInserts.length)
@@ -362,7 +357,7 @@ class DatastoreImpl implements datastore.Datastore {
   }
 
   Future<List<datastore.Entity>> lookup(List<datastore.Key> keys,
-                                        {datastore.Transaction transaction}) {
+      {datastore.Transaction transaction}) {
     var apiKeys = keys.map((key) {
       return _convertDatastore2ApiKey(key, enforceId: true);
     }).toList();
@@ -433,16 +428,14 @@ class DatastoreImpl implements datastore.Datastore {
     }, onError: _handleError);
   }
 
-  Future<Page<datastore.Entity>> query(
-      datastore.Query query, {datastore.Partition partition,
-                              datastore.Transaction transaction}) {
+  Future<Page<datastore.Entity>> query(datastore.Query query,
+      {datastore.Partition partition, datastore.Transaction transaction}) {
     // NOTE: We explicitly do not set 'limit' here, since this is handled by
     // QueryPageImpl.runQuery.
     var apiQuery = new api.Query()
-        ..filter = _convertDatastore2ApiFilters(query.filters,
-                                                query.ancestorKey)
-        ..order = _convertDatastore2ApiOrders(query.orders)
-        ..offset = query.offset;
+      ..filter = _convertDatastore2ApiFilters(query.filters, query.ancestorKey)
+      ..order = _convertDatastore2ApiOrders(query.orders)
+      ..offset = query.offset;
 
     if (query.kind != null) {
       apiQuery.kind = [new api.KindExpression()..name = query.kind];
@@ -457,17 +450,18 @@ class DatastoreImpl implements datastore.Datastore {
     }
     if (partition != null) {
       request.partitionId = new api.PartitionId()
-          ..namespaceId = partition.namespace;
+        ..namespaceId = partition.namespace;
     }
 
-    return QueryPageImpl.runQuery(_api, _project, request, query.limit)
+    return QueryPageImpl
+        .runQuery(_api, _project, request, query.limit)
         .catchError(_handleError);
   }
 
   Future rollback(datastore.Transaction transaction) {
     // TODO: Handle [transaction]
     var request = new api.RollbackRequest()
-        ..transaction = (transaction as TransactionImpl).data;
+      ..transaction = (transaction as TransactionImpl).data;
     return _api.projects.rollback(request, _project).catchError(_handleError);
   }
 }
@@ -484,15 +478,12 @@ class QueryPageImpl implements Page<datastore.Entity> {
   // This might be `null` in which case we request as many as we can get.
   final int _remainingNumberOfEntities;
 
-  QueryPageImpl(this._api, this._project,
-                this._nextRequest, this._entities,
-                this._isLast, this._remainingNumberOfEntities);
+  QueryPageImpl(this._api, this._project, this._nextRequest, this._entities,
+      this._isLast, this._remainingNumberOfEntities);
 
-  static Future<QueryPageImpl> runQuery(api.DatastoreApi api,
-                                        String project,
-                                        api.RunQueryRequest request,
-                                        int limit,
-                                        {int batchSize}) {
+  static Future<QueryPageImpl> runQuery(api.DatastoreApi api, String project,
+      api.RunQueryRequest request, int limit,
+      {int batchSize}) {
     int batchLimit = batchSize;
     if (batchLimit == null) {
       batchLimit = MAX_ENTITIES_PER_RESPONSE;
@@ -530,7 +521,6 @@ class QueryPageImpl implements Page<datastore.Entity> {
             '(${request.query.limit}) was.');
       }
 
-
       // FIXME: TODO: Big hack!
       // It looks like Apiary/Atlas is currently broken.
       /*
@@ -554,8 +544,7 @@ class QueryPageImpl implements Page<datastore.Entity> {
       // If the server signals there are more entities and we either have no
       // limit or our limit has not been reached, we set `moreBatches` to
       // `true`.
-      bool moreBatches =
-          (remainingEntities == null || remainingEntities > 0) &&
+      bool moreBatches = (remainingEntities == null || remainingEntities > 0) &&
           response.batch.moreResults == 'MORE_RESULTS_AFTER_LIMIT';
 
       bool gotAll = limit != null && remainingEntities == 0;
@@ -563,13 +552,13 @@ class QueryPageImpl implements Page<datastore.Entity> {
       bool isLast = gotAll || noMore;
 
       // As a sanity check, we assert that `moreBatches XOR isLast`.
-      assert (isLast != moreBatches);
+      assert(isLast != moreBatches);
 
       // FIXME: TODO: Big hack!
       // It looks like Apiary/Atlas is currently broken.
       if (moreBatches && returnedEntities.length == 0) {
         print('Warning: Api to Google Cloud Datastore returned bogus response. '
-              'Trying a workaround.');
+            'Trying a workaround.');
         isLast = true;
         moreBatches = false;
       }
@@ -614,8 +603,8 @@ class QueryPageImpl implements Page<datastore.Entity> {
       });
     }
 
-    return QueryPageImpl.runQuery(
-        _api, _project, _nextRequest, _remainingNumberOfEntities)
+    return QueryPageImpl
+        .runQuery(_api, _project, _nextRequest, _remainingNumberOfEntities)
         .catchError(DatastoreImpl._handleError);
   }
 }

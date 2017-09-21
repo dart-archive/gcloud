@@ -15,7 +15,6 @@ import 'db/e2e/db_test_impl.dart' as db_test;
 import 'db/e2e/metamodel_test_impl.dart' as db_metamodel_test;
 import 'datastore/e2e/datastore_test_impl.dart' as datastore_test;
 
-
 import 'common_e2e.dart';
 
 main() {
