@@ -1,3 +1,9 @@
+## 0.4.0+1
+
+* Made a number of strong-mode improvements.
+
+* Updated dependency on `googleapis` and `googleapis_beta`.
+
 ## 0.4.0
 
 * Remove support for `FilterRelation.In` and "propertyname IN" for queries:
