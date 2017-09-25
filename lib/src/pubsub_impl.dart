@@ -10,9 +10,8 @@ class _PubSubImpl implements PubSub {
   final String _topicPrefix;
   final String _subscriptionPrefix;
 
-  _PubSubImpl(http.Client client, String project)
-      : this.project = project,
-        _api = new pubsub.PubsubApi(client),
+  _PubSubImpl(http.Client client, this.project)
+      : _api = new pubsub.PubsubApi(client),
         _topicPrefix = 'projects/$project/topics/',
         _subscriptionPrefix = 'projects/$project/subscriptions/';
 
