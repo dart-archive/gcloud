@@ -50,8 +50,8 @@ import 'package:unittest/unittest.dart';
 import 'package:gcloud/db.dart' as db;
 import 'package:gcloud/src/datastore_impl.dart' as datastore_impl;
 
-import '../../datastore/e2e/datastore_test_impl.dart' as datastore_test;
 import '../../common_e2e.dart';
+import '../../datastore/e2e/datastore_test_impl.dart' as datastore_test;
 
 @db.Kind()
 class Person extends db.Model {
@@ -279,7 +279,7 @@ runTests(db.DatastoreDB store, String namespace) {
 
       test('parent_key', () {
         var root = partition.emptyKey;
-        var users = [];
+        var users = <db.Model>[];
         for (var i = 333; i <= 334; i++) {
           users.add(new User()
             ..id = i
@@ -288,7 +288,7 @@ runTests(db.DatastoreDB store, String namespace) {
             ..name = 'user$i'
             ..nickname = 'nickname${i%3}');
         }
-        var persons = [];
+        var persons = <db.Model>[];
         for (var i = 335; i <= 336; i++) {
           persons.add(new Person()
             ..id = i
@@ -308,7 +308,7 @@ runTests(db.DatastoreDB store, String namespace) {
 
       test('auto_ids', () {
         var root = partition.emptyKey;
-        var persons = [];
+        var persons = <Person>[];
         persons.add(new Person()
           ..id = 42
           ..parentKey = root
@@ -379,7 +379,7 @@ runTests(db.DatastoreDB store, String namespace) {
 
     test('query', () {
       var root = partition.emptyKey;
-      var users = [];
+      var users = <User>[];
       for (var i = 1; i <= 10; i++) {
         var languages = [];
         if (i == 9) {
@@ -397,7 +397,7 @@ runTests(db.DatastoreDB store, String namespace) {
           ..languages = languages);
       }
 
-      var expandoPersons = [];
+      var expandoPersons = <ExpandoPerson>[];
       for (var i = 1; i <= 3; i++) {
         var expandoPerson = new ExpandoPerson()
           ..parentKey = root
@@ -413,14 +413,14 @@ runTests(db.DatastoreDB store, String namespace) {
 
       var LOWER_BOUND = 'user2';
 
-      var usersSortedNameDescNicknameAsc = new List.from(users);
+      var usersSortedNameDescNicknameAsc = new List<User>.from(users);
       usersSortedNameDescNicknameAsc.sort((User a, User b) {
         var result = b.name.compareTo(a.name);
         if (result == 0) return a.nickname.compareTo(b.nickname);
         return result;
       });
 
-      var usersSortedNameDescNicknameDesc = new List.from(users);
+      var usersSortedNameDescNicknameDesc = new List<User>.from(users);
       usersSortedNameDescNicknameDesc.sort((User a, User b) {
         var result = b.name.compareTo(a.name);
         if (result == 0) return b.nickname.compareTo(a.nickname);
@@ -445,7 +445,7 @@ runTests(db.DatastoreDB store, String namespace) {
           .where((User u) => u.wife == root.append(User, id: 42 + 3))
           .toList();
 
-      var allInserts = []..addAll(users)..addAll(expandoPersons);
+      var allInserts = <db.Model>[]..addAll(users)..addAll(expandoPersons);
       var allKeys = allInserts.map((db.Model model) => model.key).toList();
       return store.commit(inserts: allInserts).then((_) {
         return waitUntilEntitiesReady(store, allKeys, partition).then((_) {
@@ -646,7 +646,7 @@ Future waitUntilEntitiesGone(
 
 Future waitUntilEntitiesHelper(db.DatastoreDB mdb, List<db.Key> keys,
     bool positive, db.Partition partition) {
-  var keysByKind = {};
+  var keysByKind = <Type, dynamic>{};
   for (var key in keys) {
     keysByKind.putIfAbsent(key.type, () => []).add(key);
   }

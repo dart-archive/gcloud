@@ -75,7 +75,7 @@ main() {
               return mock.respond(new storage.Bucket()..name = bucketName);
             }, count: predefined.length));
 
-        var futures = [];
+        var futures = <Future>[];
         for (int i = 0; i < predefined.length; i++) {
           futures.add(
               api.createBucket(bucketName, predefinedAcl: predefined[i][0]));
@@ -130,7 +130,7 @@ main() {
               return mock.respond(new storage.Bucket()..name = bucketName);
             }, count: acls.length));
 
-        var futures = [];
+        var futures = <Future>[];
         for (int i = 0; i < acls.length; i++) {
           futures.add(api.createBucket(bucketName, acl: acls[i]));
         }
@@ -195,7 +195,7 @@ main() {
               return mock.respond(new storage.Bucket()..name = bucketName);
             }, count: predefined.length * acls.length));
 
-        var futures = [];
+        var futures = <Future>[];
         for (int i = 0; i < predefined.length; i++) {
           for (int j = 0; j < acls.length; j++) {
             futures.add(api.createBucket(bucketName,
@@ -436,8 +436,6 @@ main() {
           .then(expectAsync((_) => upload(addToSink, false)));
     }
 
-    ;
-
     test('write-short-1', () {
       withMockClient((mock, api) {
         runTest(mock, api, [bytesNormalUpload], bytesNormalUpload.length);
@@ -648,7 +646,7 @@ main() {
             }, count: metadata.length));
 
         var bucket = api.bucket(bucketName);
-        var futures = [];
+        var futures = <Future>[];
         for (int i = 0; i < metadata.length; i++) {
           futures
               .add(bucket.writeBytes(objectName, bytes, metadata: metadata[i]));
@@ -714,7 +712,7 @@ main() {
             }, count: metadata.length * 2));
 
         var bucket = api.bucket(bucketName);
-        var futures = [];
+        var futures = <Future>[];
         for (int i = 0; i < metadata.length; i++) {
           futures.add(bucket.writeBytes(objectName, bytesResumableUpload,
               metadata: metadata[i]));
@@ -757,7 +755,7 @@ main() {
             }, count: predefined.length));
 
         var bucket = api.bucket(bucketName);
-        var futures = [];
+        var futures = <Future>[];
         for (int i = 0; i < predefined.length; i++) {
           futures.add(bucket.writeBytes(objectName, bytes,
               predefinedAcl: predefined[i][0]));
@@ -820,7 +818,7 @@ main() {
             }, count: acls.length));
 
         var bucket = api.bucket(bucketName);
-        var futures = [];
+        var futures = <Future>[];
         for (int i = 0; i < acls.length; i++) {
           futures.add(bucket.writeBytes(objectName, bytes, acl: acls[i]));
         }
@@ -894,7 +892,7 @@ main() {
             }, count: predefined.length * acls.length));
 
         var bucket = api.bucket(bucketName);
-        var futures = [];
+        var futures = <Future>[];
         for (int i = 0; i < predefined.length; i++) {
           for (int j = 0; j < acls.length; j++) {
             futures.add(bucket.writeBytes(objectName, bytes,

@@ -49,16 +49,16 @@
 library gcloud.storage;
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:collection' show UnmodifiableListView, UnmodifiableMapView;
+import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
 import 'package:googleapis/storage/v1.dart' as storage_api;
 
+import 'common.dart';
 import 'service_scope.dart' as ss;
 
-import 'common.dart';
 export 'common.dart';
 
 part 'src/storage_impl.dart';
@@ -363,7 +363,7 @@ class ProjectScope extends AclScope {
   /// Possible values are `owners`, `editors` and `viewers`.
   final String role;
 
-  ProjectScope(String project, String this.role)
+  ProjectScope(String project, this.role)
       : super._(AclScope._TYPE_PROJECT, project);
 
   /// Project ID.

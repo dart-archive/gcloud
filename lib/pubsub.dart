@@ -11,9 +11,9 @@ import 'package:http/http.dart' as http;
 
 import 'package:googleapis_beta/pubsub/v1beta2.dart' as pubsub;
 
+import 'common.dart';
 import 'service_scope.dart' as ss;
 
-import 'common.dart';
 export 'common.dart';
 
 part 'src/pubsub_impl.dart';

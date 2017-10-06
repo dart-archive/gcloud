@@ -6,11 +6,17 @@ library gcloud.db;
 
 import 'dart:async';
 import 'dart:collection';
+// dart:core is imported explicitly so it is available at top-level without
+//   the `core` prefix defined below.
+import 'dart:core';
+// Importing `dart:core` as `core` to allow access to `String` in `IdType`
+//   without conflicts.
+import 'dart:core' as core;
 import 'dart:mirrors' as mirrors;
 
 import 'common.dart' show StreamFromPages;
-import 'service_scope.dart' as ss;
 import 'datastore.dart' as datastore;
+import 'service_scope.dart' as ss;
 
 part 'src/db/annotations.dart';
 part 'src/db/db.dart';

@@ -5,16 +5,13 @@
 part of gcloud.pubsub;
 
 class _PubSubImpl implements PubSub {
-  final http.Client _client;
   final String project;
   final pubsub.PubsubApi _api;
   final String _topicPrefix;
   final String _subscriptionPrefix;
 
-  _PubSubImpl(client, project)
-      : this._client = client,
-        this.project = project,
-        _api = new pubsub.PubsubApi(client),
+  _PubSubImpl(http.Client client, this.project)
+      : _api = new pubsub.PubsubApi(client),
         _topicPrefix = 'projects/$project/topics/',
         _subscriptionPrefix = 'projects/$project/subscriptions/';
 

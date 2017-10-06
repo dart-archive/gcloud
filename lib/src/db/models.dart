@@ -48,7 +48,7 @@ class Key {
   Partition get partition {
     var obj = _parent;
     while (obj is! Partition) {
-      obj = obj._parent;
+      obj = (obj as Key)._parent;
     }
     return obj;
   }

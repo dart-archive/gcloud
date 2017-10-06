@@ -88,7 +88,9 @@ Future withAuthClient(List<String> scopes, AuthCallback callback,
 
   return serviceKeyJson(serviceKeyLocation).then((keyJson) {
     var creds = new auth.ServiceAccountCredentials.fromJson(keyJson);
-    return auth.clientViaServiceAccount(creds, scopes).then((client) {
+    return auth
+        .clientViaServiceAccount(creds, scopes)
+        .then((http.Client client) {
       if (trace) client = new TraceClient(client);
       return callback(project, client).whenComplete(() => client.close());
     });

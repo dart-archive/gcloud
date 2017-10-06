@@ -52,7 +52,7 @@ runTests(PubSub pubsub, String project, String prefix) {
     test('create-lookup-delete', () async {
       var topicName = generateTopicName();
       var subscriptionName = generateSubscriptionName();
-      var topic = await pubsub.createTopic(topicName);
+      await pubsub.createTopic(topicName);
       var subscription =
           await pubsub.createSubscription(subscriptionName, topicName);
       expect(subscription.name, subscriptionName);
@@ -70,7 +70,7 @@ runTests(PubSub pubsub, String project, String prefix) {
     test('create-list-delete', () async {
       const int count = 5;
       var topicName = generateTopicName();
-      var topic = await pubsub.createTopic(topicName);
+      await pubsub.createTopic(topicName);
 
       var subscriptionPrefix = generateSubscriptionName();
 

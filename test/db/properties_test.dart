@@ -75,9 +75,14 @@ main() {
       expect(prop.validate(null, null), isTrue);
       expect(prop.validate(null, [1, 2]), isTrue);
       expect(prop.encodeValue(null, null), equals(null));
-      expect(prop.encodeValue(null, []).bytes, equals([]));
-      expect(prop.encodeValue(null, [1, 2]).bytes, equals([1, 2]));
-      expect(prop.encodeValue(null, new Uint8List.fromList([1, 2])).bytes,
+      expect((prop.encodeValue(null, []) as datastore.BlobValue).bytes,
+          equals([]));
+      expect((prop.encodeValue(null, [1, 2]) as datastore.BlobValue).bytes,
+          equals([1, 2]));
+      expect(
+          (prop.encodeValue(null, new Uint8List.fromList([1, 2]))
+                  as datastore.BlobValue)
+              .bytes,
           equals([1, 2]));
       expect(prop.decodePrimitiveValue(null, null), equals(null));
       expect(prop.decodePrimitiveValue(null, new datastore.BlobValue([])),
@@ -185,7 +190,7 @@ class Custom {
 
 class CustomProperty extends StringProperty {
   const CustomProperty(
-      {String propertyName: null, bool required: false, bool indexed: true});
+      {String propertyName, bool required: false, bool indexed: true});
 
   bool validate(ModelDB db, Object value) {
     if (required && value == null) return false;
@@ -197,7 +202,7 @@ class CustomProperty extends StringProperty {
     return new Custom()..customValue = value;
   }
 
-  Object encodeValue(ModelDB db, Object value) {
+  Object encodeValue(ModelDB db, Object value, {bool forComparison: false}) {
     if (value == null) return null;
     return (value as Custom).customValue;
   }
@@ -209,7 +214,7 @@ class KeyMock implements Key {
   KeyMock(this._datastoreKey);
 
   Object id = 1;
-  Type type = null;
+  Type type;
   Key get parent => this;
   bool get isEmpty => false;
   Partition get partition => null;

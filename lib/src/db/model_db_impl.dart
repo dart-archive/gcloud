@@ -185,7 +185,7 @@ class ModelDBImpl implements ModelDB {
     libraries.forEach((mirrors.LibraryMirror lm) {
       lm.declarations.values
           .where((d) => d is mirrors.ClassMirror && d.hasReflectedType)
-          .forEach((mirrors.ClassMirror declaration) {
+          .forEach((declaration) {
         _tryLoadNewModelClass(declaration);
       });
     });
@@ -343,7 +343,7 @@ class ModelDBImpl implements ModelDB {
   }
 }
 
-class _ModelDescription {
+class _ModelDescription<T extends Model> {
   final HashMap<String, String> _property2FieldName =
       new HashMap<String, String>();
   final HashMap<String, String> _field2PropertyName =
@@ -383,7 +383,7 @@ class _ModelDescription {
 
   String kindName(ModelDBImpl db) => kind;
 
-  datastore.Entity encodeModel(ModelDBImpl db, Model model) {
+  datastore.Entity encodeModel(ModelDBImpl db, T model) {
     var key = db.toDatastoreKey(model.key);
 
     var properties = {};
@@ -475,7 +475,7 @@ class _ModelDescription {
 //   - we may end up removing properties after a read-write cycle
 //   - we may end up dropping added properties in a write
 // ([usedNames] := [realFieldNames] + [realPropertyNames])
-class _ExpandoModelDescription extends _ModelDescription {
+class _ExpandoModelDescription extends _ModelDescription<ExpandoModel> {
   Set<String> realFieldNames;
   Set<String> realPropertyNames;
   Set<String> usedNames;

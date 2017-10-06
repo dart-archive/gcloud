@@ -6,11 +6,11 @@ library gcloud.datastore_impl;
 
 import 'dart:async';
 
+import 'package:googleapis/datastore/v1.dart' as api;
 import 'package:http/http.dart' as http;
 
-import '../datastore.dart' as datastore;
 import '../common.dart' show Page;
-import 'package:googleapis/datastore/v1.dart' as api;
+import '../datastore.dart' as datastore;
 
 class TransactionImpl implements datastore.Transaction {
   final String data;
@@ -390,7 +390,7 @@ class DatastoreImpl implements datastore.Datastore {
       //    // A list of keys that were not looked up due to resource constraints.
       //    repeated Key deferred = 3;
       //  }
-      var entities = new List(apiKeys.length);
+      var entities = new List<datastore.Entity>(apiKeys.length);
       for (int i = 0; i < apiKeys.length; i++) {
         var apiKey = apiKeys[i];
 

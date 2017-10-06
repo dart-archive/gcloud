@@ -37,7 +37,7 @@ class _StorageImpl implements Storage {
   final String project;
   final storage_api.StorageApi _api;
 
-  _StorageImpl(client, this.project)
+  _StorageImpl(http.Client client, this.project)
       : _api = new storage_api.StorageApi(client);
 
   Future createBucket(String bucketName,
@@ -80,7 +80,7 @@ class _StorageImpl implements Storage {
   }
 
   Stream<String> listBucketNames() {
-    Future<Page<Bucket>> firstPage(pageSize) {
+    Future<_BucketPageImpl> firstPage(pageSize) {
       return _listBuckets(pageSize, null)
           .then((response) => new _BucketPageImpl(this, pageSize, response));
     }
@@ -181,7 +181,7 @@ class _BucketImpl implements Bucket {
     return sink;
   }
 
-  Future writeBytes(String objectName, List<int> bytes,
+  Future<ObjectInfo> writeBytes(String objectName, List<int> bytes,
       {ObjectMetadata metadata,
       Acl acl,
       PredefinedAcl predefinedAcl,
@@ -237,7 +237,7 @@ class _BucketImpl implements Bucket {
   }
 
   Stream<BucketEntry> list({String prefix}) {
-    Future<Page<Bucket>> firstPage(pageSize) {
+    Future<_ObjectPageImpl> firstPage(pageSize) {
       return _listObjects(bucketName, prefix, _DIRECTORY_DELIMITER, 50, null)
           .then((response) =>
               new _ObjectPageImpl(this, prefix, pageSize, response));
@@ -494,10 +494,10 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
   final int _maxNormalUploadLength;
   int _bufferLength = 0;
   final List<List<int>> buffer = new List<List<int>>();
-  final StreamController _controller = new StreamController(sync: true);
+  final _controller = new StreamController<List<int>>(sync: true);
   StreamSubscription _subscription;
   StreamController _resumableController;
-  final _doneCompleter = new Completer();
+  final _doneCompleter = new Completer<_ObjectInfoImpl>();
 
   static const int _STATE_LENGTH_KNOWN = 0;
   static const int _STATE_PROBING_LENGTH = 1;

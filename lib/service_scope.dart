@@ -144,7 +144,8 @@ Object lookup(Object key) {
 /// Represents a global service scope of values stored via zones.
 class _ServiceScope {
   /// A mapping of keys to values stored inside the service scope.
-  final Map<Object, Object> _key2Values = new Map<Object, Object>();
+  final Map<Object, _RegisteredEntry> _key2Values =
+      new Map<Object, _RegisteredEntry>();
 
   /// A set which indicates whether an object was copied from it's parent.
   final Set<Object> _parentCopies = new Set<Object>();

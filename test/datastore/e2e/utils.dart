@@ -23,7 +23,7 @@ buildKey(int i, {Function idFunction, String kind: TEST_KIND, Partition p}) {
   return new Key(path, partition: p);
 }
 
-Map<String, String> buildProperties(int i) {
+Map<String, Object> buildProperties(int i) {
   var listValues = [
     'foo',
     '$TEST_LIST_VALUE$i',
@@ -66,7 +66,7 @@ List<Entity> buildEntityWithAllProperties(int from, int to,
   var us42 = const Duration(microseconds: 42);
   var unIndexed = new Set<String>.from(['blobProperty']);
 
-  Map<String, String> buildProperties(int i) {
+  Map<String, dynamic> buildProperties(int i) {
     return {
       'nullValue': null,
       'boolProperty': true,

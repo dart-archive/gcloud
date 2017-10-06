@@ -33,10 +33,9 @@ import 'package:gcloud/src/datastore_impl.dart' as datastore_impl;
 import 'package:gcloud/common.dart';
 import 'package:unittest/unittest.dart';
 
+import '../../common_e2e.dart';
 import '../error_matchers.dart';
 import 'utils.dart';
-
-import '../../common_e2e.dart';
 
 Future sleep(Duration duration) {
   var completer = new Completer();
@@ -137,8 +136,8 @@ runTests(Datastore datastore, String namespace) {
     for (var key in a.properties.keys) {
       if (!b.properties.containsKey(key)) return false;
       if (a.properties[key] != null && a.properties[key] is List) {
-        var aList = a.properties[key];
-        var bList = b.properties[key];
+        var aList = a.properties[key] as List;
+        var bList = b.properties[key] as List;
         if (aList.length != bList.length) return false;
         for (var i = 0; i < aList.length; i++) {
           if (aList[i] != bList[i]) return false;
@@ -559,7 +558,7 @@ runTests(Datastore datastore, String namespace) {
           var NUM_TRANSACTIONS = 10;
 
           // Start transactions
-          var transactions = [];
+          var transactions = <Future<Transaction>>[];
           for (var i = 0; i < NUM_TRANSACTIONS; i++) {
             transactions.add(datastore.beginTransaction(crossEntityGroup: xg));
           }
@@ -567,13 +566,13 @@ runTests(Datastore datastore, String namespace) {
               .wait(transactions)
               .then((List<Transaction> transactions) {
             // Do a lookup for the entities in every transaction
-            var lookups = [];
+            var lookups = <Future<List<Entity>>>[];
             for (var transaction in transactions) {
               lookups.add(datastore.lookup(keys, transaction: transaction));
             }
             return Future.wait(lookups).then((List<List<Entity>> results) {
               // Do a conflicting commit in every transaction.
-              var commits = [];
+              var commits = <Future>[];
               for (var i = 0; i < transactions.length; i++) {
                 var transaction = transactions[i];
                 commits.add(test(results[i], transaction, i));
@@ -600,7 +599,7 @@ runTests(Datastore datastore, String namespace) {
       });
     });
     group('query', () {
-      Future testQuery(String kind,
+      Future<List<Entity>> testQuery(String kind,
           {List<Filter> filters,
           List<Order> orders,
           bool transactional: false,
@@ -721,12 +720,12 @@ runTests(Datastore datastore, String namespace) {
       };
 
       var filterFunction = (Entity entity) {
-        var value = entity.properties[QUERY_KEY];
+        var value = entity.properties[QUERY_KEY] as String;
         return value.compareTo(QUERY_UPPER_BOUND) == -1 &&
             value.compareTo(QUERY_LOWER_BOUND) == 1;
       };
       var listFilterFunction = (Entity entity) {
-        var values = entity.properties[TEST_LIST_PROPERTY];
+        var values = entity.properties[TEST_LIST_PROPERTY] as List;
         return values.contains(QUERY_LIST_ENTRY);
       };
       var indexFilterMatches = (Entity entity) {
@@ -1034,7 +1033,7 @@ Future cleanupDB(Datastore db, String namespace) {
     return consumePages((_) => db.query(q, partition: partition))
         .then((List<Entity> entities) {
       return entities
-          .map((Entity e) => e.key.elements.last.id)
+          .map((Entity e) => e.key.elements.last.id as String)
           .where((String kind) => !kind.contains('__'))
           .toList();
     });
@@ -1071,7 +1070,7 @@ Future waitUntilEntitiesGone(Datastore db, List<Key> keys, Partition p) {
 
 Future waitUntilEntitiesHelper(
     Datastore db, List<Key> keys, bool positive, Partition p) {
-  var keysByKind = {};
+  var keysByKind = <String, dynamic>{};
   for (var key in keys) {
     keysByKind.putIfAbsent(key.elements.last.kind, () => []).add(key);
   }
