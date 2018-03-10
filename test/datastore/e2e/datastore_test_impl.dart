@@ -739,7 +739,7 @@ void runTests(Datastore datastore, String namespace) {
       var sortedAndFiltered = sorted.where(filterFunction).toList();
       var sortedAndListFiltered = sorted.where(listFilterFunction).toList();
       var indexedEntity = sorted.where(indexFilterMatches).toList();
-      //expect(indexedEntity.length, equals(1));
+      assert(indexedEntity.length == 1);
 
       var filters = [
         new Filter(FilterRelation.GreatherThan, QUERY_KEY, QUERY_LOWER_BOUND),
