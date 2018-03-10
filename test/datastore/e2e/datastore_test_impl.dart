@@ -22,9 +22,9 @@ library datastore_test;
 ///   - name: listproperty
 ///   - name: test_property
 ///     direction: desc
-/// $ gcloud preview datastore create-indexes .
-/// 02:19 PM Host: appengine.google.com
-/// 02:19 PM Uploading index definitions.
+/// $ gcloud datastore create-indexes index.yaml
+///
+/// Now, wait for indexing done
 
 import 'dart:async';
 

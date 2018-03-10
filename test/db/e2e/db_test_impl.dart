@@ -40,9 +40,9 @@ library db_test;
 ///   - name: name
 ///     direction: asc
 ///
-/// $ gcloud preview datastore create-indexes .
-/// 02:19 PM Host: appengine.google.com
-/// 02:19 PM Uploading index definitions.
+/// $ gcloud datastore create-indexes index.yaml
+///
+/// Now, wait for indexing done
 
 import 'dart:async';
 
