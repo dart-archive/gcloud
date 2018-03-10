@@ -7,7 +7,6 @@ library gcloud.test.common_e2e;
 import 'dart:async';
 import 'dart:io';
 
-import 'package:unittest/unittest.dart';
 import 'package:googleapis_auth/auth_io.dart' as auth;
 import 'package:http/http.dart' as http;
 
@@ -78,7 +77,7 @@ Future withAuthClient(List<String> scopes, AuthCallback callback,
 
   if (!onBot() && (project == null || serviceKeyLocation == null)) {
     throw new StateError(
-        'Envoronment variables $PROJECT_ENV and $SERVICE_KEY_LOCATION_ENV '
+        'Environment variables $PROJECT_ENV and $SERVICE_KEY_LOCATION_ENV '
         'required when not running on the package bot');
   }
 
@@ -92,30 +91,7 @@ Future withAuthClient(List<String> scopes, AuthCallback callback,
         .clientViaServiceAccount(creds, scopes)
         .then((http.Client client) {
       if (trace) client = new TraceClient(client);
-      return callback(project, client).whenComplete(() => client.close());
+      return callback(project, client);
     });
   });
-}
-
-Future runE2EUnittest(Function callback) {
-  var config = new E2EConfiguration();
-
-  unittestConfiguration = config;
-  callback();
-
-  return config.done;
-}
-
-class E2EConfiguration extends SimpleConfiguration {
-  final Completer _completer = new Completer();
-
-  Future get done => _completer.future;
-
-  onDone(success) {
-    new Future.sync(() {
-      super.onDone(success);
-    })
-        .then((_) => _completer.complete(_))
-        .catchError((error, stack) => _completer.completeError(error, stack));
-  }
 }

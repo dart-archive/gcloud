@@ -9,39 +9,58 @@ import 'dart:io';
 
 import 'package:gcloud/db.dart' as db;
 import 'package:gcloud/src/datastore_impl.dart' as datastore_impl;
-import 'package:unittest/unittest.dart';
+import 'package:http/http.dart';
+import 'package:test/test.dart';
 
 import 'common_e2e.dart';
 import 'datastore/e2e/datastore_test_impl.dart' as datastore_test;
 import 'db/e2e/db_test_impl.dart' as db_test;
 import 'db/e2e/metamodel_test_impl.dart' as db_metamodel_test;
 
-main() {
+Future main() async {
   var scopes = datastore_impl.DatastoreImpl.SCOPES;
-
   var now = new DateTime.now().millisecondsSinceEpoch;
   String namespace = '${Platform.operatingSystem}${now}';
 
-  withAuthClient(scopes, (String project, httpClient) {
-    var datastore = new datastore_impl.DatastoreImpl(httpClient, project);
-    var datastoreDB = new db.DatastoreDB(datastore);
+  datastore_impl.DatastoreImpl datastore;
+  db.DatastoreDB datastoreDB;
+  Client client;
 
-    return runE2EUnittest(() {
-      datastore_test.runTests(datastore, namespace);
+  await withAuthClient(scopes, (String project, httpClient) {
+    datastore = new datastore_impl.DatastoreImpl(httpClient, project);
+    datastoreDB = new db.DatastoreDB(datastore);
+    client = httpClient;
+  });
 
-      test('sleep-between-test-suites', () {
-        expect(new Future.delayed(const Duration(seconds: 10)), completes);
-      });
+  tearDownAll(() async {
+    client.close();
+  });
 
-      db_test.runTests(datastoreDB, namespace);
-
-      test('sleep-between-test-suites', () {
-        expect(new Future.delayed(const Duration(seconds: 10)), completes);
-      });
-
-      db_metamodel_test.runTests(datastore, datastoreDB);
-    }).whenComplete(() {
-      return datastore_test.cleanupDB(datastore, namespace);
+  group('datastore_test', () {
+    tearDown(() async {
+      await datastore_test.cleanupDB(datastore, namespace);
     });
+
+    datastore_test.runTests(datastore, namespace);
+  });
+
+  test('sleep-between-test-suites', () {
+    expect(new Future.delayed(const Duration(seconds: 10)), completes);
+  });
+
+  group('datastore_test', () {
+    db_test.runTests(datastoreDB, namespace);
+  });
+
+  test('sleep-between-test-suites', () {
+    expect(new Future.delayed(const Duration(seconds: 10)), completes);
+  });
+
+  group('datastore_test', () {
+    tearDown(() async {
+      await datastore_test.cleanupDB(datastore, namespace);
+    });
+
+    db_metamodel_test.runTests(datastore, datastoreDB);
   });
 }

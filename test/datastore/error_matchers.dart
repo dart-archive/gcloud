@@ -4,7 +4,7 @@
 
 library error_matchers;
 
-import 'package:unittest/unittest.dart';
+import 'package:test/test.dart';
 import 'package:gcloud/datastore.dart';
 
 class _ApplicationError extends TypeMatcher {

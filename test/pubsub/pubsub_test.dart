@@ -5,7 +5,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:unittest/unittest.dart';
+import 'package:test/test.dart';
 
 import 'package:gcloud/pubsub.dart';
 
@@ -48,7 +48,7 @@ main() {
         mock.register(
             'PUT',
             'projects/$PROJECT/topics/test-topic',
-            expectAsync((request) {
+            expectAsync1((request) {
               var requestTopic =
                   new pubsub.Topic.fromJson(JSON.decode(request.body));
               expect(requestTopic.name, absoluteName);
@@ -56,11 +56,11 @@ main() {
             }, count: 2));
 
         var api = new PubSub(mock, PROJECT);
-        return api.createTopic(name).then(expectAsync((topic) {
+        return api.createTopic(name).then(expectAsync1((topic) {
           expect(topic.name, name);
           expect(topic.project, PROJECT);
           expect(topic.absoluteName, absoluteName);
-          return api.createTopic(absoluteName).then(expectAsync((topic) {
+          return api.createTopic(absoluteName).then(expectAsync1((topic) {
             expect(topic.name, name);
             expect(topic.absoluteName, absoluteName);
           }));
@@ -83,15 +83,15 @@ main() {
         mock.register(
             'DELETE',
             'projects/test-project/topics/test-topic',
-            expectAsync((request) {
+            expectAsync1((request) {
               expect(request.body.length, 0);
               return mock.respondEmpty();
             }, count: 2));
 
         var api = new PubSub(mock, PROJECT);
-        return api.deleteTopic(name).then(expectAsync((result) {
+        return api.deleteTopic(name).then(expectAsync1((result) {
           expect(result, isNull);
-          return api.deleteTopic(absoluteName).then(expectAsync((topic) {
+          return api.deleteTopic(absoluteName).then(expectAsync1((topic) {
             expect(result, isNull);
           }));
         }));
@@ -113,17 +113,17 @@ main() {
         mock.register(
             'GET',
             'projects/test-project/topics/test-topic',
-            expectAsync((request) {
+            expectAsync1((request) {
               expect(request.body.length, 0);
               return mock.respond(new pubsub.Topic()..name = absoluteName);
             }, count: 2));
 
         var api = new PubSub(mock, PROJECT);
-        return api.lookupTopic(name).then(expectAsync((topic) {
+        return api.lookupTopic(name).then(expectAsync1((topic) {
           expect(topic.name, name);
           expect(topic.project, PROJECT);
           expect(topic.absoluteName, absoluteName);
-          return api.lookupTopic(absoluteName).then(expectAsync((topic) {
+          return api.lookupTopic(absoluteName).then(expectAsync1((topic) {
             expect(topic.name, name);
             expect(topic.absoluteName, absoluteName);
           }));
@@ -165,7 +165,7 @@ main() {
           mock.register(
               'GET',
               'projects/$PROJECT/topics',
-              expectAsync((request) {
+              expectAsync1((request) {
                 pageCount++;
                 expect(request.url.queryParameters['pageSize'], '$pageSize');
                 expect(request.body.length, 0);
@@ -193,7 +193,7 @@ main() {
             var api = new PubSub(mock, PROJECT);
             return api
                 .listTopics()
-                .listen(expectAsync((_) => null, count: count))
+                .listen(expectAsync1((_) => null, count: count))
                 .asFuture();
           }
 
@@ -215,8 +215,8 @@ main() {
             registerQueryMock(mock, 70, 50);
 
             var api = new PubSub(mock, PROJECT);
-            api.listTopics().listen(expectAsync(((_) => null), count: 70),
-                onDone: expectAsync(() => null))
+            api.listTopics().listen(expectAsync1(((_) => null), count: 70),
+                onDone: expectAsync0(() => null))
               ..pause()
               ..resume()
               ..pause()
@@ -231,7 +231,7 @@ main() {
             var count = 0;
             var subscription;
             subscription = api.listTopics().listen(
-                expectAsync(((_) {
+                expectAsync1(((_) {
                   subscription
                     ..pause()
                     ..resume()
@@ -243,7 +243,7 @@ main() {
                   }
                   return null;
                 }), count: 70),
-                onDone: expectAsync(() => null))
+                onDone: expectAsync0(() => null))
               ..pause();
             scheduleMicrotask(() => subscription.resume());
           });
@@ -265,7 +265,7 @@ main() {
             var api = new PubSub(mock, PROJECT);
             var subscription;
             subscription = api.listTopics().listen(
-                expectAsync((_) => subscription.cancel()),
+                expectAsync1((_) => subscription.cancel()),
                 onDone: () => throw 'Unexpected');
           });
 
@@ -274,15 +274,15 @@ main() {
               // Test error on first GET request.
               var mock = mockClient();
               mock.register('GET', 'projects/$PROJECT/topics',
-                  expectAsync((request) {
+                  expectAsync1((request) {
                 return mock.respondError(500);
               }));
               var api = new PubSub(mock, PROJECT);
               var subscription;
               subscription = api.listTopics().listen((_) => throw 'Unexpected',
-                  onDone: expectAsync(() => null),
+                  onDone: expectAsync0(() => null),
                   onError:
-                      expectAsync((e) => e is pubsub.DetailedApiRequestError));
+                      expectAsync1((e) => e is pubsub.DetailedApiRequestError));
               if (withPause) {
                 subscription.pause();
                 scheduleMicrotask(() => subscription.resume());
@@ -304,7 +304,7 @@ main() {
               int count = 0;
               var subscription;
               subscription = api.listTopics().listen(
-                  expectAsync(((_) {
+                  expectAsync1(((_) {
                     count++;
                     if (count == 50) {
                       if (withPause) {
@@ -313,15 +313,15 @@ main() {
                       }
                       mock.clear();
                       mock.register('GET', 'projects/$PROJECT/topics',
-                          expectAsync((request) {
+                          expectAsync1((request) {
                         return mock.respondError(500);
                       }));
                     }
                     return null;
                   }), count: 50),
-                  onDone: expectAsync(() => null),
+                  onDone: expectAsync0(() => null),
                   onError:
-                      expectAsync((e) => e is pubsub.DetailedApiRequestError));
+                      expectAsync1((e) => e is pubsub.DetailedApiRequestError));
             }
 
             runTest(false);
@@ -335,14 +335,14 @@ main() {
             registerQueryMock(mock, 0, 50);
 
             var api = new PubSub(mock, PROJECT);
-            return api.pageTopics().then(expectAsync((page) {
+            return api.pageTopics().then(expectAsync1((page) {
               expect(page.items.length, 0);
               expect(page.isLast, isTrue);
               expect(page.next(), completion(isNull));
 
               mock.clear();
               registerQueryMock(mock, 0, 20);
-              return api.pageTopics(pageSize: 20).then(expectAsync((page) {
+              return api.pageTopics(pageSize: 20).then(expectAsync1((page) {
                 expect(page.items.length, 0);
                 expect(page.isLast, isTrue);
                 expect(page.next(), completion(isNull));
@@ -355,14 +355,14 @@ main() {
             registerQueryMock(mock, 10, 50);
 
             var api = new PubSub(mock, PROJECT);
-            return api.pageTopics().then(expectAsync((page) {
+            return api.pageTopics().then(expectAsync1((page) {
               expect(page.items.length, 10);
               expect(page.isLast, isTrue);
               expect(page.next(), completion(isNull));
 
               mock.clear();
               registerQueryMock(mock, 20, 20);
-              return api.pageTopics(pageSize: 20).then(expectAsync((page) {
+              return api.pageTopics(pageSize: 20).then(expectAsync1((page) {
                 expect(page.items.length, 20);
                 expect(page.isLast, isTrue);
                 expect(page.next(), completion(isNull));
@@ -384,7 +384,7 @@ main() {
                 expect(page.isLast, pageCount == totalPages);
                 expect(page.items.length,
                     page.isLast ? n - (totalPages - 1) * pageSize : pageSize);
-                page.next().then(expectAsync((page) {
+                page.next().then(expectAsync1((page) {
                   if (page != null) {
                     handlePage(page);
                   } else {
@@ -395,7 +395,7 @@ main() {
               }
 
               var api = new PubSub(mock, PROJECT);
-              api.pageTopics(pageSize: pageSize).then(expectAsync(handlePage));
+              api.pageTopics(pageSize: pageSize).then(expectAsync1(handlePage));
 
               return completer.future;
             }
@@ -426,7 +426,7 @@ main() {
         mock.register(
             'PUT',
             'projects/$PROJECT/subscriptions',
-            expectAsync((request) {
+            expectAsync1((request) {
               var requestSubscription =
                   new pubsub.Subscription.fromJson(JSON.decode(request.body));
               expect(requestSubscription.name, absoluteName);
@@ -437,12 +437,12 @@ main() {
         var api = new PubSub(mock, PROJECT);
         return api
             .createSubscription(name, topicName)
-            .then(expectAsync((subscription) {
+            .then(expectAsync1((subscription) {
           expect(subscription.name, name);
           expect(subscription.absoluteName, absoluteName);
           return api
               .createSubscription(absoluteName, absoluteTopicName)
-              .then(expectAsync((subscription) {
+              .then(expectAsync1((subscription) {
             expect(subscription.name, name);
             expect(subscription.project, PROJECT);
             expect(subscription.absoluteName, absoluteName);
@@ -468,15 +468,17 @@ main() {
         mock.register(
             'DELETE',
             'projects/$PROJECT/subscriptions',
-            expectAsync((request) {
+            expectAsync1((request) {
               expect(request.body.length, 0);
               return mock.respondEmpty();
             }, count: 2));
 
         var api = new PubSub(mock, PROJECT);
-        return api.deleteSubscription(name).then(expectAsync((result) {
+        return api.deleteSubscription(name).then(expectAsync1((result) {
           expect(result, isNull);
-          return api.deleteSubscription(absoluteName).then(expectAsync((topic) {
+          return api
+              .deleteSubscription(absoluteName)
+              .then(expectAsync1((topic) {
             expect(result, isNull);
           }));
         }));
@@ -498,19 +500,19 @@ main() {
         mock.register(
             'GET',
             new RegExp('projects/$PROJECT/subscriptions'),
-            expectAsync((request) {
+            expectAsync1((request) {
               expect(request.body.length, 0);
               return mock
                   .respond(new pubsub.Subscription()..name = absoluteName);
             }, count: 2));
 
         var api = new PubSub(mock, PROJECT);
-        return api.lookupSubscription(name).then(expectAsync((subscription) {
+        return api.lookupSubscription(name).then(expectAsync1((subscription) {
           expect(subscription.name, name);
           expect(subscription.absoluteName, absoluteName);
           return api
               .lookupSubscription(absoluteName)
-              .then(expectAsync((subscription) {
+              .then(expectAsync1((subscription) {
             expect(subscription.name, name);
             expect(subscription.project, PROJECT);
             expect(subscription.absoluteName, absoluteName);
@@ -554,7 +556,7 @@ main() {
           mock.register(
               'GET',
               'projects/$PROJECT/subscriptions',
-              expectAsync((request) {
+              expectAsync1((request) {
                 pageCount++;
                 expect(request.url.queryParameters['pageSize'], '$pageSize');
                 expect(request.body.length, 0);
@@ -583,7 +585,7 @@ main() {
             var api = new PubSub(mock, PROJECT);
             return api
                 .listSubscriptions(topic)
-                .listen(expectAsync((_) => null, count: count))
+                .listen(expectAsync1((_) => null, count: count))
                 .asFuture();
           }
 
@@ -616,8 +618,8 @@ main() {
 
             var api = new PubSub(mock, PROJECT);
             api.listSubscriptions().listen(
-                expectAsync(((_) => null), count: 70),
-                onDone: expectAsync(() => null))
+                expectAsync1(((_) => null), count: 70),
+                onDone: expectAsync0(() => null))
               ..pause()
               ..resume()
               ..pause()
@@ -632,7 +634,7 @@ main() {
             var count = 0;
             var subscription;
             subscription = api.listSubscriptions().listen(
-                expectAsync(((_) {
+                expectAsync1(((_) {
                   subscription
                     ..pause()
                     ..resume()
@@ -644,7 +646,7 @@ main() {
                   }
                   return null;
                 }), count: 70),
-                onDone: expectAsync(() => null))
+                onDone: expectAsync0(() => null))
               ..pause();
             scheduleMicrotask(() => subscription.resume());
           });
@@ -666,7 +668,7 @@ main() {
             var api = new PubSub(mock, PROJECT);
             var subscription;
             subscription = api.listSubscriptions().listen(
-                expectAsync((_) => subscription.cancel()),
+                expectAsync1((_) => subscription.cancel()),
                 onDone: () => throw 'Unexpected');
           });
 
@@ -675,16 +677,16 @@ main() {
               // Test error on first GET request.
               var mock = mockClient();
               mock.register('GET', 'projects/$PROJECT/subscriptions',
-                  expectAsync((request) {
+                  expectAsync1((request) {
                 return mock.respondError(500);
               }));
               var api = new PubSub(mock, PROJECT);
               var subscription;
               subscription = api.listSubscriptions().listen(
                   (_) => throw 'Unexpected',
-                  onDone: expectAsync(() => null),
+                  onDone: expectAsync0(() => null),
                   onError:
-                      expectAsync((e) => e is pubsub.DetailedApiRequestError));
+                      expectAsync1((e) => e is pubsub.DetailedApiRequestError));
               if (withPause) {
                 subscription.pause();
                 scheduleMicrotask(() => subscription.resume());
@@ -706,7 +708,7 @@ main() {
               int count = 0;
               var subscription;
               subscription = api.listSubscriptions().listen(
-                  expectAsync(((_) {
+                  expectAsync1(((_) {
                     count++;
                     if (count == 50) {
                       if (withPause) {
@@ -715,15 +717,15 @@ main() {
                       }
                       mock.clear();
                       mock.register('GET', 'projects/$PROJECT/subscriptions',
-                          expectAsync((request) {
+                          expectAsync1((request) {
                         return mock.respondError(500);
                       }));
                     }
                     return null;
                   }), count: 50),
-                  onDone: expectAsync(() => null),
+                  onDone: expectAsync0(() => null),
                   onError:
-                      expectAsync((e) => e is pubsub.DetailedApiRequestError));
+                      expectAsync1((e) => e is pubsub.DetailedApiRequestError));
             }
 
             runTest(false);
@@ -737,7 +739,9 @@ main() {
             registerQueryMock(mock, 0, 50, topic: topic);
 
             var api = new PubSub(mock, PROJECT);
-            return api.pageSubscriptions(topic: topic).then(expectAsync((page) {
+            return api
+                .pageSubscriptions(topic: topic)
+                .then(expectAsync1((page) {
               expect(page.items.length, 0);
               expect(page.isLast, isTrue);
               expect(page.next(), completion(isNull));
@@ -746,7 +750,7 @@ main() {
               registerQueryMock(mock, 0, 20, topic: topic);
               return api
                   .pageSubscriptions(topic: topic, pageSize: 20)
-                  .then(expectAsync((page) {
+                  .then(expectAsync1((page) {
                 expect(page.items.length, 0);
                 expect(page.isLast, isTrue);
                 expect(page.next(), completion(isNull));
@@ -764,7 +768,9 @@ main() {
             registerQueryMock(mock, 10, 50, topic: topic);
 
             var api = new PubSub(mock, PROJECT);
-            return api.pageSubscriptions(topic: topic).then(expectAsync((page) {
+            return api
+                .pageSubscriptions(topic: topic)
+                .then(expectAsync1((page) {
               expect(page.items.length, 10);
               expect(page.isLast, isTrue);
               expect(page.next(), completion(isNull));
@@ -773,7 +779,7 @@ main() {
               registerQueryMock(mock, 20, 20, topic: topic);
               return api
                   .pageSubscriptions(topic: topic, pageSize: 20)
-                  .then(expectAsync((page) {
+                  .then(expectAsync1((page) {
                 expect(page.items.length, 20);
                 expect(page.isLast, isTrue);
                 expect(page.next(), completion(isNull));
@@ -853,7 +859,7 @@ main() {
     var attributes = {'a': '1', 'b': 'text'};
 
     registerLookup(mock) {
-      mock.register('GET', absoluteName, expectAsync((request) {
+      mock.register('GET', absoluteName, expectAsync1((request) {
         expect(request.body.length, 0);
         return mock.respond(new pubsub.Topic()..name = absoluteName);
       }));
@@ -863,7 +869,7 @@ main() {
       mock.register(
           'POST',
           'projects/test-project/topics/test-topic:publish',
-          expectAsync((request) {
+          expectAsync1((request) {
             var publishRequest =
                 new pubsub.PublishRequest.fromJson(JSON.decode(request.body));
             return fn(publishRequest);
@@ -875,7 +881,7 @@ main() {
       registerLookup(mock);
 
       var api = new PubSub(mock, PROJECT);
-      return api.lookupTopic(name).then(expectAsync((topic) {
+      return api.lookupTopic(name).then(expectAsync1((topic) {
         mock.clear();
         registerPublish(mock, 4, ((request) {
           expect(request.messages.length, 1);
@@ -884,17 +890,17 @@ main() {
           return mock.respond(new pubsub.PublishResponse()..messageIds = ['0']);
         }));
 
-        return topic.publishString(message).then(expectAsync((result) {
+        return topic.publishString(message).then(expectAsync1((result) {
           expect(result, isNull);
-          return topic.publishBytes(messageBytes).then(expectAsync((result) {
+          return topic.publishBytes(messageBytes).then(expectAsync1((result) {
             expect(result, isNull);
             return topic
                 .publish(new Message.withString(message))
-                .then(expectAsync((result) {
+                .then(expectAsync1((result) {
               expect(result, isNull);
               return topic
                   .publish(new Message.withBytes(messageBytes))
-                  .then(expectAsync((result) {
+                  .then(expectAsync1((result) {
                 expect(result, isNull);
               }));
             }));
@@ -908,7 +914,7 @@ main() {
       registerLookup(mock);
 
       var api = new PubSub(mock, PROJECT);
-      return api.lookupTopic(name).then(expectAsync((topic) {
+      return api.lookupTopic(name).then(expectAsync1((topic) {
         mock.clear();
         registerPublish(mock, 4, ((request) {
           expect(request.messages.length, 1);
@@ -921,21 +927,21 @@ main() {
 
         return topic
             .publishString(message, attributes: attributes)
-            .then(expectAsync((result) {
+            .then(expectAsync1((result) {
           expect(result, isNull);
           return topic
               .publishBytes(messageBytes, attributes: attributes)
-              .then(expectAsync((result) {
+              .then(expectAsync1((result) {
             expect(result, isNull);
             return topic
                 .publish(
                     new Message.withString(message, attributes: attributes))
-                .then(expectAsync((result) {
+                .then(expectAsync1((result) {
               expect(result, isNull);
               return topic
                   .publish(new Message.withBytes(messageBytes,
                       attributes: attributes))
-                  .then(expectAsync((result) {
+                  .then(expectAsync1((result) {
                 expect(result, isNull);
               }));
             }));
@@ -946,22 +952,22 @@ main() {
 
     test('delete', () {
       var mock = mockClient();
-      mock.register('GET', absoluteName, expectAsync((request) {
+      mock.register('GET', absoluteName, expectAsync1((request) {
         expect(request.body.length, 0);
         return mock.respond(new pubsub.Topic()..name = absoluteName);
       }));
 
       var api = new PubSub(mock, PROJECT);
-      return api.lookupTopic(name).then(expectAsync((topic) {
+      return api.lookupTopic(name).then(expectAsync1((topic) {
         expect(topic.name, name);
         expect(topic.absoluteName, absoluteName);
 
-        mock.register('DELETE', absoluteName, expectAsync((request) {
+        mock.register('DELETE', absoluteName, expectAsync1((request) {
           expect(request.body.length, 0);
           return mock.respondEmpty();
         }));
 
-        return topic.delete().then(expectAsync((result) {
+        return topic.delete().then(expectAsync1((result) {
           expect(result, isNull);
         }));
       }));
@@ -974,22 +980,22 @@ main() {
 
     test('delete', () {
       var mock = mockClient();
-      mock.register('GET', absoluteName, expectAsync((request) {
+      mock.register('GET', absoluteName, expectAsync1((request) {
         expect(request.body.length, 0);
         return mock.respond(new pubsub.Topic()..name = absoluteName);
       }));
 
       var api = new PubSub(mock, PROJECT);
-      return api.lookupSubscription(name).then(expectAsync((subscription) {
+      return api.lookupSubscription(name).then(expectAsync1((subscription) {
         expect(subscription.name, name);
         expect(subscription.absoluteName, absoluteName);
 
-        mock.register('DELETE', absoluteName, expectAsync((request) {
+        mock.register('DELETE', absoluteName, expectAsync1((request) {
           expect(request.body.length, 0);
           return mock.respondEmpty();
         }));
 
-        return subscription.delete().then(expectAsync((result) {
+        return subscription.delete().then(expectAsync1((result) {
           expect(result, isNull);
         }));
       }));

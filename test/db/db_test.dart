@@ -5,7 +5,7 @@
 library gcloud.db_test;
 
 import 'package:gcloud/db.dart';
-import 'package:unittest/unittest.dart';
+import 'package:test/test.dart';
 
 @Kind()
 class Foobar extends Model {}

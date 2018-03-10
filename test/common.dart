@@ -9,7 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart' as http_testing;
 import 'package:http_parser/http_parser.dart' as http_parser;
 import 'package:mime/mime.dart' as mime;
-import 'package:unittest/unittest.dart';
+import 'package:test/test.dart';
 
 const CONTENT_TYPE_JSON_UTF8 = 'application/json; charset=utf-8';
 
