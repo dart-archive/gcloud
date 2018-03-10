@@ -89,12 +89,12 @@ void main() {
       }
 
       return Future.forEach([
-        // TODO: Figure out why some returned ACLs are empty.
-        () => test(PredefinedAcl.authenticatedRead, 0),
-        // [test, [PredefinedAcl.private, 0]],  // TODO: Cannot delete.
+        // See documentation: https://cloud.google.com/storage/docs/access-control/lists
+        () => test(PredefinedAcl.authenticatedRead, 2),
+        () => test(PredefinedAcl.private, 1),
         () => test(PredefinedAcl.projectPrivate, 3),
-        () => test(PredefinedAcl.publicRead, 0),
-        () => test(PredefinedAcl.publicReadWrite, 0)
+        () => test(PredefinedAcl.publicRead, 2),
+        () => test(PredefinedAcl.publicReadWrite, 2),
       ], (f) => f().then(expectAsync1((_) {})));
     });
 
