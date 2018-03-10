@@ -4,6 +4,8 @@
 
 library error_matchers;
 
+import 'dart:io';
+
 import 'package:test/test.dart';
 import 'package:gcloud/datastore.dart';
 
@@ -37,6 +39,11 @@ class _IntMatcher extends TypeMatcher {
   bool matches(item, Map matchState) => item is int;
 }
 
+class _SocketException extends TypeMatcher {
+  const _SocketException() : super("SocketException");
+  bool matches(item, Map matchState) => item is SocketException;
+}
+
 const isApplicationError = const _ApplicationError();
 
 const isDataStoreError = const _DataStoreError();
@@ -45,3 +52,5 @@ const isNeedIndexError = const _NeedIndexError();
 const isTimeoutError = const _TimeoutError();
 
 const isInt = const _IntMatcher();
+
+const isSocketException = const _SocketException();

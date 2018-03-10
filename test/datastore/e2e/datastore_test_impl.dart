@@ -255,10 +255,10 @@ void runTests(Datastore datastore, String namespace) {
             transactional: true, xg: true);
       });
 
-      test('negative_insert_20000_entities', () {
+      test('negative_insert_20000_entities', () async {
         // Maybe it should not be a [DataStoreError] here?
         // FIXME/TODO: This was adapted
-        expect(datastore.commit(inserts: named20000), throws);
+        expect(datastore.commit(inserts: named20000), throwsA(isSocketException));
       });
 
       // TODO: test invalid inserts (like entities without key, ...)
