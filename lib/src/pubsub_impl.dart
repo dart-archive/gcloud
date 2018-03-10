@@ -418,10 +418,12 @@ class _TopicPageImpl implements Page<Topic> {
   final List<Topic> items;
 
   _TopicPageImpl(this._api, this._pageSize, pubsub.ListTopicsResponse response)
-      : items = new List(response.topics.length),
+      : items = new List(response.topics != null ? response.topics.length : 0),
         _nextPageToken = response.nextPageToken {
-    for (int i = 0; i < response.topics.length; i++) {
-      items[i] = new _TopicImpl(_api, response.topics[i]);
+    if (response.topics != null) {
+      for (int i = 0; i < response.topics.length; i++) {
+        items[i] = new _TopicImpl(_api, response.topics[i]);
+      }
     }
   }
 
