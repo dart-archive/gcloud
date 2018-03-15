@@ -8,7 +8,7 @@ import 'dart:typed_data';
 
 import 'package:gcloud/db.dart';
 import 'package:gcloud/datastore.dart' as datastore;
-import 'package:unittest/unittest.dart';
+import 'package:test/test.dart';
 
 main() {
   group('properties', () {

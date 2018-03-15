@@ -7,7 +7,7 @@ library gcloud.test.service_scope_test;
 import 'dart:async';
 
 import 'package:gcloud/service_scope.dart' as ss;
-import 'package:unittest/unittest.dart';
+import 'package:test/test.dart';
 
 main() {
   test('no-service-scope', () {
@@ -16,14 +16,14 @@ main() {
     expect(() => ss.lookup(1), throwsA(isStateError));
 
     var c = new Completer.sync();
-    ss.fork(expectAsync(() {
+    ss.fork(expectAsync0(() {
       c.complete();
       return new Future.value();
     }));
 
     // Assert that after fork()ing we still don't have a service scope outside
     // of the zone created by the fork()ing.
-    c.future.then(expectAsync((_) {
+    c.future.then(expectAsync1((_) {
       expect(() => ss.register(1, 'foobar'), throwsA(isStateError));
       expect(() => ss.registerScopeExitCallback(() {}), throwsA(isStateError));
       expect(() => ss.lookup(1), throwsA(isStateError));
@@ -31,7 +31,7 @@ main() {
   });
 
   test('non-existent-key', () {
-    return ss.fork(expectAsync(() {
+    return ss.fork(expectAsync0(() {
       expect(ss.lookup(1), isNull);
       return new Future.value();
     }));
@@ -39,20 +39,20 @@ main() {
 
   test('fork-callback-returns-non-future', () {
     // The closure passed to fork() must return a future.
-    expect(() => ss.fork(expectAsync(() => null)), throwsA(isArgumentError));
+    expect(() => ss.fork(expectAsync0(() => null)), throwsA(isArgumentError));
   });
 
   test('error-on-double-insert', () {
     // Ensure that inserting twice with the same key results in an error.
-    return ss.fork(expectAsync(() => new Future.sync(() {
+    return ss.fork(expectAsync0(() => new Future.sync(() {
           ss.register(1, 'firstValue');
           expect(() => ss.register(1, 'firstValue'), throwsA(isArgumentError));
         })));
   });
 
   test('only-cleanup', () {
-    return ss.fork(expectAsync(() => new Future.sync(() {
-          ss.registerScopeExitCallback(expectAsync(() {}));
+    return ss.fork(expectAsync0(() => new Future.sync(() {
+          ss.registerScopeExitCallback(expectAsync0(() {}));
         })));
   });
 
@@ -60,7 +60,7 @@ main() {
     // Ensure cleanup functions are called in the reverse order of inserting
     // their entries.
     int insertions = 0;
-    return ss.fork(expectAsync(() => new Future.value(() {
+    return ss.fork(expectAsync0(() => new Future.value(() {
           int NUM = 10;
 
           for (int i = 0; i < NUM; i++) {
@@ -68,7 +68,7 @@ main() {
 
             insertions++;
             ss.register(key, 'value$i');
-            ss.registerScopeExitCallback(expectAsync(() {
+            ss.registerScopeExitCallback(expectAsync0(() {
               expect(insertions, equals(i + 1));
               insertions--;
             }));
@@ -86,21 +86,21 @@ main() {
 
   test('onion-cleanup', () {
     // Ensures that a cleanup method can look up things registered before it.
-    return ss.fork(expectAsync(() {
-      ss.registerScopeExitCallback(expectAsync(() {
+    return ss.fork(expectAsync0(() {
+      ss.registerScopeExitCallback(expectAsync0(() {
         expect(ss.lookup(1), isNull);
         expect(ss.lookup(2), isNull);
       }));
       ss.register(1, 'value1');
-      ss.registerScopeExitCallback(expectAsync(() {
+      ss.registerScopeExitCallback(expectAsync0(() {
         expect(ss.lookup(1), equals('value1'));
         expect(ss.lookup(2), isNull);
       }));
-      ss.register(2, 'value2', onScopeExit: expectAsync(() {
+      ss.register(2, 'value2', onScopeExit: expectAsync0(() {
         expect(ss.lookup(1), equals('value1'));
         expect(ss.lookup(2), isNull);
       }));
-      ss.registerScopeExitCallback(expectAsync(() {
+      ss.registerScopeExitCallback(expectAsync0(() {
         expect(ss.lookup(1), 'value1');
         expect(ss.lookup(2), 'value2');
       }));
@@ -126,7 +126,7 @@ main() {
                 });
               }
             }))
-        .catchError(expectAsync((e, _) {
+        .catchError(expectAsync2((e, _) {
       for (int i = 0; i < 10; i++) {
         expect('$e'.contains('xx${i}yy'), equals(i.isEven));
       }
@@ -136,13 +136,13 @@ main() {
   test('service-scope-destroyed-after-callback-completes', () {
     // Ensure that once the closure passed to fork() completes, the service
     // scope is destroyed.
-    return ss.fork(expectAsync(() => new Future.sync(() {
+    return ss.fork(expectAsync0(() => new Future.sync(() {
           var key = 1;
           ss.register(key, 'firstValue');
           ss.registerScopeExitCallback(Zone.current.bindCallback(() {
             // Spawn an async task which will be run after the cleanups to ensure
             // the service scope got destroyed.
-            Timer.run(expectAsync(() {
+            Timer.run(expectAsync0(() {
               expect(() => ss.lookup(key), throwsA(isStateError));
               expect(() => ss.register(2, 'value'), throwsA(isStateError));
               expect(() => ss.registerScopeExitCallback(() {}),
@@ -156,12 +156,12 @@ main() {
   test('override-parent-value', () {
     // Ensure that once the closure passed to fork() completes, the service
     // scope is destroyed.
-    return ss.fork(expectAsync(() => new Future.sync(() {
+    return ss.fork(expectAsync0(() => new Future.sync(() {
           var key = 1;
           ss.register(key, 'firstValue');
           expect(ss.lookup(key), equals('firstValue'));
 
-          return ss.fork(expectAsync(() => new Future.sync(() {
+          return ss.fork(expectAsync0(() => new Future.sync(() {
                 ss.register(key, 'secondValue');
                 expect(ss.lookup(key), equals('secondValue'));
               })));
@@ -171,10 +171,10 @@ main() {
   test('fork-onError-handler', () {
     // Ensure that once the closure passed to fork() completes, the service
     // scope is destroyed.
-    ss.fork(expectAsync(() {
+    ss.fork(expectAsync0(() {
       Timer.run(() => throw new StateError('foobar'));
       return new Future.value();
-    }), onError: expectAsync((error, _) {
+    }), onError: expectAsync2((error, _) {
       expect(error, isStateError);
     }));
   });
@@ -188,19 +188,19 @@ main() {
     var subKey1 = 3;
     var subKey2 = 4;
 
-    return ss.fork(expectAsync(() {
+    return ss.fork(expectAsync0(() {
       int cleanupFork1 = 0;
       int cleanupFork2 = 0;
 
       ss.register(rootKey, 'root');
-      ss.registerScopeExitCallback(expectAsync(() {
+      ss.registerScopeExitCallback(expectAsync0(() {
         expect(cleanupFork1, equals(2));
         expect(cleanupFork2, equals(2));
       }));
       expect(ss.lookup(rootKey), equals('root'));
 
       Future spawnChild(ownSubKey, otherSubKey, int i, cleanup) {
-        return ss.fork(expectAsync(() => new Future.sync(() {
+        return ss.fork(expectAsync0(() => new Future.sync(() {
               ss.register(subKey, 'fork$i');
               ss.registerScopeExitCallback(cleanup);
               ss.register(ownSubKey, 'sub$i');

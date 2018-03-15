@@ -497,7 +497,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
   final _controller = new StreamController<List<int>>(sync: true);
   StreamSubscription _subscription;
   StreamController _resumableController;
-  final _doneCompleter = new Completer<_ObjectInfoImpl>();
+  final _doneCompleter = new Completer<dynamic>();
 
   static const int _STATE_LENGTH_KNOWN = 0;
   static const int _STATE_PROBING_LENGTH = 1;

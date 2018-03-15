@@ -6,7 +6,7 @@ library metamodel_test;
 
 import 'dart:async';
 
-import 'package:unittest/unittest.dart';
+import 'package:test/test.dart';
 
 import 'package:gcloud/datastore.dart';
 import 'package:gcloud/datastore.dart' show Key, Partition;
@@ -45,7 +45,7 @@ Future sleep(Duration duration) {
   return completer.future;
 }
 
-runTests(datastore, db.DatastoreDB store) {
+void runTests(datastore, db.DatastoreDB store) {
   // Shorten this name, so we don't have to break lines at 80 chars.
   final cond = predicate;
 
@@ -74,8 +74,8 @@ runTests(datastore, db.DatastoreDB store) {
             var futures = <Future>[];
             for (var namespace in namespaces) {
               if (!(namespace == null ||
-                  namespace == 'FooNamespace' ||
-                  namespace == 'BarNamespace')) {
+                  namespace.name == 'FooNamespace' ||
+                  namespace.name == 'BarNamespace')) {
                 continue;
               }
               var partition = store.newPartition(namespace.name);

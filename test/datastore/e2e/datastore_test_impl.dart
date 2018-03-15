@@ -22,16 +22,17 @@ library datastore_test;
 ///   - name: listproperty
 ///   - name: test_property
 ///     direction: desc
-/// $ gcloud preview datastore create-indexes .
-/// 02:19 PM Host: appengine.google.com
-/// 02:19 PM Uploading index definitions.
+/// $ gcloud datastore create-indexes index.yaml
+///
+/// Now, wait for indexing done
 
 import 'dart:async';
 
 import 'package:gcloud/datastore.dart';
 import 'package:gcloud/src/datastore_impl.dart' as datastore_impl;
 import 'package:gcloud/common.dart';
-import 'package:unittest/unittest.dart';
+import 'package:http/http.dart';
+import 'package:test/test.dart';
 
 import '../../common_e2e.dart';
 import '../error_matchers.dart';
@@ -47,7 +48,7 @@ Future<List<Entity>> consumePages(FirstPageProvider provider) {
   return new StreamFromPages(provider).stream.toList();
 }
 
-runTests(Datastore datastore, String namespace) {
+void runTests(Datastore datastore, String namespace) {
   Partition partition = new Partition(namespace);
 
   Future withTransaction(Function f, {bool xg: false}) {
@@ -254,10 +255,10 @@ runTests(Datastore datastore, String namespace) {
             transactional: true, xg: true);
       });
 
-      test('negative_insert_20000_entities', () {
+      test('negative_insert_20000_entities', () async {
         // Maybe it should not be a [DataStoreError] here?
         // FIXME/TODO: This was adapted
-        expect(datastore.commit(inserts: named20000), throws);
+        expect(datastore.commit(inserts: named20000), throwsA(isSocketException));
       });
 
       // TODO: test invalid inserts (like entities without key, ...)
@@ -598,6 +599,7 @@ runTests(Datastore datastore, String namespace) {
             throwsA(isTransactionAbortedError));
       });
     });
+
     group('query', () {
       Future<List<Entity>> testQuery(String kind,
           {List<Filter> filters,
@@ -737,7 +739,7 @@ runTests(Datastore datastore, String namespace) {
       var sortedAndFiltered = sorted.where(filterFunction).toList();
       var sortedAndListFiltered = sorted.where(listFilterFunction).toList();
       var indexedEntity = sorted.where(indexFilterMatches).toList();
-      expect(indexedEntity.length, equals(1));
+      assert(indexedEntity.length == 1);
 
       var filters = [
         new Filter(FilterRelation.GreatherThan, QUERY_KEY, QUERY_LOWER_BOUND),
@@ -1019,7 +1021,7 @@ runTests(Datastore datastore, String namespace) {
               return datastore.commit(deletes: [subSubKey, subSubKey2]);
             }
           ];
-          return Future.forEach(futures, (f) => f()).then(expectAsync((_) {}));
+          return Future.forEach(futures, (f) => f()).then(expectAsync1((_) {}));
         });
       });
     });
@@ -1098,13 +1100,21 @@ Future waitUntilEntitiesHelper(
   });
 }
 
-main() {
-  var scopes = datastore_impl.DatastoreImpl.SCOPES;
+Future main() async {
+  Datastore datastore;
+  BaseClient client;
 
-  withAuthClient(scopes, (String project, httpClient) {
-    var datastore = new datastore_impl.DatastoreImpl(httpClient, 's~$project');
-    return cleanupDB(datastore, null).then((_) {
-      return runE2EUnittest(() => runTests(datastore, null));
-    });
+  var scopes = datastore_impl.DatastoreImpl.SCOPES;
+  await withAuthClient(scopes, (String project, httpClient) {
+    datastore = new datastore_impl.DatastoreImpl(httpClient, project);
+    client = httpClient;
+    return cleanupDB(datastore, null);
   });
+
+  tearDownAll(() async {
+    await cleanupDB(datastore, null);
+    client.close();
+  });
+
+  runTests(datastore, null);
 }

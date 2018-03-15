@@ -7,7 +7,7 @@ library gcloud.db_impl_test;
 import 'dart:async';
 
 import 'package:gcloud/db.dart';
-import 'package:unittest/unittest.dart';
+import 'package:test/test.dart';
 
 import 'model_dbs/duplicate_fieldname.dart' as test4;
 import 'model_dbs/duplicate_kind.dart' as test1;

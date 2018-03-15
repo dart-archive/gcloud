@@ -40,15 +40,16 @@ library db_test;
 ///   - name: name
 ///     direction: asc
 ///
-/// $ gcloud preview datastore create-indexes .
-/// 02:19 PM Host: appengine.google.com
-/// 02:19 PM Uploading index definitions.
+/// $ gcloud datastore create-indexes index.yaml
+///
+/// Now, wait for indexing done
 
 import 'dart:async';
 
-import 'package:unittest/unittest.dart';
 import 'package:gcloud/db.dart' as db;
 import 'package:gcloud/src/datastore_impl.dart' as datastore_impl;
+import 'package:http/http.dart';
+import 'package:test/test.dart';
 
 import '../../common_e2e.dart';
 import '../../datastore/e2e/datastore_test_impl.dart' as datastore_test;
@@ -137,7 +138,7 @@ class ExpandoPerson extends db.ExpandoModel {
 
 Future sleep(Duration duration) => new Future.delayed(duration);
 
-runTests(db.DatastoreDB store, String namespace) {
+void runTests(db.DatastoreDB store, String namespace) {
   var partition = store.newPartition(namespace);
 
   void compareModels(List<db.Model> expectedModels, List<db.Model> models,
@@ -180,11 +181,13 @@ runTests(db.DatastoreDB store, String namespace) {
         });
       });
     } else {
-      return store.commit(inserts: objects).then(expectAsync((_) {
-        return store.lookup(keys).then(expectAsync((List<db.Model> models) {
+      return store.commit(inserts: objects).then(expectAsync1((_) {
+        return store.lookup(keys).then(expectAsync1((List<db.Model> models) {
           compareModels(objects, models);
-          return store.commit(deletes: keys).then(expectAsync((_) {
-            return store.lookup(keys).then(expectAsync((List<db.Model> models) {
+          return store.commit(deletes: keys).then(expectAsync1((_) {
+            return store
+                .lookup(keys)
+                .then(expectAsync1((List<db.Model> models) {
               for (var i = 0; i < models.length; i++) {
                 expect(models[i], isNull);
               }
@@ -330,7 +333,7 @@ runTests(db.DatastoreDB store, String namespace) {
           ..parentKey = root
           ..age = 83
           ..name = 'user83');
-        return store.commit(inserts: persons).then(expectAsync((_) {
+        return store.commit(inserts: persons).then(expectAsync1((_) {
           // At this point, autoIds are allocated and are reflected in the
           // models (as well as parentKey if it was empty).
 
@@ -360,13 +363,13 @@ runTests(db.DatastoreDB store, String namespace) {
           // because an id doesn't need to be globally unique, only under
           // entities with the same parent.
 
-          return store.lookup(keys).then(expectAsync((List<Person> models) {
+          return store.lookup(keys).then(expectAsync1((List<db.Model> models) {
             // Since the id/parentKey fields are set after commit and a lookup
             // returns new model instances, we can do full model comparison
             // here.
             compareModels(persons, models);
-            return store.commit(deletes: keys).then(expectAsync((_) {
-              return store.lookup(keys).then(expectAsync((List models) {
+            return store.commit(deletes: keys).then(expectAsync1((_) {
+              return store.lookup(keys).then(expectAsync1((List models) {
                 for (var i = 0; i < models.length; i++) {
                   expect(models[i], isNull);
                 }
@@ -677,14 +680,21 @@ Future waitUntilEntitiesHelper(db.DatastoreDB mdb, List<db.Key> keys,
   });
 }
 
-main() {
-  var scopes = datastore_impl.DatastoreImpl.SCOPES;
+Future main() async {
+  db.DatastoreDB store;
+  BaseClient client;
 
-  withAuthClient(scopes, (String project, httpClient) {
-    var datastore = new datastore_impl.DatastoreImpl(httpClient, 's~$project');
+  var scopes = datastore_impl.DatastoreImpl.SCOPES;
+  await withAuthClient(scopes, (String project, httpClient) {
+    var datastore = new datastore_impl.DatastoreImpl(httpClient, project);
     return datastore_test.cleanupDB(datastore, null).then((_) {
-      return runE2EUnittest(
-          () => runTests(new db.DatastoreDB(datastore), null));
+      store = new db.DatastoreDB(datastore);
     });
   });
+
+  tearDownAll(() {
+    client?.close();
+  });
+
+  runTests(store, null);
 }

@@ -8,7 +8,7 @@ import 'dart:async';
 
 import 'package:googleapis/storage/v1.dart' as storage_api;
 import 'package:gcloud/storage.dart';
-import 'package:unittest/unittest.dart';
+import 'package:test/test.dart';
 
 import '../common_e2e.dart';
 
@@ -26,18 +26,44 @@ const int minResumableUpload = maxNormalUpload + 1;
 final bytesResumableUpload =
     new List<int>.generate(minResumableUpload, (e) => e & 255);
 
-runTests(Storage storage, Bucket testBucket) {
+void main() {
+  Storage storage;
+  String testBucketName;
+  Bucket testBucket;
+
+  setUpAll(() {
+    return withAuthClient(Storage.SCOPES, (String project, httpClient) {
+      testBucketName = generateBucketName();
+
+      // Share the same storage connection for all tests.
+      storage = new Storage(httpClient, project);
+
+      // Create a shared bucket for all object tests.
+      return storage.createBucket(testBucketName).then((_) {
+        testBucket = storage.bucket(testBucketName);
+      });
+    });
+  });
+
+  tearDownAll(() {
+    // Deleting a bucket relies on eventually consistent behaviour, hence
+    // the delay in attempt to prevent test flakiness.
+    return new Future.delayed(STORAGE_LIST_DELAY, () {
+      return storage.deleteBucket(testBucketName);
+    });
+  });
+
   group('bucket', () {
     test('create-info-delete', () {
       var bucketName = generateBucketName();
-      return storage.createBucket(bucketName).then(expectAsync((result) {
+      return storage.createBucket(bucketName).then(expectAsync1((result) {
         expect(result, isNull);
-        return storage.bucketInfo(bucketName).then(expectAsync((info) {
+        return storage.bucketInfo(bucketName).then(expectAsync1((info) {
           expect(info.bucketName, bucketName);
           expect(info.etag, isNotNull);
           expect(info.created is DateTime, isTrue);
           expect(info.id, isNotNull);
-          return storage.deleteBucket(bucketName).then(expectAsync((result) {
+          return storage.deleteBucket(bucketName).then(expectAsync1((result) {
             expect(result, isNull);
           }));
         }));
@@ -49,13 +75,13 @@ runTests(Storage storage, Bucket testBucket) {
         var bucketName = generateBucketName();
         return storage
             .createBucket(bucketName, predefinedAcl: predefinedAcl)
-            .then(expectAsync((result) {
+            .then(expectAsync1((result) {
           expect(result, isNull);
-          return storage.bucketInfo(bucketName).then(expectAsync((info) {
+          return storage.bucketInfo(bucketName).then(expectAsync1((info) {
             var acl = info.acl;
             expect(info.bucketName, bucketName);
             expect(acl.entries.length, expectedLength);
-            return storage.deleteBucket(bucketName).then(expectAsync((result) {
+            return storage.deleteBucket(bucketName).then(expectAsync1((result) {
               expect(result, isNull);
             }));
           }));
@@ -63,23 +89,23 @@ runTests(Storage storage, Bucket testBucket) {
       }
 
       return Future.forEach([
-        // TODO: Figure out why some returned ACLs are empty.
-        () => test(PredefinedAcl.authenticatedRead, 0),
-        // [test, [PredefinedAcl.private, 0]],  // TODO: Cannot delete.
+        // See documentation: https://cloud.google.com/storage/docs/access-control/lists
+        () => test(PredefinedAcl.authenticatedRead, 2),
+        () => test(PredefinedAcl.private, 1),
         () => test(PredefinedAcl.projectPrivate, 3),
-        () => test(PredefinedAcl.publicRead, 0),
-        () => test(PredefinedAcl.publicReadWrite, 0)
-      ], (f) => f().then(expectAsync((_) {})));
+        () => test(PredefinedAcl.publicRead, 2),
+        () => test(PredefinedAcl.publicReadWrite, 2),
+      ], (f) => f().then(expectAsync1((_) {})));
     });
 
     test('create-error', () {
-      storage.createBucket('goog-reserved').catchError(expectAsync((e) {
+      storage.createBucket('goog-reserved').catchError(expectAsync1((e) {
         expect(e, isNotNull);
       }), test: testDetailedApiError);
     });
   });
 
-  solo_group('object', () {
+  group('object', () {
     // Run all object tests in the same bucket to try to avoid the rate-limit
     // for creating and deleting buckets while testing.
     Future withTestBucket(function) {
@@ -91,13 +117,13 @@ runTests(Storage storage, Bucket testBucket) {
     test('create-read-delete', () {
       Future test(name, bytes) {
         return withTestBucket((Bucket bucket) {
-          return bucket.writeBytes('test', bytes).then(expectAsync((info) {
+          return bucket.writeBytes('test', bytes).then(expectAsync1((info) {
             expect(info, isNotNull);
             return bucket
                 .read('test')
-                .fold([], (p, e) => p..addAll(e)).then(expectAsync((result) {
+                .fold([], (p, e) => p..addAll(e)).then(expectAsync1((result) {
               expect(result, bytes);
-              return bucket.delete('test').then(expectAsync((result) {
+              return bucket.delete('test').then(expectAsync1((result) {
                 expect(result, isNull);
               }));
             }));
@@ -108,7 +134,7 @@ runTests(Storage storage, Bucket testBucket) {
       return Future.forEach([
         () => test('test-1', [1, 2, 3]),
         () => test('test-2', bytesResumableUpload)
-      ], (f) => f().then(expectAsync((_) {})));
+      ], (f) => f().then(expectAsync1((_) {})));
     });
 
     test('create-with-predefined-acl-delete', () {
@@ -116,14 +142,14 @@ runTests(Storage storage, Bucket testBucket) {
         Future test(objectName, predefinedAcl, expectedLength) {
           return bucket
               .writeBytes(objectName, [1, 2, 3], predefinedAcl: predefinedAcl)
-              .then(expectAsync((result) {
+              .then(expectAsync1((result) {
             expect(result, isNotNull);
-            return bucket.info(objectName).then(expectAsync((info) {
+            return bucket.info(objectName).then(expectAsync1((info) {
               var acl = info.metadata.acl;
               expect(info.name, objectName);
               expect(info.etag, isNotNull);
               expect(acl.entries.length, expectedLength);
-              return bucket.delete(objectName).then(expectAsync((result) {
+              return bucket.delete(objectName).then(expectAsync1((result) {
                 expect(result, isNull);
               }));
             }));
@@ -137,7 +163,7 @@ runTests(Storage storage, Bucket testBucket) {
           () => test('test-4', PredefinedAcl.publicRead, 2),
           () => test('test-5', PredefinedAcl.bucketOwnerFullControl, 2),
           () => test('test-6', PredefinedAcl.bucketOwnerRead, 2)
-        ], (f) => f().then(expectAsync((_) {})));
+        ], (f) => f().then(expectAsync1((_) {})));
       });
     });
 
@@ -146,14 +172,14 @@ runTests(Storage storage, Bucket testBucket) {
         Future test(objectName, acl, expectedLength) {
           return bucket
               .writeBytes(objectName, [1, 2, 3], acl: acl)
-              .then(expectAsync((result) {
+              .then(expectAsync1((result) {
             expect(result, isNotNull);
-            return bucket.info(objectName).then(expectAsync((info) {
+            return bucket.info(objectName).then(expectAsync1((info) {
               var acl = info.metadata.acl;
               expect(info.name, objectName);
               expect(info.etag, isNotNull);
               expect(acl.entries.length, expectedLength);
-              return bucket.delete(objectName).then(expectAsync((result) {
+              return bucket.delete(objectName).then(expectAsync1((result) {
                 expect(result, isNull);
               }));
             }));
@@ -190,7 +216,7 @@ runTests(Storage storage, Bucket testBucket) {
           () => test('test-2', acl2, acl2.entries.length + 1),
           () => test('test-3', acl3, acl3.entries.length + 1),
           () => test('test-4', acl4, acl4.entries.length + 1)
-        ], (f) => f().then(expectAsync((_) {})));
+        ], (f) => f().then(expectAsync1((_) {})));
       });
     });
 
@@ -199,9 +225,9 @@ runTests(Storage storage, Bucket testBucket) {
         Future test(objectName, metadata, bytes) {
           return bucket
               .writeBytes(objectName, bytes, metadata: metadata)
-              .then(expectAsync((result) {
+              .then(expectAsync1((result) {
             expect(result, isNotNull);
-            return bucket.info(objectName).then(expectAsync((info) {
+            return bucket.info(objectName).then(expectAsync1((info) {
               expect(info.name, objectName);
               expect(info.length, bytes.length);
               expect(info.updated is DateTime, isTrue);
@@ -217,7 +243,7 @@ runTests(Storage storage, Bucket testBucket) {
               expect(info.metadata.contentEncoding, metadata.contentEncoding);
               expect(info.metadata.contentLanguage, metadata.contentLanguage);
               expect(info.metadata.custom, metadata.custom);
-              return bucket.delete(objectName).then(expectAsync((result) {
+              return bucket.delete(objectName).then(expectAsync1((result) {
                 expect(result, isNull);
               }));
             }));
@@ -238,29 +264,7 @@ runTests(Storage storage, Bucket testBucket) {
           () => test('test-2', metadata2, [65, 66, 67]),
           () => test('test-3', metadata1, bytesResumableUpload),
           () => test('test-4', metadata2, bytesResumableUpload)
-        ], (f) => f().then(expectAsync((_) {})));
-      });
-    });
-  });
-}
-
-main() {
-  withAuthClient(Storage.SCOPES, (String project, httpClient) {
-    var testBucket = generateBucketName();
-
-    // Share the same storage connection for all tests.
-    var storage = new Storage(httpClient, project);
-
-    // Create a shared bucket for all object tests.
-    return storage.createBucket(testBucket).then((_) {
-      return runE2EUnittest(() {
-        runTests(storage, storage.bucket(testBucket));
-      }).whenComplete(() {
-        // Deleting a bucket relies on eventually consistent behaviour, hence
-        // the delay in attempt to prevent test flakiness.
-        return new Future.delayed(STORAGE_LIST_DELAY, () {
-          return storage.deleteBucket(testBucket);
-        });
+        ], (f) => f().then(expectAsync1((_) {})));
       });
     });
   });
