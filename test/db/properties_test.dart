@@ -75,7 +75,7 @@ main() {
       expect(prop.validate(null, null), isTrue);
       expect(prop.validate(null, [1, 2]), isTrue);
       expect(prop.encodeValue(null, null), equals(null));
-      expect((prop.encodeValue(null, []) as datastore.BlobValue).bytes,
+      expect((prop.encodeValue(null, <int>[]) as datastore.BlobValue).bytes,
           equals([]));
       expect((prop.encodeValue(null, [1, 2]) as datastore.BlobValue).bytes,
           equals([1, 2]));

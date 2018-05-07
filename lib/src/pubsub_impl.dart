@@ -311,12 +311,12 @@ class _PushEventImpl implements PushEvent {
   factory _PushEventImpl.fromJson(String json) {
     Map body = JSON.decode(json);
     String data = body['message']['data'];
-    Map labels = new HashMap();
+    Map<String, String> labels = new HashMap();
     body['message']['labels'].forEach((label) {
       var key = label['key'];
       var value = label['strValue'];
       if (value == null) value = label['numValue'];
-      labels[key] = value;
+      labels[key] = value.toString();
     });
     String subscription = body['subscription'];
     // TODO(#1): Remove this when the push event subscription name is prefixed

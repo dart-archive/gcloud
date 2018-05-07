@@ -45,13 +45,13 @@ Future sleep(Duration duration) {
 }
 
 Future<List<Entity>> consumePages(FirstPageProvider provider) {
-  return new StreamFromPages(provider).stream.toList();
+  return new StreamFromPages<Entity>(provider).stream.toList();
 }
 
 void runTests(Datastore datastore, String namespace) {
   Partition partition = new Partition(namespace);
 
-  Future withTransaction(Function f, {bool xg: false}) {
+  Future<T> withTransaction<T>(Function f, {bool xg: false}) {
     return datastore.beginTransaction(crossEntityGroup: xg).then(f);
   }
 
@@ -542,7 +542,7 @@ void runTests(Datastore datastore, String namespace) {
           var changedEntities = new List<Entity>(entities.length);
           for (int i = 0; i < entities.length; i++) {
             var entity = entities[i];
-            var newProperties = new Map.from(entity.properties);
+            var newProperties = new Map<String, Object>.from(entity.properties);
             for (var prop in newProperties.keys) {
               newProperties[prop] = "${newProperties[prop]}conflict$value";
             }
@@ -762,7 +762,7 @@ void runTests(Datastore datastore, String namespace) {
       var orders = [new Order(OrderDirection.Decending, QUERY_KEY)];
 
       test('query', () {
-        return insert(stringNamedEntities, []).then((keys) {
+        return insert(stringNamedEntities, <Entity>[]).then((keys) {
           return waitUntilEntitiesReady(datastore, stringNamedKeys, partition)
               .then((_) {
             var tests = [
@@ -1072,9 +1072,9 @@ Future waitUntilEntitiesGone(Datastore db, List<Key> keys, Partition p) {
 
 Future waitUntilEntitiesHelper(
     Datastore db, List<Key> keys, bool positive, Partition p) {
-  var keysByKind = <String, dynamic>{};
+  var keysByKind = <String, List<Key>>{};
   for (var key in keys) {
-    keysByKind.putIfAbsent(key.elements.last.kind, () => []).add(key);
+    keysByKind.putIfAbsent(key.elements.last.kind, () => <Key>[]).add(key);
   }
 
   Future waitForKeys(String kind, List<Key> keys) {

@@ -39,7 +39,7 @@ main() {
 
     test('create', () {
       withMockClient((mock, api) {
-        mock.register('POST', 'b', expectAsync1((request) {
+        mock.register('POST', 'b', expectAsync1((http.Request request) {
           var requestBucket =
               new storage.Bucket.fromJson(JSON.decode(request.body));
           expect(requestBucket.name, bucketName);
@@ -65,7 +65,7 @@ main() {
         mock.register(
             'POST',
             'b',
-            expectAsync1((request) {
+            expectAsync1((http.Request request) {
               var requestBucket =
                   new storage.Bucket.fromJson(JSON.decode(request.body));
               expect(requestBucket.name, bucketName);
@@ -109,7 +109,7 @@ main() {
         mock.register(
             'POST',
             'b',
-            expectAsync1((request) {
+            expectAsync1((http.Request request) {
               var requestBucket =
                   new storage.Bucket.fromJson(JSON.decode(request.body));
               expect(requestBucket.name, bucketName);
@@ -171,7 +171,7 @@ main() {
         mock.register(
             'POST',
             'b',
-            expectAsync1((request) {
+            expectAsync1((http.Request request) {
               var requestBucket =
                   new storage.Bucket.fromJson(JSON.decode(request.body));
               int predefinedIndex = count ~/ acls.length;
@@ -333,9 +333,9 @@ main() {
 
     bool testArgumentError(e) => e is ArgumentError;
     bool testDetailedApiError(e) => e is storage.DetailedApiRequestError;
-    Function expectNotNull(status) => (o) => expect(o, isNotNull);
+    final expectNotNull = (o) async {expect(o, isNotNull); return null; };
 
-    expectNormalUpload(mock, data, objectName) {
+    expectNormalUpload(MockClient mock, data, objectName) {
       var bytes = data.fold([], (p, e) => p..addAll(e));
       mock.registerUpload('POST', 'b/$bucketName/o', expectAsync1((request) {
         return mock
@@ -351,7 +351,7 @@ main() {
       }));
     }
 
-    expectResumableUpload(mock, data, objectName) {
+    expectResumableUpload(MockClient mock, data, objectName) {
       var bytes = data.fold([], (p, e) => p..addAll(e));
       expect(bytes.length, bytesResumableUpload.length);
       int count = 0;
@@ -457,7 +457,7 @@ main() {
     });
 
     test('write-short-error', () {
-      withMockClient((mock, api) {
+      withMockClient((MockClient mock, api) {
         Future test(length) {
           mock.clear();
           mock.registerUpload('POST', 'b/$bucketName/o',
@@ -537,7 +537,7 @@ main() {
           sink.done.then((_) => throw 'Unexpected').catchError(
               expectAsync1(expectNotNull),
               test: (e) => e is String || e is storage.ApiRequestError);
-          return new Stream.fromIterable(data)
+          return new Stream<List<int>>.fromIterable(data)
               .pipe(sink)
               .then((_) => throw 'Unexpected')
               .catchError(expectAsync1(expectNotNull),

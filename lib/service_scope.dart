@@ -122,12 +122,12 @@ void register(Object key, Object value, {onScopeExit()}) {
 ///
 /// The registered on-scope-exit functions are executed in reverse registration
 /// order.
-Object registerScopeExitCallback(onScopeExitCallback()) {
+void registerScopeExitCallback(onScopeExitCallback()) {
   var serviceScope = _serviceScope;
   if (serviceScope == null) {
     throw new StateError('Not running inside a service scope zone.');
   }
-  return serviceScope.registerOnScopeExitCallback(onScopeExitCallback);
+  serviceScope.registerOnScopeExitCallback(onScopeExitCallback);
 }
 
 /// Look up an item by it's key in the currently active service scope.

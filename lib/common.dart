@@ -36,10 +36,10 @@ class StreamFromPages<T> {
   bool _paused = false;
   bool _cancelled = false;
   Page _currentPage;
-  StreamController _controller;
+  StreamController<T> _controller;
 
   StreamFromPages(this._firstPageProvider) {
-    _controller = new StreamController(
+    _controller = new StreamController<T>(
         sync: true,
         onListen: _onListen,
         onPause: _onPause,

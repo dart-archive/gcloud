@@ -119,7 +119,6 @@ abstract class Model {
  * set arbitrary fields on these models. The expanded values must be values
  * accepted by the [RawDatastore] implementation.
  */
-@proxy
 abstract class ExpandoModel extends Model {
   final Map<String, Object> additionalProperties = {};
 

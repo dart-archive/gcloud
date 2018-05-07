@@ -152,7 +152,7 @@ main() {
 
         // Mock that expect/generates [n] topics in pages of page size
         // [pageSize].
-        registerQueryMock(mock, n, pageSize, [totalCalls]) {
+        registerQueryMock(MockClient mock, n, pageSize, [totalCalls]) {
           var totalPages = (n + pageSize - 1) ~/ pageSize;
           // No items still generate one request.
           if (totalPages == 0) totalPages = 1;
@@ -543,7 +543,7 @@ main() {
 
         // Mock that expect/generates [n] subscriptions in pages of page size
         // [pageSize].
-        registerQueryMock(mock, n, pageSize, {String topic, int totalCalls}) {
+        registerQueryMock(MockClient mock, n, pageSize, {String topic, int totalCalls}) {
           var totalPages = (n + pageSize - 1) ~/ pageSize;
           // No items still generate one request.
           if (totalPages == 0) totalPages = 1;
@@ -858,14 +858,14 @@ main() {
     var messageBase64 = BASE64.encode(messageBytes);
     var attributes = {'a': '1', 'b': 'text'};
 
-    registerLookup(mock) {
+    registerLookup(MockClient mock) {
       mock.register('GET', absoluteName, expectAsync1((request) {
         expect(request.body.length, 0);
         return mock.respond(new pubsub.Topic()..name = absoluteName);
       }));
     }
 
-    registerPublish(mock, count, fn) {
+    registerPublish(MockClient mock, count, fn) {
       mock.register(
           'POST',
           'projects/test-project/topics/test-topic:publish',
@@ -1053,7 +1053,7 @@ main() {
 ''';
       var event = new PushEvent.fromJson(requestBody);
       expect(event.message.asString, "Hello, world 30 of 50!");
-      expect(event.message.attributes['messageNo'], 30);
+      expect(event.message.attributes['messageNo'], '30');
       expect(event.message.attributes['test'], 'hello');
       expect(event.subscriptionName, absoluteSubscriptionName);
     });

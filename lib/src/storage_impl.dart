@@ -452,7 +452,7 @@ class _ObjectMetadata implements ObjectMetadata {
   Map<String, String> get custom {
     if (_object.metadata == null) return null;
     if (_cachedCustom == null) {
-      _cachedCustom = new UnmodifiableMapView(_object.metadata);
+      _cachedCustom = new UnmodifiableMapView<String, String>(_object.metadata);
     }
     return _cachedCustom;
   }
@@ -497,7 +497,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
   final _controller = new StreamController<List<int>>(sync: true);
   StreamSubscription _subscription;
   StreamController _resumableController;
-  final _doneCompleter = new Completer<dynamic>();
+  final _doneCompleter = new Completer<ObjectInfo>();
 
   static const int _STATE_LENGTH_KNOWN = 0;
   static const int _STATE_PROBING_LENGTH = 1;
@@ -537,7 +537,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
     return _controller.addStream(stream);
   }
 
-  Future close() {
+  Future<ObjectInfo> close() {
     _controller.close();
     return _doneCompleter.future;
   }
@@ -552,7 +552,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
       if (_bufferLength > _maxNormalUploadLength) {
         // Start resumable upload.
         // TODO: Avoid using another stream-controller.
-        _resumableController = new StreamController(sync: true);
+        _resumableController = new StreamController<List<int>>(sync: true);
         buffer.forEach(_resumableController.add);
         _startResumableUpload(_resumableController.stream, _length);
         _state = _STATE_DECIDED_RESUMABLE;
@@ -567,7 +567,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
     if (_state == _STATE_PROBING_LENGTH) {
       // As the data is already cached don't bother to wait on somebody
       // listening on the stream before adding the data.
-      _startNormalUpload(new Stream.fromIterable(buffer), _bufferLength);
+      _startNormalUpload(new Stream<List<int>>.fromIterable(buffer), _bufferLength);
     } else {
       _resumableController.close();
     }
@@ -591,7 +591,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
     _doneCompleter.completeError(e, s);
   }
 
-  void _startNormalUpload(Stream stream, int length) {
+  void _startNormalUpload(Stream<List<int>> stream, int length) {
     var contentType = _object.contentType != null
         ? _object.contentType
         : 'application/octet-stream';
@@ -607,7 +607,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
     }, onError: _completeError);
   }
 
-  void _startResumableUpload(Stream stream, int length) {
+  void _startResumableUpload(Stream<List<int>> stream, int length) {
     var contentType = _object.contentType != null
         ? _object.contentType
         : 'application/octet-stream';

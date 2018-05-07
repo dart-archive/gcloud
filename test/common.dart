@@ -96,7 +96,7 @@ class MockClient extends http.BaseClient {
   }
 
   Future<http.Response> respondInitiateResumableUpload(project) {
-    Map headers = new Map.from(RESPONSE_HEADERS);
+    Map headers = new Map<String, String>.from(RESPONSE_HEADERS);
     headers['location'] = 'https://www.googleapis.com/resumable/upload$rootPath'
         'b/$project/o?uploadType=resumable&alt=json&'
         'upload_id=AEnB2UqucpaWy7d5cr5iVQzmbQcQlLDIKiClrm0SAX3rJ7UN'
@@ -113,7 +113,7 @@ class MockClient extends http.BaseClient {
     expect(request.url.queryParameters['alt'], 'media');
 
     var myBytes = bytes;
-    var headers = new Map.from(RESPONSE_HEADERS);
+    var headers = new Map<String, String>.from(RESPONSE_HEADERS);
 
     var range = request.headers['range'];
     if (range != null) {
@@ -138,8 +138,8 @@ class MockClient extends http.BaseClient {
         headers: RESPONSE_HEADERS));
   }
 
-  Future processNormalMediaUpload(http.Request request) {
-    var completer = new Completer();
+  Future<NormalMediaUpload> processNormalMediaUpload(http.Request request) {
+    var completer = new Completer<NormalMediaUpload>();
 
     var contentType =
         new http_parser.MediaType.parse(request.headers['content-type']);
