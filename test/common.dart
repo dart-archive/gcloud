@@ -86,7 +86,7 @@ class MockClient extends http.BaseClient {
 
   Future<http.Response> respond(response) {
     return new Future.value(new http.Response(
-        JSON.encode(response.toJson()), 200,
+        jsonEncode(response.toJson()), 200,
         headers: RESPONSE_HEADERS));
   }
 
@@ -134,7 +134,7 @@ class MockClient extends http.BaseClient {
     var error = {
       'error': {'code': statusCode, 'message': 'error'}
     };
-    return new Future.value(new http.Response(JSON.encode(error), statusCode,
+    return new Future.value(new http.Response(jsonEncode(error), statusCode,
         headers: RESPONSE_HEADERS));
   }
 
@@ -160,15 +160,15 @@ class MockClient extends http.BaseClient {
         // First part in the object JSON.
         expect(contentType, 'application/json; charset=utf-8');
         mimeMultipart
-            .transform(UTF8.decoder)
+            .transform(utf8.decoder)
             .fold('', (p, e) => '$p$e')
             .then((j) => json = j);
       } else if (partCount == 2) {
         // Second part is the base64 encoded bytes.
         mimeMultipart
-            .transform(ASCII.decoder)
+            .transform(ascii.decoder)
             .fold('', (p, e) => '$p$e')
-            .then(BASE64.decode)
+            .then(base64.decode)
             .then((bytes) {
           completer.complete(new NormalMediaUpload(json, bytes, contentType));
         });
@@ -200,14 +200,14 @@ class TraceClient extends http.BaseClient {
     print(request);
     return request.finalize().toBytes().then((body) {
       print('--- START REQUEST ---');
-      print(UTF8.decode(body));
+      print(utf8.decode(body));
       print('--- END REQUEST ---');
       var r = new RequestImpl(request.method, request.url, body);
       r.headers.addAll(request.headers);
       return client.send(r).then((http.StreamedResponse rr) {
         return rr.stream.toBytes().then((body) {
           print('--- START RESPONSE ---');
-          print(UTF8.decode(body));
+          print(utf8.decode(body));
           print('--- END RESPONSE ---');
           return new http.StreamedResponse(
               new http.ByteStream.fromBytes(body), rr.statusCode,

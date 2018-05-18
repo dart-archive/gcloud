@@ -41,7 +41,7 @@ main() {
       withMockClient((mock, api) {
         mock.register('POST', 'b', expectAsync1((http.Request request) {
           var requestBucket =
-              new storage.Bucket.fromJson(JSON.decode(request.body));
+              new storage.Bucket.fromJson(jsonDecode(request.body));
           expect(requestBucket.name, bucketName);
           return mock.respond(new storage.Bucket()..name = bucketName);
         }));
@@ -67,7 +67,7 @@ main() {
             'b',
             expectAsync1((http.Request request) {
               var requestBucket =
-                  new storage.Bucket.fromJson(JSON.decode(request.body));
+                  new storage.Bucket.fromJson(jsonDecode(request.body));
               expect(requestBucket.name, bucketName);
               expect(requestBucket.acl, isNull);
               expect(request.url.queryParameters['predefinedAcl'],
@@ -111,7 +111,7 @@ main() {
             'b',
             expectAsync1((http.Request request) {
               var requestBucket =
-                  new storage.Bucket.fromJson(JSON.decode(request.body));
+                  new storage.Bucket.fromJson(jsonDecode(request.body));
               expect(requestBucket.name, bucketName);
               expect(request.url.queryParameters['predefinedAcl'], isNull);
               expect(requestBucket.acl, isNotNull);
@@ -173,7 +173,7 @@ main() {
             'b',
             expectAsync1((http.Request request) {
               var requestBucket =
-                  new storage.Bucket.fromJson(JSON.decode(request.body));
+                  new storage.Bucket.fromJson(jsonDecode(request.body));
               int predefinedIndex = count ~/ acls.length;
               int aclIndex = count % acls.length;
               expect(requestBucket.name, bucketName);
@@ -342,7 +342,7 @@ main() {
             .processNormalMediaUpload(request)
             .then(expectAsync1((mediaUpload) {
           var object =
-              new storage.Object.fromJson(JSON.decode(mediaUpload.json));
+              new storage.Object.fromJson(jsonDecode(mediaUpload.json));
           expect(object.name, objectName);
           expect(mediaUpload.bytes, bytes);
           expect(mediaUpload.contentType, 'application/octet-stream');
@@ -358,7 +358,7 @@ main() {
       mock.registerResumableUpload('POST', 'b/$bucketName/o',
           expectAsync1((request) {
         var requestObject =
-            new storage.Object.fromJson(JSON.decode(request.body));
+            new storage.Object.fromJson(jsonDecode(request.body));
         expect(requestObject.name, objectName);
         return mock.respondInitiateResumableUpload(PROJECT);
       }));
@@ -629,7 +629,7 @@ main() {
                   .processNormalMediaUpload(request)
                   .then(expectAsync1((mediaUpload) {
                 var object =
-                    new storage.Object.fromJson(JSON.decode(mediaUpload.json));
+                    new storage.Object.fromJson(jsonDecode(mediaUpload.json));
                 ObjectMetadata m = metadata[count];
                 expect(object.name, objectName);
                 expect(mediaUpload.bytes, bytes);
@@ -682,7 +682,7 @@ main() {
             'b/$bucketName/o',
             expectAsync1((request) {
               var object =
-                  new storage.Object.fromJson(JSON.decode(request.body));
+                  new storage.Object.fromJson(jsonDecode(request.body));
               ObjectMetadata m = metadata[countInitial];
               expect(object.name, objectName);
               expect(object.cacheControl, m.cacheControl);
@@ -745,7 +745,7 @@ main() {
                   .processNormalMediaUpload(request)
                   .then(expectAsync1((mediaUpload) {
                 var object =
-                    new storage.Object.fromJson(JSON.decode(mediaUpload.json));
+                    new storage.Object.fromJson(jsonDecode(mediaUpload.json));
                 expect(object.name, objectName);
                 expect(mediaUpload.bytes, bytes);
                 expect(mediaUpload.contentType, 'application/octet-stream');
@@ -797,7 +797,7 @@ main() {
                   .processNormalMediaUpload(request)
                   .then(expectAsync1((mediaUpload) {
                 var object =
-                    new storage.Object.fromJson(JSON.decode(mediaUpload.json));
+                    new storage.Object.fromJson(jsonDecode(mediaUpload.json));
                 expect(object.name, objectName);
                 expect(mediaUpload.bytes, bytes);
                 expect(mediaUpload.contentType, 'application/octet-stream');
@@ -870,7 +870,7 @@ main() {
                 int predefinedIndex = count ~/ acls.length;
                 int aclIndex = count % acls.length;
                 var object =
-                    new storage.Object.fromJson(JSON.decode(mediaUpload.json));
+                    new storage.Object.fromJson(jsonDecode(mediaUpload.json));
                 expect(object.name, objectName);
                 expect(mediaUpload.bytes, bytes);
                 expect(mediaUpload.contentType, 'application/octet-stream');

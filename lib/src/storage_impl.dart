@@ -372,10 +372,10 @@ class _ObjectInfoImpl implements ObjectInfo {
 
   String get etag => _object.etag;
 
-  List<int> get md5Hash => BASE64.decode(_object.md5Hash);
+  List<int> get md5Hash => base64.decode(_object.md5Hash);
 
   int get crc32CChecksum {
-    var list = BASE64.decode(_object.crc32c);
+    var list = base64.decode(_object.crc32c);
     return (list[3] << 24) | (list[2] << 16) | (list[1] << 8) | list[0];
   }
 

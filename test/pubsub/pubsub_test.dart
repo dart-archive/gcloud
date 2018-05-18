@@ -50,7 +50,7 @@ main() {
             'projects/$PROJECT/topics/test-topic',
             expectAsync1((request) {
               var requestTopic =
-                  new pubsub.Topic.fromJson(JSON.decode(request.body));
+                  new pubsub.Topic.fromJson(jsonDecode(request.body));
               expect(requestTopic.name, absoluteName);
               return mock.respond(new pubsub.Topic()..name = absoluteName);
             }, count: 2));
@@ -428,7 +428,7 @@ main() {
             'projects/$PROJECT/subscriptions',
             expectAsync1((request) {
               var requestSubscription =
-                  new pubsub.Subscription.fromJson(JSON.decode(request.body));
+                  new pubsub.Subscription.fromJson(jsonDecode(request.body));
               expect(requestSubscription.name, absoluteName);
               return mock
                   .respond(new pubsub.Subscription()..name = absoluteName);
@@ -854,8 +854,8 @@ main() {
     var name = 'test-topic';
     var absoluteName = 'projects/$PROJECT/topics/test-topic';
     var message = 'Hello, world!';
-    var messageBytes = UTF8.encode(message);
-    var messageBase64 = BASE64.encode(messageBytes);
+    var messageBytes = utf8.encode(message);
+    var messageBase64 = base64.encode(messageBytes);
     var attributes = {'a': '1', 'b': 'text'};
 
     registerLookup(MockClient mock) {
@@ -871,7 +871,7 @@ main() {
           'projects/test-project/topics/test-topic:publish',
           expectAsync1((request) {
             var publishRequest =
-                new pubsub.PublishRequest.fromJson(JSON.decode(request.body));
+                new pubsub.PublishRequest.fromJson(jsonDecode(request.body));
             return fn(publishRequest);
           }, count: count));
     }
