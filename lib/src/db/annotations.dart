@@ -303,6 +303,4 @@ class StringListProperty extends ListProperty {
   Object decodePrimitiveValue(ModelDB db, Object value) {
     return (super.decodePrimitiveValue(db, value) as core.List).cast<String>();
   }
-
-
 }

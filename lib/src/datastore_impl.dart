@@ -267,7 +267,7 @@ class DatastoreImpl implements datastore.Datastore {
     return orders.map(_convertDatastore2ApiOrder).toList();
   }
 
-  static FutureOr<Null> _handleError(error, stack) {
+  static Future<Null> _handleError(error, stack) {
     if (error is api.DetailedApiRequestError) {
       if (error.status == 400) {
         return new Future.error(
