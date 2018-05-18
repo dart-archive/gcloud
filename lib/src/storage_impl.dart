@@ -567,7 +567,8 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
     if (_state == _STATE_PROBING_LENGTH) {
       // As the data is already cached don't bother to wait on somebody
       // listening on the stream before adding the data.
-      _startNormalUpload(new Stream<List<int>>.fromIterable(buffer), _bufferLength);
+      _startNormalUpload(
+          new Stream<List<int>>.fromIterable(buffer), _bufferLength);
     } else {
       _resumableController.close();
     }

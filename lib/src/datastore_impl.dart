@@ -349,7 +349,8 @@ class DatastoreImpl implements datastore.Datastore {
         keys = mutationResults
             .skip(autoIdStartIndex)
             .take(autoIdInserts.length)
-            .map<datastore.Key>((api.MutationResult r) => _convertApi2DatastoreKey(r.key))
+            .map<datastore.Key>(
+                (api.MutationResult r) => _convertApi2DatastoreKey(r.key))
             .toList();
       }
       return new datastore.CommitResult(keys);

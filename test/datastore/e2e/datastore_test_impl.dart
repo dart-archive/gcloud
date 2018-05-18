@@ -258,7 +258,8 @@ void runTests(Datastore datastore, String namespace) {
       test('negative_insert_20000_entities', () async {
         // Maybe it should not be a [DataStoreError] here?
         // FIXME/TODO: This was adapted
-        expect(datastore.commit(inserts: named20000), throwsA(isSocketException));
+        expect(
+            datastore.commit(inserts: named20000), throwsA(isSocketException));
       });
 
       // TODO: test invalid inserts (like entities without key, ...)

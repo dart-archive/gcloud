@@ -333,7 +333,10 @@ main() {
 
     bool testArgumentError(e) => e is ArgumentError;
     bool testDetailedApiError(e) => e is storage.DetailedApiRequestError;
-    final expectNotNull = (o) async {expect(o, isNotNull); return null; };
+    final expectNotNull = (o) async {
+      expect(o, isNotNull);
+      return null;
+    };
 
     expectNormalUpload(MockClient mock, data, objectName) {
       var bytes = data.fold([], (p, e) => p..addAll(e));

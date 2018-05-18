@@ -185,8 +185,8 @@ class Query {
       _orders.add(new ds.Order(ds.OrderDirection.Decending,
           _convertToDatastoreName(orderString.substring(1))));
     } else {
-      _orders.add(new ds.Order(ds.OrderDirection.Ascending,
-          _convertToDatastoreName(orderString)));
+      _orders.add(new ds.Order(
+          ds.OrderDirection.Ascending, _convertToDatastoreName(orderString)));
     }
   }
 

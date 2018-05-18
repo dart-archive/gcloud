@@ -543,7 +543,8 @@ main() {
 
         // Mock that expect/generates [n] subscriptions in pages of page size
         // [pageSize].
-        registerQueryMock(MockClient mock, n, pageSize, {String topic, int totalCalls}) {
+        registerQueryMock(MockClient mock, n, pageSize,
+            {String topic, int totalCalls}) {
           var totalPages = (n + pageSize - 1) ~/ pageSize;
           // No items still generate one request.
           if (totalPages == 0) totalPages = 1;
