@@ -56,8 +56,8 @@ class ModelDBImpl implements ModelDB {
     _initialize([mirrors.currentMirrorSystem().findLibrary(librarySymbol)]);
   }
 
-  /// Converts a [datastore.Key] to a [Key].
-  Key fromDatastoreKey(datastore.Key datastoreKey) {
+  /// Converts a [ds.Key] to a [Key].
+  Key fromDatastoreKey(ds.Key datastoreKey) {
     var namespace = new Partition(datastoreKey.partition.namespace);
     Key key = namespace.emptyKey;
     for (var element in datastoreKey.elements) {
@@ -73,9 +73,9 @@ class ModelDBImpl implements ModelDB {
     return key;
   }
 
-  /// Converts a [Key] to a [datastore.Key].
-  datastore.Key toDatastoreKey(Key dbKey) {
-    List<datastore.KeyElement> elements = [];
+  /// Converts a [Key] to a [ds.Key].
+  ds.Key toDatastoreKey(Key dbKey) {
+    List<ds.KeyElement> elements = [];
     var currentKey = dbKey;
     while (!currentKey.isEmpty) {
       var id = currentKey.id;
@@ -94,16 +94,16 @@ class ModelDBImpl implements ModelDB {
             'id was of type ${id.runtimeType}');
       }
 
-      elements.add(new datastore.KeyElement(kind, id));
+      elements.add(new ds.KeyElement(kind, id));
       currentKey = currentKey.parent;
     }
     Partition partition = currentKey._parent;
-    return new datastore.Key(elements.reversed.toList(),
-        partition: new datastore.Partition(partition.namespace));
+    return new ds.Key(elements.reversed.toList(),
+        partition: new ds.Partition(partition.namespace));
   }
 
-  /// Converts a [Model] instance to a [datastore.Entity].
-  datastore.Entity toDatastoreEntity(Model model) {
+  /// Converts a [Model] instance to a [ds.Entity].
+  ds.Entity toDatastoreEntity(Model model) {
     try {
       var modelDescription = _modelDescriptionForType(model.runtimeType);
       return modelDescription.encodeModel(this, model);
@@ -112,8 +112,8 @@ class ModelDBImpl implements ModelDB {
     }
   }
 
-  /// Converts a [datastore.Entity] to a [Model] instance.
-  Model fromDatastoreEntity(datastore.Entity entity) {
+  /// Converts a [ds.Entity] to a [Model] instance.
+  Model fromDatastoreEntity(ds.Entity entity) {
     if (entity == null) return null;
 
     Key key = fromDatastoreKey(entity.key);
@@ -383,17 +383,17 @@ class _ModelDescription<T extends Model> {
 
   String kindName(ModelDBImpl db) => kind;
 
-  datastore.Entity encodeModel(ModelDBImpl db, T model) {
+  ds.Entity encodeModel(ModelDBImpl db, T model) {
     var key = db.toDatastoreKey(model.key);
 
-    var properties = {};
+    var properties = <String, Object>{};
     var mirror = mirrors.reflect(model);
 
     db._propertiesForModel(this).forEach((String fieldName, Property prop) {
       _encodeProperty(db, model, mirror, properties, fieldName, prop);
     });
 
-    return new datastore.Entity(key, properties,
+    return new ds.Entity(key, properties,
         unIndexedProperties: _unIndexedProperties);
   }
 
@@ -412,7 +412,7 @@ class _ModelDescription<T extends Model> {
     properties[propertyName] = prop.encodeValue(db, value);
   }
 
-  Model decodeEntity(ModelDBImpl db, Key key, datastore.Entity entity) {
+  Model decodeEntity(ModelDBImpl db, Key key, ds.Entity entity) {
     if (entity == null) return null;
 
     // NOTE: this assumes a default constructor for the model classes!
@@ -429,7 +429,7 @@ class _ModelDescription<T extends Model> {
     return mirror.reflectee;
   }
 
-  _decodeProperty(ModelDBImpl db, datastore.Entity entity,
+  _decodeProperty(ModelDBImpl db, ds.Entity entity,
       mirrors.InstanceMirror mirror, String fieldName, Property prop) {
     String propertyName = fieldNameToPropertyName(fieldName);
 
@@ -491,7 +491,7 @@ class _ExpandoModelDescription extends _ModelDescription<ExpandoModel> {
     usedNames = new Set()..addAll(realFieldNames)..addAll(realPropertyNames);
   }
 
-  datastore.Entity encodeModel(ModelDBImpl db, ExpandoModel model) {
+  ds.Entity encodeModel(ModelDBImpl db, ExpandoModel model) {
     var entity = super.encodeModel(db, model);
     var properties = entity.properties;
     model.additionalProperties.forEach((String key, Object value) {
@@ -503,7 +503,7 @@ class _ExpandoModelDescription extends _ModelDescription<ExpandoModel> {
     return entity;
   }
 
-  Model decodeEntity(ModelDBImpl db, Key key, datastore.Entity entity) {
+  Model decodeEntity(ModelDBImpl db, Key key, ds.Entity entity) {
     if (entity == null) return null;
 
     ExpandoModel model = super.decodeEntity(db, key, entity);

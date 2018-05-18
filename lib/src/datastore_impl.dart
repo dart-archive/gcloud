@@ -162,8 +162,8 @@ class DatastoreImpl implements datastore.Datastore {
   }
 
   static datastore.Entity _convertApi2DatastoreEntity(api.Entity entity) {
-    var unindexedProperties = new Set();
-    var properties = {};
+    var unindexedProperties = new Set<String>();
+    var properties = <String, Object>{};
 
     if (entity.properties != null) {
       entity.properties.forEach((String name, api.Value value) {
@@ -267,7 +267,7 @@ class DatastoreImpl implements datastore.Datastore {
     return orders.map(_convertDatastore2ApiOrder).toList();
   }
 
-  static Future _handleError(error, stack) {
+  static Future<Null> _handleError(error, stack) {
     if (error is api.DetailedApiRequestError) {
       if (error.status == 400) {
         return new Future.error(
@@ -317,7 +317,7 @@ class DatastoreImpl implements datastore.Datastore {
       request.mode = 'NON_TRANSACTIONAL';
     }
 
-    var mutations = request.mutations = [];
+    var mutations = request.mutations = <api.Mutation>[];
     if (inserts != null) {
       for (int i = 0; i < inserts.length; i++) {
         mutations.add(new api.Mutation()
@@ -349,7 +349,8 @@ class DatastoreImpl implements datastore.Datastore {
         keys = mutationResults
             .skip(autoIdStartIndex)
             .take(autoIdInserts.length)
-            .map((api.MutationResult r) => _convertApi2DatastoreKey(r.key))
+            .map<datastore.Key>(
+                (api.MutationResult r) => _convertApi2DatastoreKey(r.key))
             .toList();
       }
       return new datastore.CommitResult(keys);
@@ -495,7 +496,7 @@ class QueryPageImpl implements Page<datastore.Entity> {
     request.query.limit = batchLimit;
 
     return api.projects.runQuery(request, project).then((response) {
-      var returnedEntities = const [];
+      var returnedEntities = const <datastore.Entity>[];
 
       var batch = response.batch;
       if (batch.entityResults != null) {

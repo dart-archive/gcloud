@@ -1,3 +1,7 @@
+## 0.5.0
+
+* Fixes to support Dart 2.
+
 ## 0.4.0+1
 
 * Made a number of strong-mode improvements.

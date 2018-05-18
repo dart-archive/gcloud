@@ -221,10 +221,10 @@ class _MessageImpl implements Message {
       : _stringMessage = null;
 
   List<int> get asBytes =>
-      _bytesMessage != null ? _bytesMessage : UTF8.encode(_stringMessage);
+      _bytesMessage != null ? _bytesMessage : utf8.encode(_stringMessage);
 
   String get asString =>
-      _stringMessage != null ? _stringMessage : UTF8.decode(_bytesMessage);
+      _stringMessage != null ? _stringMessage : utf8.decode(_bytesMessage);
 }
 
 /// Message received using [Subscription.pull].
@@ -246,7 +246,7 @@ class _PullMessage implements Message {
   }
 
   String get asString {
-    if (_string == null) _string = UTF8.decode(_message.dataAsBytes);
+    if (_string == null) _string = utf8.decode(_message.dataAsBytes);
     return _string;
   }
 
@@ -265,9 +265,9 @@ class _PushMessage implements Message {
 
   _PushMessage(this._base64Message, this.attributes);
 
-  List<int> get asBytes => BASE64.decode(_base64Message);
+  List<int> get asBytes => base64.decode(_base64Message);
 
-  String get asString => UTF8.decode(asBytes);
+  String get asString => utf8.decode(asBytes);
 }
 
 /// Pull event received from Pub/Sub pull delivery.
@@ -309,14 +309,14 @@ class _PushEventImpl implements PushEvent {
   _PushEventImpl(this._message, this._subscriptionName);
 
   factory _PushEventImpl.fromJson(String json) {
-    Map body = JSON.decode(json);
+    Map body = jsonDecode(json);
     String data = body['message']['data'];
-    Map labels = new HashMap();
+    Map<String, String> labels = new HashMap();
     body['message']['labels'].forEach((label) {
       var key = label['key'];
       var value = label['strValue'];
       if (value == null) value = label['numValue'];
-      labels[key] = value;
+      labels[key] = value.toString();
     });
     String subscription = body['subscription'];
     // TODO(#1): Remove this when the push event subscription name is prefixed
@@ -353,7 +353,7 @@ class _TopicImpl implements Topic {
   Future delete() => _api._deleteTopic(_topic.name);
 
   Future publishString(String message, {Map<String, String> attributes}) {
-    return _api._publish(_topic.name, UTF8.encode(message), attributes);
+    return _api._publish(_topic.name, utf8.encode(message), attributes);
   }
 
   Future publishBytes(List<int> message, {Map<String, String> attributes}) {

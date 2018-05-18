@@ -11,24 +11,24 @@ part of gcloud.db;
  */
 abstract class ModelDB {
   /**
-   * Converts a [datastore.Key] to a [Key].
+   * Converts a [ds.Key] to a [Key].
    */
-  Key fromDatastoreKey(datastore.Key datastoreKey);
+  Key fromDatastoreKey(ds.Key datastoreKey);
 
   /**
-   * Converts a [Key] to a [datastore.Key].
+   * Converts a [Key] to a [ds.Key].
    */
-  datastore.Key toDatastoreKey(Key dbKey);
+  ds.Key toDatastoreKey(Key dbKey);
 
   /**
-   * Converts a [Model] instance to a [datastore.Entity].
+   * Converts a [Model] instance to a [ds.Entity].
    */
-  datastore.Entity toDatastoreEntity(Model model);
+  ds.Entity toDatastoreEntity(Model model);
 
   /**
-   * Converts a [datastore.Entity] to a [Model] instance.
+   * Converts a [ds.Entity] to a [Model] instance.
    */
-  Model fromDatastoreEntity(datastore.Entity entity);
+  Model fromDatastoreEntity(ds.Entity entity);
 
   /**
    * Returns the kind name for instances of [type].

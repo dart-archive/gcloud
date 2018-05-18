@@ -25,7 +25,7 @@ class Transaction {
   static const int _TRANSACTION_COMMITTED = 2;
 
   final DatastoreDB db;
-  final datastore.Transaction _datastoreTransaction;
+  final ds.Transaction _datastoreTransaction;
 
   final List<Model> _inserts = [];
   final List<Key> _deletes = [];
@@ -108,30 +108,30 @@ class Transaction {
 }
 
 class Query {
-  final _relationMapping = const <String, datastore.FilterRelation>{
-    '<': datastore.FilterRelation.LessThan,
-    '<=': datastore.FilterRelation.LessThanOrEqual,
-    '>': datastore.FilterRelation.GreatherThan,
-    '>=': datastore.FilterRelation.GreatherThanOrEqual,
-    '=': datastore.FilterRelation.Equal,
+  final _relationMapping = const <String, ds.FilterRelation>{
+    '<': ds.FilterRelation.LessThan,
+    '<=': ds.FilterRelation.LessThanOrEqual,
+    '>': ds.FilterRelation.GreatherThan,
+    '>=': ds.FilterRelation.GreatherThanOrEqual,
+    '=': ds.FilterRelation.Equal,
   };
 
   final DatastoreDB _db;
-  final datastore.Transaction _transaction;
+  final ds.Transaction _transaction;
   final String _kind;
 
   final Partition _partition;
   final Key _ancestorKey;
 
-  final List<datastore.Filter> _filters = [];
-  final List<datastore.Order> _orders = [];
+  final List<ds.Filter> _filters = [];
+  final List<ds.Order> _orders = [];
   int _offset;
   int _limit;
 
   Query(DatastoreDB dbImpl, Type kind,
       {Partition partition,
       Key ancestorKey,
-      datastore.Transaction datastoreTransaction})
+      ds.Transaction datastoreTransaction})
       : _db = dbImpl,
         _kind = dbImpl.modelDB.kindName(kind),
         _partition = partition,
@@ -165,11 +165,11 @@ class Query {
     // This is for backwards compatibility: We allow [datastore.Key]s for now.
     // TODO: We should remove the condition in a major version update of
     // `package:gcloud`.
-    if (comparisonObject is! datastore.Key) {
+    if (comparisonObject is! ds.Key) {
       comparisonObject = _db.modelDB
           .toDatastoreValue(_kind, name, comparisonObject, forComparison: true);
     }
-    _filters.add(new datastore.Filter(
+    _filters.add(new ds.Filter(
         _relationMapping[comparison], propertyName, comparisonObject));
   }
 
@@ -182,11 +182,11 @@ class Query {
   void order(String orderString) {
     // TODO: validate [orderString] (e.g. is name valid)
     if (orderString.startsWith('-')) {
-      _orders.add(new datastore.Order(datastore.OrderDirection.Decending,
+      _orders.add(new ds.Order(ds.OrderDirection.Decending,
           _convertToDatastoreName(orderString.substring(1))));
     } else {
-      _orders.add(new datastore.Order(datastore.OrderDirection.Ascending,
-          _convertToDatastoreName(orderString)));
+      _orders.add(new ds.Order(
+          ds.OrderDirection.Ascending, _convertToDatastoreName(orderString)));
     }
   }
 
@@ -220,7 +220,7 @@ class Query {
     if (_ancestorKey != null) {
       ancestorKey = _db.modelDB.toDatastoreKey(_ancestorKey);
     }
-    var query = new datastore.Query(
+    var query = new ds.Query(
         ancestorKey: ancestorKey,
         kind: _kind,
         filters: _filters,
@@ -230,10 +230,10 @@ class Query {
 
     var partition;
     if (_partition != null) {
-      partition = new datastore.Partition(_partition.namespace);
+      partition = new ds.Partition(_partition.namespace);
     }
 
-    return new StreamFromPages((int pageSize) {
+    return new StreamFromPages<ds.Entity>((int pageSize) {
       return _db.datastore
           .query(query, transaction: _transaction, partition: partition);
     }).stream.map(_db.modelDB.fromDatastoreEntity);
@@ -254,7 +254,7 @@ class Query {
 }
 
 class DatastoreDB {
-  final datastore.Datastore datastore;
+  final ds.Datastore datastore;
   final ModelDB _modelDB;
   Partition _defaultPartition;
 
@@ -356,13 +356,13 @@ class DatastoreDB {
 Future _commitHelper(DatastoreDB db,
     {List<Model> inserts,
     List<Key> deletes,
-    datastore.Transaction datastoreTransaction}) {
+    ds.Transaction datastoreTransaction}) {
   var entityInserts, entityAutoIdInserts, entityDeletes;
   var autoIdModelInserts;
   if (inserts != null) {
-    entityInserts = [];
-    entityAutoIdInserts = [];
-    autoIdModelInserts = [];
+    entityInserts = <ds.Entity>[];
+    entityAutoIdInserts = <ds.Entity>[];
+    autoIdModelInserts = <Model>[];
 
     for (var model in inserts) {
       // If parent was not explicitly set, we assume this model will map to
@@ -388,7 +388,7 @@ Future _commitHelper(DatastoreDB db,
           autoIdInserts: entityAutoIdInserts,
           deletes: entityDeletes,
           transaction: datastoreTransaction)
-      .then((datastore.CommitResult result) {
+      .then((ds.CommitResult result) {
     if (entityAutoIdInserts != null && entityAutoIdInserts.length > 0) {
       for (var i = 0; i < result.autoIdInsertKeys.length; i++) {
         var key = db.modelDB.fromDatastoreKey(result.autoIdInsertKeys[i]);
@@ -400,11 +400,11 @@ Future _commitHelper(DatastoreDB db,
 }
 
 Future<List<Model>> _lookupHelper(DatastoreDB db, List<Key> keys,
-    {datastore.Transaction datastoreTransaction}) {
+    {ds.Transaction datastoreTransaction}) {
   var entityKeys = keys.map(db.modelDB.toDatastoreKey).toList();
   return db.datastore
       .lookup(entityKeys, transaction: datastoreTransaction)
-      .then((List<datastore.Entity> entities) {
+      .then((List<ds.Entity> entities) {
     return entities.map(db.modelDB.fromDatastoreEntity).toList();
   });
 }

@@ -51,7 +51,7 @@ Future<String> serviceKeyJson(String serviceKeyLocation) {
   if (!serviceKeyLocation.startsWith('gs://')) {
     return new File(serviceKeyLocation).readAsString();
   }
-  var future;
+  Future<ProcessResult> future;
   if (onBot()) {
     future = Process.run(
         'python', ['third_party/gsutil/gsutil', 'cat', serviceKeyLocation],

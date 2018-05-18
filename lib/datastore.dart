@@ -141,7 +141,7 @@ class Key {
 
   factory Key.fromParent(String kind, int id, {Key parent}) {
     var partition;
-    var elements = [];
+    var elements = <KeyElement>[];
     if (parent != null) {
       partition = parent.partition;
       elements.addAll(parent.elements);

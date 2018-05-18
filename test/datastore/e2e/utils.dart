@@ -40,7 +40,7 @@ Map<String, Object> buildProperties(int i) {
 
 List<Key> buildKeys(int from, int to,
     {Function idFunction, String kind: TEST_KIND, Partition partition}) {
-  var keys = [];
+  var keys = <Key>[];
   for (var i = from; i < to; i++) {
     keys.add(buildKey(i, idFunction: idFunction, kind: kind, p: partition));
   }
@@ -49,7 +49,7 @@ List<Key> buildKeys(int from, int to,
 
 List<Entity> buildEntities(int from, int to,
     {Function idFunction, String kind: TEST_KIND, Partition partition}) {
-  var entities = [];
+  var entities = <Entity>[];
   var unIndexedProperties = new Set<String>();
   for (var i = from; i < to; i++) {
     var key = buildKey(i, idFunction: idFunction, kind: kind, p: partition);
@@ -87,7 +87,7 @@ List<Entity> buildEntityWithAllProperties(int from, int to,
     };
   }
 
-  var entities = [];
+  var entities = <Entity>[];
   for (var i = from; i < to; i++) {
     var key =
         buildKey(i, idFunction: (i) => 'allprop$i', kind: kind, p: partition);

@@ -179,7 +179,7 @@ class ModelKeyProperty extends PrimitiveProperty {
 
   Object decodePrimitiveValue(ModelDB db, Object value) {
     if (value == null) return null;
-    return db.fromDatastoreKey(value as datastore.Key);
+    return db.fromDatastoreKey(value as ds.Key);
   }
 }
 
@@ -201,13 +201,13 @@ class BlobProperty extends PrimitiveProperty {
 
   Object encodeValue(ModelDB db, Object value, {bool forComparison: false}) {
     if (value == null) return null;
-    return new datastore.BlobValue(value);
+    return new ds.BlobValue(value);
   }
 
   Object decodePrimitiveValue(ModelDB db, Object value) {
     if (value == null) return null;
 
-    return (value as datastore.BlobValue).bytes;
+    return (value as ds.BlobValue).bytes;
   }
 }
 
@@ -298,4 +298,9 @@ class StringListProperty extends ListProperty {
   const StringListProperty({String propertyName, bool indexed: true})
       : super(const StringProperty(),
             propertyName: propertyName, indexed: indexed);
+
+  @override
+  Object decodePrimitiveValue(ModelDB db, Object value) {
+    return (super.decodePrimitiveValue(db, value) as core.List).cast<String>();
+  }
 }
