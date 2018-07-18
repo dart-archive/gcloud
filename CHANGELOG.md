@@ -1,8 +1,8 @@
 ## 0.6.0
 
 * **BREAKING CHANGE:** Add generics support. Instead of writing
-  `db.query(Person).run()` and getting back a generic `List<Model>`, you now
-  write `db.query<Person>().run()` and get `List<Person>`.
+  `db.query(Person).run()` and getting back a generic `Stream<Model>`, you now
+  write `db.query<Person>().run()` and get `Stream<Person>`.
   The same goes for `.lookup([key])`, which can now be written as
   `.lookup<Person>([key])` and will return a `Person`.
 
