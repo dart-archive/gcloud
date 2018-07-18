@@ -113,7 +113,7 @@ class ModelDBImpl implements ModelDB {
   }
 
   /// Converts a [ds.Entity] to a [Model] instance.
-  Model fromDatastoreEntity(ds.Entity entity) {
+  T fromDatastoreEntity<T extends Model>(ds.Entity entity) {
     if (entity == null) return null;
 
     Key key = fromDatastoreKey(entity.key);
@@ -125,7 +125,7 @@ class ModelDBImpl implements ModelDB {
     }
 
     try {
-      return modelDescription.decodeEntity(this, key, entity);
+      return modelDescription.decodeEntity<T>(this, key, entity);
     } catch (error, stack) {
       throw new StateError('Error while decoding entity ($error, $stack).');
     }
@@ -412,7 +412,7 @@ class _ModelDescription<T extends Model> {
     properties[propertyName] = prop.encodeValue(db, value);
   }
 
-  Model decodeEntity(ModelDBImpl db, Key key, ds.Entity entity) {
+  T decodeEntity<T extends Model>(ModelDBImpl db, Key key, ds.Entity entity) {
     if (entity == null) return null;
 
     // NOTE: this assumes a default constructor for the model classes!
@@ -503,7 +503,7 @@ class _ExpandoModelDescription extends _ModelDescription<ExpandoModel> {
     return entity;
   }
 
-  Model decodeEntity(ModelDBImpl db, Key key, ds.Entity entity) {
+  T decodeEntity<T extends Model>(ModelDBImpl db, Key key, ds.Entity entity) {
     if (entity == null) return null;
 
     ExpandoModel model = super.decodeEntity(db, key, entity);
@@ -513,7 +513,8 @@ class _ExpandoModelDescription extends _ModelDescription<ExpandoModel> {
         model.additionalProperties[key] = value;
       }
     });
-    return model;
+    // TODO: check if there is a more elegant solution than this
+    return model as T;
   }
 
   String fieldNameToPropertyName(String fieldName) {

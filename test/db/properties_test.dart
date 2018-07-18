@@ -243,7 +243,7 @@ class ModelDBMock implements ModelDB {
   }
 
   Map<String, Property> propertiesForModel(modelDescription) => null;
-  Model fromDatastoreEntity(datastore.Entity entity) => null;
+  T fromDatastoreEntity<T extends Model>(datastore.Entity entity) => null;
   datastore.Entity toDatastoreEntity(Model model) => null;
   String fieldNameToPropertyName(String kind, String fieldName) => null;
   String kindName(Type type) => null;

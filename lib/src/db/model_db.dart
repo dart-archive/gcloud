@@ -28,7 +28,7 @@ abstract class ModelDB {
   /**
    * Converts a [ds.Entity] to a [Model] instance.
    */
-  Model fromDatastoreEntity(ds.Entity entity);
+  T fromDatastoreEntity<T extends Model>(ds.Entity entity);
 
   /**
    * Returns the kind name for instances of [type].
