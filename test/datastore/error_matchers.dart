@@ -9,39 +9,32 @@ import 'dart:io';
 import 'package:test/test.dart';
 import 'package:gcloud/datastore.dart';
 
-class _ApplicationError extends TypeMatcher {
-  const _ApplicationError() : super("ApplicationError");
-  bool matches(item, Map matchState) => item is ApplicationError;
+class _ApplicationError extends TypeMatcher<ApplicationError> {
+  const _ApplicationError();
 }
 
-class _DataStoreError extends TypeMatcher {
-  const _DataStoreError() : super("DataStoreError");
-  bool matches(item, Map matchState) => item is DatastoreError;
+class _DataStoreError extends TypeMatcher<DatastoreError> {
+  const _DataStoreError();
 }
 
-class _TransactionAbortedError extends TypeMatcher {
-  const _TransactionAbortedError() : super("TransactionAbortedError");
-  bool matches(item, Map matchState) => item is TransactionAbortedError;
+class _TransactionAbortedError extends TypeMatcher<TransactionAbortedError> {
+  const _TransactionAbortedError();
 }
 
-class _NeedIndexError extends TypeMatcher {
-  const _NeedIndexError() : super("NeedIndexError");
-  bool matches(item, Map matchState) => item is NeedIndexError;
+class _NeedIndexError extends TypeMatcher<NeedIndexError> {
+  const _NeedIndexError();
 }
 
-class _TimeoutError extends TypeMatcher {
-  const _TimeoutError() : super("TimeoutError");
-  bool matches(item, Map matchState) => item is TimeoutError;
+class _TimeoutError extends TypeMatcher<TimeoutError> {
+  const _TimeoutError();
 }
 
-class _IntMatcher extends TypeMatcher {
-  const _IntMatcher() : super("IntMatcher");
-  bool matches(item, Map matchState) => item is int;
+class _IntMatcher extends TypeMatcher<int> {
+  const _IntMatcher();
 }
 
-class _SocketException extends TypeMatcher {
-  const _SocketException() : super("SocketException");
-  bool matches(item, Map matchState) => item is SocketException;
+class _SocketException extends TypeMatcher<SocketException> {
+  const _SocketException();
 }
 
 const isApplicationError = const _ApplicationError();
