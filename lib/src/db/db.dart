@@ -406,6 +406,6 @@ Future<List<T>> _lookupHelper<T extends Model>(DatastoreDB db, List<Key> keys,
   return db.datastore
       .lookup(entityKeys, transaction: datastoreTransaction)
       .then((List<ds.Entity> entities) {
-    return entities.map(db.modelDB.fromDatastoreEntity).cast<T>().toList();
+    return entities.map<T>(db.modelDB.fromDatastoreEntity).toList();
   });
 }
