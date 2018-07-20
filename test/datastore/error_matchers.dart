@@ -9,41 +9,13 @@ import 'dart:io';
 import 'package:test/test.dart';
 import 'package:gcloud/datastore.dart';
 
-class _ApplicationError extends TypeMatcher<ApplicationError> {
-  const _ApplicationError();
-}
+const isApplicationError = const TypeMatcher<ApplicationError>();
 
-class _DataStoreError extends TypeMatcher<DatastoreError> {
-  const _DataStoreError();
-}
+const isDataStoreError = const TypeMatcher<DatastoreError>();
+const isTransactionAbortedError = const TypeMatcher<TransactionAbortedError>();
+const isNeedIndexError = const TypeMatcher<NeedIndexError>();
+const isTimeoutError = const TypeMatcher<TimeoutError>();
 
-class _TransactionAbortedError extends TypeMatcher<TransactionAbortedError> {
-  const _TransactionAbortedError();
-}
+const isInt = const TypeMatcher<int>();
 
-class _NeedIndexError extends TypeMatcher<NeedIndexError> {
-  const _NeedIndexError();
-}
-
-class _TimeoutError extends TypeMatcher<TimeoutError> {
-  const _TimeoutError();
-}
-
-class _IntMatcher extends TypeMatcher<int> {
-  const _IntMatcher();
-}
-
-class _SocketException extends TypeMatcher<SocketException> {
-  const _SocketException();
-}
-
-const isApplicationError = const _ApplicationError();
-
-const isDataStoreError = const _DataStoreError();
-const isTransactionAbortedError = const _TransactionAbortedError();
-const isNeedIndexError = const _NeedIndexError();
-const isTimeoutError = const _TimeoutError();
-
-const isInt = const _IntMatcher();
-
-const isSocketException = const _SocketException();
+const isSocketException = const TypeMatcher<SocketException>();
