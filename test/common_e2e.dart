@@ -64,7 +64,7 @@ Future<String> serviceKeyJson(String serviceKeyLocation) {
     if (result.exitCode != 0) {
       throw new Exception('Failed to run gsutil, ${result.stderr}');
     }
-    return result.stdout;
+    return result.stdout.toString();
   });
 }
 

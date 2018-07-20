@@ -59,10 +59,7 @@ void runTests(datastore, db.DatastoreDB store) {
       return datastore.commit(inserts: entities).then((_) {
         return sleep(const Duration(seconds: 10)).then((_) {
           var namespaceQuery = store.query<Namespace>();
-          return namespaceQuery
-              .run()
-              .toList()
-              .then((namespaces) {
+          return namespaceQuery.run().toList().then((namespaces) {
             expect(namespaces.length, greaterThanOrEqualTo(3));
             expect(namespaces, contains(cond((ns) => ns.name == null)));
             expect(

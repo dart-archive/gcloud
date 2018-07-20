@@ -67,7 +67,7 @@ class Person extends db.Model {
 
   operator ==(Object other) => sameAs(other);
 
-  sameAs(Object other) {
+  bool sameAs(Object other) {
     return other is Person &&
         id == other.id &&
         parentKey == other.parentKey &&
@@ -235,7 +235,7 @@ void runTests(db.DatastoreDB store, String namespace) {
             ..parentKey = root
             ..age = 42 + i
             ..name = 'user$i'
-            ..nickname = 'nickname${i%3}');
+            ..nickname = 'nickname${i % 3}');
         }
         return testInsertLookupDelete(users);
       });
@@ -251,7 +251,7 @@ void runTests(db.DatastoreDB store, String namespace) {
           expandoPerson.bar = i;
           expect(expandoPerson.additionalProperties['foo'], equals('foo$i'));
           expect(expandoPerson.additionalProperties['bar'], equals(i));
-          expandoPersons.add(expandoPerson);
+          expandoPersons.add(expandoPerson as ExpandoPerson);
         }
         return testInsertLookupDelete(expandoPersons);
       });
@@ -289,7 +289,7 @@ void runTests(db.DatastoreDB store, String namespace) {
             ..parentKey = root
             ..age = 42 + i
             ..name = 'user$i'
-            ..nickname = 'nickname${i%3}');
+            ..nickname = 'nickname${i % 3}');
         }
         var persons = <db.Model>[];
         for (var i = 335; i <= 336; i++) {
@@ -396,7 +396,7 @@ void runTests(db.DatastoreDB store, String namespace) {
           ..wife = root.append(User, id: 42 + i)
           ..age = 42 + i
           ..name = 'user$i'
-          ..nickname = 'nickname${i%3}'
+          ..nickname = 'nickname${i % 3}'
           ..languages = languages);
       }
 
@@ -411,7 +411,7 @@ void runTests(db.DatastoreDB store, String namespace) {
         expandoPerson.bar = i;
         expect(expandoPerson.additionalProperties['foo'], equals('foo$i'));
         expect(expandoPerson.additionalProperties['bar'], equals(i));
-        expandoPersons.add(expandoPerson);
+        expandoPersons.add(expandoPerson as ExpandoPerson);
       }
 
       var LOWER_BOUND = 'user2';
@@ -649,7 +649,7 @@ Future waitUntilEntitiesGone(
 
 Future waitUntilEntitiesHelper(db.DatastoreDB mdb, List<db.Key> keys,
     bool positive, db.Partition partition) {
-  var keysByKind = <Type, dynamic>{};
+  var keysByKind = <Type, List<db.Key>>{};
   for (var key in keys) {
     keysByKind.putIfAbsent(key.type, () => <db.Key>[]).add(key);
   }

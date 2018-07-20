@@ -46,12 +46,11 @@ class Key {
    * The partition of this [Key].
    */
   Partition get partition {
-    Partition obj = _parent;
+    var obj = _parent;
     while (obj is! Partition) {
-      // TODO(enyo): Can't the parent of the parent not also be a `Key`?
-      obj = (obj as Key)._parent as Partition;
+      obj = (obj as Key)._parent;
     }
-    return obj;
+    return obj as Partition;
   }
 
   Key append(Type modelType, {Object id}) {

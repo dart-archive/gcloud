@@ -454,8 +454,7 @@ class DatastoreImpl implements datastore.Datastore {
         ..namespaceId = partition.namespace;
     }
 
-    return QueryPageImpl
-        .runQuery(_api, _project, request, query.limit)
+    return QueryPageImpl.runQuery(_api, _project, request, query.limit)
         .catchError(_handleError);
   }
 
@@ -604,8 +603,8 @@ class QueryPageImpl implements Page<datastore.Entity> {
       });
     }
 
-    return QueryPageImpl
-        .runQuery(_api, _project, _nextRequest, _remainingNumberOfEntities)
+    return QueryPageImpl.runQuery(
+            _api, _project, _nextRequest, _remainingNumberOfEntities)
         .catchError(DatastoreImpl._handleError);
   }
 }

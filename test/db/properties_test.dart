@@ -199,7 +199,7 @@ class CustomProperty extends StringProperty {
 
   Object decodePrimitiveValue(ModelDB db, Object value) {
     if (value == null) return null;
-    return new Custom()..customValue = value;
+    return new Custom()..customValue = value as String;
   }
 
   Object encodeValue(ModelDB db, Object value, {bool forComparison: false}) {
