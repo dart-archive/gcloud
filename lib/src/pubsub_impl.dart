@@ -19,7 +19,7 @@ class _PubSubImpl implements PubSub {
     return name.startsWith('projects/') ? name : '${_topicPrefix}$name';
   }
 
-  String _fullSubscriptionName(name) {
+  String _fullSubscriptionName(String name) {
     return name.startsWith('projects/') ? name : '${_subscriptionPrefix}$name';
   }
 
@@ -107,7 +107,7 @@ class _PubSubImpl implements PubSub {
         .then((_) => null);
   }
 
-  void _checkTopicName(name) {
+  void _checkTopicName(String name) {
     if (name.startsWith('projects/') && !name.contains('/topics/')) {
       throw new ArgumentError(
           "Illegal topic name. Absolute topic names must have the form "
@@ -119,7 +119,7 @@ class _PubSubImpl implements PubSub {
     }
   }
 
-  void _checkSubscriptionName(name) {
+  void _checkSubscriptionName(String name) {
     if (name.startsWith('projects/') && !name.contains('/subscriptions/')) {
       throw new ArgumentError(
           "Illegal subscription name. Absolute subscription names must have "
@@ -150,7 +150,7 @@ class _PubSubImpl implements PubSub {
   }
 
   Stream<Topic> listTopics() {
-    Future<Page<Topic>> firstPage(pageSize) {
+    Future<Page<Topic>> firstPage(int pageSize) {
       return _listTopics(pageSize, null)
           .then((response) => new _TopicPageImpl(this, pageSize, response));
     }
@@ -185,7 +185,7 @@ class _PubSubImpl implements PubSub {
   }
 
   Stream<Subscription> listSubscriptions([String query]) {
-    Future<Page<Subscription>> firstPage(pageSize) {
+    Future<Page<Subscription>> firstPage(int pageSize) {
       return _listSubscriptions(query, pageSize, null).then((response) =>
           new _SubscriptionPageImpl(this, query, pageSize, response));
     }
@@ -313,7 +313,7 @@ class _PushEventImpl implements PushEvent {
     String data = body['message']['data'];
     Map<String, String> labels = new HashMap();
     body['message']['labels'].forEach((label) {
-      var key = label['key'];
+      String key = label['key'];
       var value = label['strValue'];
       if (value == null) value = label['numValue'];
       labels[key] = value.toString();

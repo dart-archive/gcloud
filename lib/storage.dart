@@ -55,6 +55,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import 'package:googleapis/storage/v1.dart' as storage_api;
+import 'package:_discoveryapis_commons/_discoveryapis_commons.dart' as commons;
 
 import 'common.dart';
 import 'service_scope.dart' as ss;
@@ -72,7 +73,7 @@ const Symbol _storageKey = #gcloud.storage;
 ///
 /// Accessing this getter outside of a service scope will result in an error.
 /// See the `package:gcloud/service_scope.dart` library for more information.
-Storage get storageService => ss.lookup(_storageKey);
+Storage get storageService => ss.lookup(_storageKey) as Storage;
 
 /// Registers the [storage] object within the current service scope.
 ///

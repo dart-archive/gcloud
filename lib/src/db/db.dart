@@ -38,7 +38,8 @@ class Transaction {
    * Looks up [keys] within this transaction.
    */
   Future<List<T>> lookup<T extends Model>(List<Key> keys) {
-    return _lookupHelper<T>(db, keys, datastoreTransaction: _datastoreTransaction);
+    return _lookupHelper<T>(db, keys,
+        datastoreTransaction: _datastoreTransaction);
   }
 
   /**
@@ -216,7 +217,7 @@ class Query<T extends Model> {
    * will be reflected in the indices in an eventual consistent way.
    */
   Stream<T> run() {
-    var ancestorKey;
+    ds.Key ancestorKey;
     if (_ancestorKey != null) {
       ancestorKey = _db.modelDB.toDatastoreKey(_ancestorKey);
     }
@@ -228,7 +229,7 @@ class Query<T extends Model> {
         offset: _offset,
         limit: _limit);
 
-    var partition;
+    ds.Partition partition;
     if (_partition != null) {
       partition = new ds.Partition(_partition.namespace);
     }
@@ -356,7 +357,8 @@ Future _commitHelper(DatastoreDB db,
     {List<Model> inserts,
     List<Key> deletes,
     ds.Transaction datastoreTransaction}) {
-  var entityInserts, entityAutoIdInserts, entityDeletes;
+  List<ds.Entity> entityInserts, entityAutoIdInserts;
+  List<ds.Key> entityDeletes;
   var autoIdModelInserts;
   if (inserts != null) {
     entityInserts = <ds.Entity>[];

@@ -23,7 +23,7 @@ const Symbol _datastoreKey = #gcloud.datastore;
 ///
 /// Accessing this getter outside of a service scope will result in an error.
 /// See the `package:gcloud/service_scope.dart` library for more information.
-Datastore get datastoreService => ss.lookup(_datastoreKey);
+Datastore get datastoreService => ss.lookup(_datastoreKey) as Datastore;
 
 /// Registers the [Datastore] object within the current service scope.
 ///
@@ -140,7 +140,7 @@ class Key {
       : this.partition = (partition == null) ? Partition.DEFAULT : partition;
 
   factory Key.fromParent(String kind, int id, {Key parent}) {
-    var partition;
+    Partition partition;
     var elements = <KeyElement>[];
     if (parent != null) {
       partition = parent.partition;

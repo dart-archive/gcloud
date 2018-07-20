@@ -20,7 +20,8 @@ const Symbol _authenticatedClientKey = #gcloud.http;
 ///
 /// Accessing this getter outside of a service scope will result in an error.
 /// See the `package:gcloud/service_scope.dart` library for more information.
-http.Client get authClientService => ss.lookup(_authenticatedClientKey);
+http.Client get authClientService =>
+    ss.lookup(_authenticatedClientKey) as http.Client;
 
 /// Registers the [http.Client] object within the current service scope.
 ///
@@ -33,6 +34,8 @@ http.Client get authClientService => ss.lookup(_authenticatedClientKey);
 void registerAuthClientService(http.Client client, {bool close: true}) {
   ss.register(_authenticatedClientKey, client);
   if (close) {
-    ss.registerScopeExitCallback(() => client.close());
+    ss.registerScopeExitCallback(() {
+      client.close();
+    });
   }
 }

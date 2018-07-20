@@ -27,7 +27,7 @@ const Symbol _pubsubKey = #gcloud.pubsub;
 ///
 /// Accessing this getter outside of a service scope will result in an error.
 /// See the `package:gcloud/service_scope.dart` library for more information.
-PubSub get pubsubService => ss.lookup(_pubsubKey);
+PubSub get pubsubService => ss.lookup(_pubsubKey) as PubSub;
 
 /// Registers the [pubsub] object within the current service scope.
 ///

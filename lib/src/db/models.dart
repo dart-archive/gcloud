@@ -37,7 +37,7 @@ class Key {
    */
   Key get parent {
     if (_parent is Key) {
-      return _parent;
+      return _parent as Key;
     }
     return null;
   }
@@ -46,9 +46,10 @@ class Key {
    * The partition of this [Key].
    */
   Partition get partition {
-    var obj = _parent;
+    Partition obj = _parent;
     while (obj is! Partition) {
-      obj = (obj as Key)._parent;
+      // TODO(enyo): Can't the parent of the parent not also be a `Key`?
+      obj = (obj as Key)._parent as Partition;
     }
     return obj;
   }

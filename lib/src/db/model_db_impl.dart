@@ -184,7 +184,8 @@ class ModelDBImpl implements ModelDB {
   void _initialize(Iterable<mirrors.LibraryMirror> libraries) {
     libraries.forEach((mirrors.LibraryMirror lm) {
       lm.declarations.values
-          .where((d) => d is mirrors.ClassMirror && d.hasReflectedType)
+          .whereType<mirrors.ClassMirror>()
+          .where((d) => d.hasReflectedType)
           .forEach((declaration) {
         _tryLoadNewModelClass(declaration);
       });
@@ -217,7 +218,7 @@ class ModelDBImpl implements ModelDB {
               'Cannot have more than one ModelMetadata() annotation '
               'on a Model class');
         }
-        kindAnnotation = instance.reflectee;
+        kindAnnotation = instance.reflectee as Kind;
       }
     }
 
@@ -242,7 +243,7 @@ class ModelDBImpl implements ModelDB {
       mirrors.ClassMirror modelClass, String name, bool useIntegerId) {
     assert(!_modelDesc2Type.containsKey(modelClass.reflectedType));
 
-    var modelDesc;
+    _ModelDescription modelDesc;
     if (_isExpandoClass(modelClass)) {
       modelDesc = new _ExpandoModelDescription(name, useIntegerId);
     } else {
@@ -289,9 +290,9 @@ class ModelDBImpl implements ModelDB {
         if (memberMap.containsKey(fieldSymbol) &&
             memberMap[fieldSymbol].isGetter &&
             decl.metadata != null) {
-          var propertyAnnotations = decl.metadata
+          final propertyAnnotations = decl.metadata
               .map((mirrors.InstanceMirror mirror) => mirror.reflectee)
-              .where((Object property) => property is Property)
+              .whereType<Property>()
               .toList();
 
           if (propertyAnnotations.length > 1) {
@@ -305,7 +306,7 @@ class ModelDBImpl implements ModelDB {
             var fieldName = mirrors.MirrorSystem.getName(fieldSymbol);
 
             // Determine the name to use for the property in datastore.
-            var propertyName = (property as Property).propertyName;
+            var propertyName = property.propertyName;
             if (propertyName == null) propertyName = fieldName;
 
             if (properties.containsKey(fieldName)) {
@@ -426,7 +427,7 @@ class _ModelDescription<T extends Model> {
     db._propertiesForModel(this).forEach((String fieldName, Property prop) {
       _decodeProperty(db, entity, mirror, fieldName, prop);
     });
-    return mirror.reflectee;
+    return mirror.reflectee as T;
   }
 
   _decodeProperty(ModelDBImpl db, ds.Entity entity,

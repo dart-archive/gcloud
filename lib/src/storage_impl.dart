@@ -80,7 +80,7 @@ class _StorageImpl implements Storage {
   }
 
   Stream<String> listBucketNames() {
-    Future<_BucketPageImpl> firstPage(pageSize) {
+    Future<_BucketPageImpl> firstPage(int pageSize) {
       return _listBuckets(pageSize, null)
           .then((response) => new _BucketPageImpl(this, pageSize, response));
     }
@@ -161,7 +161,7 @@ class _BucketImpl implements Bucket {
     object = objectMetadata._object;
 
     // If no predefined ACL is passed use the default (if any).
-    var predefinedName;
+    String predefinedName;
     if (predefinedAcl != null || _defaultPredefinedObjectAcl != null) {
       var predefined =
           predefinedAcl != null ? predefinedAcl : _defaultPredefinedObjectAcl;
@@ -186,7 +186,7 @@ class _BucketImpl implements Bucket {
       Acl acl,
       PredefinedAcl predefinedAcl,
       String contentType}) {
-    var sink = write(objectName,
+    _MediaUploadStreamSink sink = write(objectName,
         length: bytes.length,
         metadata: metadata,
         acl: acl,
@@ -220,7 +220,7 @@ class _BucketImpl implements Bucket {
       options = new storage_api.PartialDownloadOptions(range);
     }
 
-    var media = await _api.objects
+    commons.Media media = await _api.objects
         .get(bucketName, objectName, downloadOptions: options);
 
     yield* media.stream;
@@ -229,7 +229,7 @@ class _BucketImpl implements Bucket {
   Future<ObjectInfo> info(String objectName) {
     return _api.objects
         .get(bucketName, objectName, projection: 'full')
-        .then((object) => new _ObjectInfoImpl(object));
+        .then((object) => new _ObjectInfoImpl(object as storage_api.Object));
   }
 
   Future delete(String objectName) {
@@ -237,7 +237,7 @@ class _BucketImpl implements Bucket {
   }
 
   Stream<BucketEntry> list({String prefix}) {
-    Future<_ObjectPageImpl> firstPage(pageSize) {
+    Future<_ObjectPageImpl> firstPage(int pageSize) {
       return _listObjects(bucketName, prefix, _DIRECTORY_DELIMITER, 50, null)
           .then((response) =>
               new _ObjectPageImpl(this, prefix, pageSize, response));
@@ -402,7 +402,7 @@ class _ObjectMetadata implements ObjectMetadata {
   final storage_api.Object _object;
   Acl _cachedAcl;
   ObjectGeneration _cachedGeneration;
-  Map _cachedCustom;
+  Map<String, String> _cachedCustom;
 
   _ObjectMetadata(
       {Acl acl,
@@ -496,7 +496,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
   final List<List<int>> buffer = new List<List<int>>();
   final _controller = new StreamController<List<int>>(sync: true);
   StreamSubscription _subscription;
-  StreamController _resumableController;
+  StreamController<List<int>> _resumableController;
   final _doneCompleter = new Completer<ObjectInfo>();
 
   static const int _STATE_LENGTH_KNOWN = 0;
@@ -574,7 +574,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
     }
   }
 
-  _onError(e, s) {
+  _onError(e, StackTrace s) {
     // If still deciding on the strategy complete with error. Otherwise
     // forward the error for default processing.
     if (_state == _STATE_PROBING_LENGTH) {
@@ -584,7 +584,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
     }
   }
 
-  _completeError(e, s) {
+  _completeError(e, StackTrace s) {
     if (_state != _STATE_LENGTH_KNOWN) {
       // Always cancel subscription on error.
       _subscription.cancel();
