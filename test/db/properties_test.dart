@@ -218,7 +218,7 @@ class KeyMock implements Key {
   bool get isEmpty => false;
   Partition get partition => null;
   datastore.Key get datastoreKey => _datastoreKey;
-  Key append(Type modelType, {Object id}) => null;
+  Key<T> append<T>(Type modelType, {T id}) => null;
   int get hashCode => 1;
 }
 
