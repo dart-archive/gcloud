@@ -199,7 +199,8 @@ main() {
       }));
       expect(ss.lookup(rootKey), equals('root'));
 
-      Future spawnChild(ownSubKey, otherSubKey, int i, cleanup) {
+      Future spawnChild(
+          ownSubKey, otherSubKey, int i, ss.ScopeExitCallback cleanup) {
         return ss.fork(expectAsync0(() => new Future.sync(() {
               ss.register(subKey, 'fork$i');
               ss.registerScopeExitCallback(cleanup);
@@ -214,8 +215,12 @@ main() {
       }
 
       return Future.wait([
-        spawnChild(subKey1, subKey2, 1, () => cleanupFork1++),
-        spawnChild(subKey2, subKey1, 2, () => cleanupFork2++),
+        spawnChild(subKey1, subKey2, 1, () {
+          cleanupFork1++;
+        }),
+        spawnChild(subKey2, subKey1, 2, () {
+          cleanupFork2++;
+        }),
       ]);
     }));
   });

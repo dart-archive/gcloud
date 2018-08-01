@@ -44,14 +44,14 @@ Future sleep(Duration duration) {
   return completer.future;
 }
 
-Future<List<Entity>> consumePages(FirstPageProvider provider) {
+Future<List<Entity>> consumePages(FirstPageProvider<Entity> provider) {
   return new StreamFromPages<Entity>(provider).stream.toList();
 }
 
 void runTests(Datastore datastore, String namespace) {
   Partition partition = new Partition(namespace);
 
-  Future<T> withTransaction<T>(Function f, {bool xg: false}) {
+  Future<T> withTransaction<T>(FutureOr<T> f(Transaction t), {bool xg: false}) {
     return datastore.beginTransaction(crossEntityGroup: xg).then(f);
   }
 
@@ -379,7 +379,8 @@ void runTests(Datastore datastore, String namespace) {
         return insert([], unnamedEntities5).then((keys) {
           keys.forEach((key) => expect(isValidKey(key), isTrue));
           return testLookup(keys, unnamedEntities5,
-              transactional: true, xg: true).then((_) {
+                  transactional: true, xg: true)
+              .then((_) {
             return delete(keys);
           });
         });
@@ -564,8 +565,7 @@ void runTests(Datastore datastore, String namespace) {
           for (var i = 0; i < NUM_TRANSACTIONS; i++) {
             transactions.add(datastore.beginTransaction(crossEntityGroup: xg));
           }
-          return Future
-              .wait(transactions)
+          return Future.wait(transactions)
               .then((List<Transaction> transactions) {
             // Do a lookup for the entities in every transaction
             var lookups = <Future<List<Entity>>>[];
@@ -643,12 +643,13 @@ void runTests(Datastore datastore, String namespace) {
           int offset,
           int limit}) {
         return testQuery(kind,
-            filters: filters,
-            orders: orders,
-            transactional: transactional,
-            xg: xg,
-            offset: offset,
-            limit: limit).then((List<Entity> entities) {
+                filters: filters,
+                orders: orders,
+                transactional: transactional,
+                xg: xg,
+                offset: offset,
+                limit: limit)
+            .then((List<Entity> entities) {
           expect(entities.length, equals(expectedEntities.length));
 
           if (correctOrder) {
@@ -719,7 +720,7 @@ void runTests(Datastore datastore, String namespace) {
         // Reverse the order
         return -1 *
             (a.properties[QUERY_KEY] as String)
-                .compareTo(b.properties[QUERY_KEY]);
+                .compareTo(b.properties[QUERY_KEY].toString());
       };
 
       var filterFunction = (Entity entity) {
@@ -1103,10 +1104,10 @@ Future waitUntilEntitiesHelper(
 
 Future main() async {
   Datastore datastore;
-  BaseClient client;
+  Client client;
 
   var scopes = datastore_impl.DatastoreImpl.SCOPES;
-  await withAuthClient(scopes, (String project, httpClient) {
+  await withAuthClient(scopes, (String project, Client httpClient) {
     datastore = new datastore_impl.DatastoreImpl(httpClient, project);
     client = httpClient;
     return cleanupDB(datastore, null);

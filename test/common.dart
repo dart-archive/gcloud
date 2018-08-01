@@ -24,7 +24,7 @@ class MockClient extends http.BaseClient {
   final String rootPath;
   final Uri rootUri;
 
-  Map<String, Map<Pattern, Function>> mocks = {};
+  Map<String, Map<Pattern, http_testing.MockClientHandler>> mocks = {};
   http_testing.MockClient client;
 
   MockClient(String hostname, String rootPath)
@@ -67,8 +67,9 @@ class MockClient extends http.BaseClient {
       throw 'No mock handler for method ${request.method} found. '
           'Request URL was: ${request.url}';
     }
-    var mockHandler;
-    mocks[request.method].forEach((pattern, handler) {
+    http_testing.MockClientHandler mockHandler;
+    mocks[request.method]
+        .forEach((pattern, http_testing.MockClientHandler handler) {
       if (pattern.matchAsPrefix(path) != null) {
         mockHandler = handler;
       }
@@ -96,7 +97,7 @@ class MockClient extends http.BaseClient {
   }
 
   Future<http.Response> respondInitiateResumableUpload(project) {
-    Map headers = new Map<String, String>.from(RESPONSE_HEADERS);
+    final headers = new Map<String, String>.from(RESPONSE_HEADERS);
     headers['location'] = 'https://www.googleapis.com/resumable/upload$rootPath'
         'b/$project/o?uploadType=resumable&alt=json&'
         'upload_id=AEnB2UqucpaWy7d5cr5iVQzmbQcQlLDIKiClrm0SAX3rJ7UN'
@@ -130,7 +131,7 @@ class MockClient extends http.BaseClient {
     return new http.Response.bytes(myBytes, 200, headers: headers);
   }
 
-  Future<http.Response> respondError(statusCode) {
+  Future<http.Response> respondError(int statusCode) {
     var error = {
       'error': {'code': statusCode, 'message': 'error'}
     };
@@ -147,7 +148,7 @@ class MockClient extends http.BaseClient {
     var boundary = contentType.parameters['boundary'];
 
     var partCount = 0;
-    var json;
+    String json;
     new Stream.fromIterable([
       request.bodyBytes,
       [13, 10]

@@ -13,11 +13,11 @@ class Namespace extends db.ExpandoModel {
   String get name {
     // The default namespace will be reported with id 1.
     if (id == Namespace.EmptyNamespaceId) return null;
-    return id;
+    return id as String;
   }
 }
 
 @db.Kind(name: '__kind__')
 class Kind extends db.Model {
-  String get name => id;
+  String get name => id as String;
 }

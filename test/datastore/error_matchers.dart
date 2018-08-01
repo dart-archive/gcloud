@@ -9,48 +9,13 @@ import 'dart:io';
 import 'package:test/test.dart';
 import 'package:gcloud/datastore.dart';
 
-class _ApplicationError extends TypeMatcher {
-  const _ApplicationError() : super("ApplicationError");
-  bool matches(item, Map matchState) => item is ApplicationError;
-}
+const isApplicationError = const TypeMatcher<ApplicationError>();
 
-class _DataStoreError extends TypeMatcher {
-  const _DataStoreError() : super("DataStoreError");
-  bool matches(item, Map matchState) => item is DatastoreError;
-}
+const isDataStoreError = const TypeMatcher<DatastoreError>();
+const isTransactionAbortedError = const TypeMatcher<TransactionAbortedError>();
+const isNeedIndexError = const TypeMatcher<NeedIndexError>();
+const isTimeoutError = const TypeMatcher<TimeoutError>();
 
-class _TransactionAbortedError extends TypeMatcher {
-  const _TransactionAbortedError() : super("TransactionAbortedError");
-  bool matches(item, Map matchState) => item is TransactionAbortedError;
-}
+const isInt = const TypeMatcher<int>();
 
-class _NeedIndexError extends TypeMatcher {
-  const _NeedIndexError() : super("NeedIndexError");
-  bool matches(item, Map matchState) => item is NeedIndexError;
-}
-
-class _TimeoutError extends TypeMatcher {
-  const _TimeoutError() : super("TimeoutError");
-  bool matches(item, Map matchState) => item is TimeoutError;
-}
-
-class _IntMatcher extends TypeMatcher {
-  const _IntMatcher() : super("IntMatcher");
-  bool matches(item, Map matchState) => item is int;
-}
-
-class _SocketException extends TypeMatcher {
-  const _SocketException() : super("SocketException");
-  bool matches(item, Map matchState) => item is SocketException;
-}
-
-const isApplicationError = const _ApplicationError();
-
-const isDataStoreError = const _DataStoreError();
-const isTransactionAbortedError = const _TransactionAbortedError();
-const isNeedIndexError = const _NeedIndexError();
-const isTimeoutError = const _TimeoutError();
-
-const isInt = const _IntMatcher();
-
-const isSocketException = const _SocketException();
+const isSocketException = const TypeMatcher<SocketException>();

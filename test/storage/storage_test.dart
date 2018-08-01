@@ -20,7 +20,7 @@ import '../common_e2e.dart';
 const String HOSTNAME = 'www.googleapis.com';
 const String ROOT_PATH = '/storage/v1/';
 
-http.Client mockClient() => new MockClient(HOSTNAME, ROOT_PATH);
+MockClient mockClient() => new MockClient(HOSTNAME, ROOT_PATH);
 
 withMockClient(function(MockClient client, Storage storage)) {
   var mock = mockClient();
@@ -41,7 +41,7 @@ main() {
       withMockClient((mock, api) {
         mock.register('POST', 'b', expectAsync1((http.Request request) {
           var requestBucket =
-              new storage.Bucket.fromJson(jsonDecode(request.body));
+              new storage.Bucket.fromJson(jsonDecode(request.body) as Map);
           expect(requestBucket.name, bucketName);
           return mock.respond(new storage.Bucket()..name = bucketName);
         }));
@@ -67,7 +67,7 @@ main() {
             'b',
             expectAsync1((http.Request request) {
               var requestBucket =
-                  new storage.Bucket.fromJson(jsonDecode(request.body));
+                  new storage.Bucket.fromJson(jsonDecode(request.body) as Map);
               expect(requestBucket.name, bucketName);
               expect(requestBucket.acl, isNull);
               expect(request.url.queryParameters['predefinedAcl'],
@@ -77,8 +77,8 @@ main() {
 
         var futures = <Future>[];
         for (int i = 0; i < predefined.length; i++) {
-          futures.add(
-              api.createBucket(bucketName, predefinedAcl: predefined[i][0]));
+          futures.add(api.createBucket(bucketName,
+              predefinedAcl: predefined[i][0] as PredefinedAcl));
         }
         return Future.wait(futures);
       });
@@ -111,7 +111,7 @@ main() {
             'b',
             expectAsync1((http.Request request) {
               var requestBucket =
-                  new storage.Bucket.fromJson(jsonDecode(request.body));
+                  new storage.Bucket.fromJson(jsonDecode(request.body) as Map);
               expect(requestBucket.name, bucketName);
               expect(request.url.queryParameters['predefinedAcl'], isNull);
               expect(requestBucket.acl, isNotNull);
@@ -173,7 +173,7 @@ main() {
             'b',
             expectAsync1((http.Request request) {
               var requestBucket =
-                  new storage.Bucket.fromJson(jsonDecode(request.body));
+                  new storage.Bucket.fromJson(jsonDecode(request.body) as Map);
               int predefinedIndex = count ~/ acls.length;
               int aclIndex = count % acls.length;
               expect(requestBucket.name, bucketName);
@@ -199,7 +199,8 @@ main() {
         for (int i = 0; i < predefined.length; i++) {
           for (int j = 0; j < acls.length; j++) {
             futures.add(api.createBucket(bucketName,
-                predefinedAcl: predefined[i][0], acl: acls[j]));
+                predefinedAcl: predefined[i][0] as PredefinedAcl,
+                acl: acls[j]));
           }
         }
         return Future.wait(futures);
@@ -338,14 +339,14 @@ main() {
       return null;
     };
 
-    expectNormalUpload(MockClient mock, data, objectName) {
+    expectNormalUpload(MockClient mock, data, String objectName) {
       var bytes = data.fold([], (p, e) => p..addAll(e));
       mock.registerUpload('POST', 'b/$bucketName/o', expectAsync1((request) {
         return mock
             .processNormalMediaUpload(request)
             .then(expectAsync1((mediaUpload) {
           var object =
-              new storage.Object.fromJson(jsonDecode(mediaUpload.json));
+              new storage.Object.fromJson(jsonDecode(mediaUpload.json) as Map);
           expect(object.name, objectName);
           expect(mediaUpload.bytes, bytes);
           expect(mediaUpload.contentType, 'application/octet-stream');
@@ -354,14 +355,14 @@ main() {
       }));
     }
 
-    expectResumableUpload(MockClient mock, data, objectName) {
+    expectResumableUpload(MockClient mock, data, String objectName) {
       var bytes = data.fold([], (p, e) => p..addAll(e));
       expect(bytes.length, bytesResumableUpload.length);
       int count = 0;
       mock.registerResumableUpload('POST', 'b/$bucketName/o',
           expectAsync1((request) {
         var requestObject =
-            new storage.Object.fromJson(jsonDecode(request.body));
+            new storage.Object.fromJson(jsonDecode(request.body) as Map);
         expect(requestObject.name, objectName);
         return mock.respondInitiateResumableUpload(PROJECT);
       }));
@@ -384,7 +385,7 @@ main() {
       expect(result.name, objectName);
     }
 
-    Future pipeToSink(sink, List<List<int>> data) {
+    Future pipeToSink(StreamSink<List<int>> sink, List<List<int>> data) {
       sink.done.then(expectAsync1(checkResult));
       sink.done.catchError((e) => throw 'Unexpected $e');
       return new Stream.fromIterable(data)
@@ -393,7 +394,7 @@ main() {
           .catchError((e) => throw 'Unexpected $e');
     }
 
-    Future addStreamToSink(sink, List<List<int>> data) {
+    Future addStreamToSink(StreamSink<List<int>> sink, List<List<int>> data) {
       sink.done.then(expectAsync1(checkResult));
       sink.done.catchError((e) => throw 'Unexpected $e');
       return sink
@@ -403,7 +404,7 @@ main() {
           .catchError((e) => throw 'Unexpected $e');
     }
 
-    Future addToSink(sink, List<List<int>> data) {
+    Future addToSink(StreamSink<List<int>> sink, List<List<int>> data) {
       sink.done.then(expectAsync1(checkResult));
       sink.done.catchError((e) => throw 'Unexpected $e');
       data.forEach((bytes) => sink.add(bytes));
@@ -413,17 +414,19 @@ main() {
           .catchError((e) => throw 'Unexpected $e');
     }
 
-    Future runTest(mock, api, data, length) {
+    Future runTest(
+        MockClient mock, Storage api, List<List<int>> data, int length) {
       var bucket = api.bucket(bucketName);
 
-      Future upload(fn, sendLength) {
+      Future upload(Future fn(StreamSink<List<int>> sink, List<List<int>> data),
+          bool sendLength) {
         mock.clear();
         if (length <= maxNormalUpload) {
           expectNormalUpload(mock, data, objectName);
         } else {
           expectResumableUpload(mock, data, objectName);
         }
-        var sink;
+        StreamSink<List<int>> sink;
         if (sendLength) {
           sink = bucket.write(objectName, length: length);
         } else {
@@ -461,7 +464,7 @@ main() {
 
     test('write-short-error', () {
       withMockClient((MockClient mock, api) {
-        Future test(length) {
+        Future test(int length) {
           mock.clear();
           mock.registerUpload('POST', 'b/$bucketName/o',
               expectAsync1((request) {
@@ -524,7 +527,7 @@ main() {
 
     test('write-long-wrong-length', () {
       withMockClient((mock, api) {
-        Future test(data, length) {
+        Future test(List<List<int>> data, int length) {
           mock.clear();
           mock.registerResumableUpload('POST', 'b/$bucketName/o',
               expectAsync1((request) {
@@ -631,8 +634,8 @@ main() {
               return mock
                   .processNormalMediaUpload(request)
                   .then(expectAsync1((mediaUpload) {
-                var object =
-                    new storage.Object.fromJson(jsonDecode(mediaUpload.json));
+                var object = new storage.Object.fromJson(
+                    jsonDecode(mediaUpload.json) as Map);
                 ObjectMetadata m = metadata[count];
                 expect(object.name, objectName);
                 expect(mediaUpload.bytes, bytes);
@@ -685,7 +688,7 @@ main() {
             'b/$bucketName/o',
             expectAsync1((request) {
               var object =
-                  new storage.Object.fromJson(jsonDecode(request.body));
+                  new storage.Object.fromJson(jsonDecode(request.body) as Map);
               ObjectMetadata m = metadata[countInitial];
               expect(object.name, objectName);
               expect(object.cacheControl, m.cacheControl);
@@ -747,8 +750,8 @@ main() {
               return mock
                   .processNormalMediaUpload(request)
                   .then(expectAsync1((mediaUpload) {
-                var object =
-                    new storage.Object.fromJson(jsonDecode(mediaUpload.json));
+                var object = new storage.Object.fromJson(
+                    jsonDecode(mediaUpload.json) as Map);
                 expect(object.name, objectName);
                 expect(mediaUpload.bytes, bytes);
                 expect(mediaUpload.contentType, 'application/octet-stream');
@@ -763,7 +766,7 @@ main() {
         var futures = <Future>[];
         for (int i = 0; i < predefined.length; i++) {
           futures.add(bucket.writeBytes(objectName, bytes,
-              predefinedAcl: predefined[i][0]));
+              predefinedAcl: predefined[i][0] as PredefinedAcl));
         }
         return Future.wait(futures);
       });
@@ -799,8 +802,8 @@ main() {
               return mock
                   .processNormalMediaUpload(request)
                   .then(expectAsync1((mediaUpload) {
-                var object =
-                    new storage.Object.fromJson(jsonDecode(mediaUpload.json));
+                var object = new storage.Object.fromJson(
+                    jsonDecode(mediaUpload.json) as Map);
                 expect(object.name, objectName);
                 expect(mediaUpload.bytes, bytes);
                 expect(mediaUpload.contentType, 'application/octet-stream');
@@ -872,8 +875,8 @@ main() {
                   .then(expectAsync1((mediaUpload) {
                 int predefinedIndex = count ~/ acls.length;
                 int aclIndex = count % acls.length;
-                var object =
-                    new storage.Object.fromJson(jsonDecode(mediaUpload.json));
+                var object = new storage.Object.fromJson(
+                    jsonDecode(mediaUpload.json) as Map);
                 expect(object.name, objectName);
                 expect(mediaUpload.bytes, bytes);
                 expect(mediaUpload.contentType, 'application/octet-stream');
@@ -901,7 +904,8 @@ main() {
         for (int i = 0; i < predefined.length; i++) {
           for (int j = 0; j < acls.length; j++) {
             futures.add(bucket.writeBytes(objectName, bytes,
-                acl: acls[j], predefinedAcl: predefined[i][0]));
+                acl: acls[j],
+                predefinedAcl: predefined[i][0] as PredefinedAcl));
           }
         }
         return Future.wait(futures);

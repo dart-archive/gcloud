@@ -31,11 +31,11 @@ typedef Future<Page<T>> FirstPageProvider<T>(int pageSize);
 /// Helper class to turn a series of pages into a stream.
 class StreamFromPages<T> {
   static const int _PAGE_SIZE = 50;
-  final FirstPageProvider _firstPageProvider;
+  final FirstPageProvider<T> _firstPageProvider;
   bool _pendingRequest = false;
   bool _paused = false;
   bool _cancelled = false;
-  Page _currentPage;
+  Page<T> _currentPage;
   StreamController<T> _controller;
 
   StreamFromPages(this._firstPageProvider) {
@@ -49,7 +49,7 @@ class StreamFromPages<T> {
 
   Stream<T> get stream => _controller.stream;
 
-  void _handleError(e, s) {
+  void _handleError(e, StackTrace s) {
     _controller.addError(e, s);
     _controller.close();
   }

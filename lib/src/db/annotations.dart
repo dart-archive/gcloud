@@ -174,7 +174,7 @@ class ModelKeyProperty extends PrimitiveProperty {
 
   Object encodeValue(ModelDB db, Object value, {bool forComparison: false}) {
     if (value == null) return null;
-    return db.toDatastoreKey(value);
+    return db.toDatastoreKey(value as Key);
   }
 
   Object decodePrimitiveValue(ModelDB db, Object value) {
@@ -201,7 +201,7 @@ class BlobProperty extends PrimitiveProperty {
 
   Object encodeValue(ModelDB db, Object value, {bool forComparison: false}) {
     if (value == null) return null;
-    return new ds.BlobValue(value);
+    return new ds.BlobValue(value as List<int>);
   }
 
   Object decodePrimitiveValue(ModelDB db, Object value) {

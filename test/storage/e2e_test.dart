@@ -71,7 +71,7 @@ void main() {
     });
 
     test('create-with-predefined-acl-delete', () {
-      Future<Acl> test(predefinedAcl, expectedLength) {
+      Future<Acl> test(PredefinedAcl predefinedAcl, expectedLength) {
         var bucketName = generateBucketName();
         return storage
             .createBucket(bucketName, predefinedAcl: predefinedAcl)
@@ -108,14 +108,14 @@ void main() {
   group('object', () {
     // Run all object tests in the same bucket to try to avoid the rate-limit
     // for creating and deleting buckets while testing.
-    Future withTestBucket(function) {
+    Future withTestBucket(Future function(Bucket bucket)) {
       return function(testBucket).whenComplete(() {
         // TODO: Clean the bucket.
       });
     }
 
     test('create-read-delete', () {
-      Future test(name, bytes) {
+      Future test(name, List<int> bytes) {
         return withTestBucket((Bucket bucket) {
           return bucket.writeBytes('test', bytes).then(expectAsync1((info) {
             expect(info, isNotNull);
@@ -139,7 +139,8 @@ void main() {
 
     test('create-with-predefined-acl-delete', () {
       return withTestBucket((Bucket bucket) {
-        Future test(objectName, predefinedAcl, expectedLength) {
+        Future test(
+            String objectName, PredefinedAcl predefinedAcl, expectedLength) {
           return bucket
               .writeBytes(objectName, [1, 2, 3], predefinedAcl: predefinedAcl)
               .then(expectAsync1((result) {
@@ -169,7 +170,7 @@ void main() {
 
     test('create-with-acl-delete', () {
       return withTestBucket((Bucket bucket) {
-        Future test(objectName, acl, expectedLength) {
+        Future test(String objectName, Acl acl, expectedLength) {
           return bucket
               .writeBytes(objectName, [1, 2, 3], acl: acl)
               .then(expectAsync1((result) {
@@ -222,7 +223,8 @@ void main() {
 
     test('create-with-metadata-delete', () {
       return withTestBucket((Bucket bucket) {
-        Future test(objectName, metadata, bytes) {
+        Future test(
+            String objectName, ObjectMetadata metadata, List<int> bytes) {
           return bucket
               .writeBytes(objectName, bytes, metadata: metadata)
               .then(expectAsync1((result) {

@@ -40,12 +40,13 @@ class DatastoreImpl implements datastore.Datastore {
       ..namespaceId = key.partition.namespace;
 
     apiKey.path = key.elements.map((datastore.KeyElement element) {
-      var part = new api.PathElement();
+      final part = new api.PathElement();
       part.kind = element.kind;
-      if (element.id is int) {
-        part.id = '${element.id}';
-      } else if (element.id is String) {
-        part.name = element.id;
+      final id = element.id;
+      if (id is int) {
+        part.id = '$id';
+      } else if (id is String) {
+        part.name = id;
       } else if (enforceId) {
         throw new datastore.ApplicationError(
             'Error while encoding entity key: Using `null` as the id is not '
@@ -69,7 +70,7 @@ class DatastoreImpl implements datastore.Datastore {
       }
     }).toList();
 
-    var partition;
+    datastore.Partition partition;
     if (key.partitionId != null) {
       partition = new datastore.Partition(key.partitionId.namespaceId);
       // TODO: assert projectId.
@@ -267,7 +268,7 @@ class DatastoreImpl implements datastore.Datastore {
     return orders.map(_convertDatastore2ApiOrder).toList();
   }
 
-  static Future<Null> _handleError(error, stack) {
+  static Future<Null> _handleError(error, StackTrace stack) {
     if (error is api.DetailedApiRequestError) {
       if (error.status == 400) {
         return new Future.error(
@@ -340,7 +341,7 @@ class DatastoreImpl implements datastore.Datastore {
       }
     }
     return _api.projects.commit(request, _project).then((result) {
-      var keys;
+      List<datastore.Key> keys;
       if (autoIdInserts != null && autoIdInserts.length > 0) {
         List<api.MutationResult> mutationResults = result.mutationResults;
         assert(autoIdStartIndex != -1);
@@ -454,8 +455,7 @@ class DatastoreImpl implements datastore.Datastore {
         ..namespaceId = partition.namespace;
     }
 
-    return QueryPageImpl
-        .runQuery(_api, _project, request, query.limit)
+    return QueryPageImpl.runQuery(_api, _project, request, query.limit)
         .catchError(_handleError);
   }
 
@@ -604,8 +604,8 @@ class QueryPageImpl implements Page<datastore.Entity> {
       });
     }
 
-    return QueryPageImpl
-        .runQuery(_api, _project, _nextRequest, _remainingNumberOfEntities)
+    return QueryPageImpl.runQuery(
+            _api, _project, _nextRequest, _remainingNumberOfEntities)
         .catchError(DatastoreImpl._handleError);
   }
 }

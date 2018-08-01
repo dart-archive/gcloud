@@ -37,7 +37,7 @@ class Key {
    */
   Key get parent {
     if (_parent is Key) {
-      return _parent;
+      return _parent as Key;
     }
     return null;
   }
@@ -50,7 +50,7 @@ class Key {
     while (obj is! Partition) {
       obj = (obj as Key)._parent;
     }
-    return obj;
+    return obj as Partition;
   }
 
   Key append(Type modelType, {Object id}) {

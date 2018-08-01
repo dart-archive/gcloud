@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:http/http.dart' as http;
 import 'package:test/test.dart';
 
 import 'package:gcloud/pubsub.dart';
@@ -48,9 +49,9 @@ main() {
         mock.register(
             'PUT',
             'projects/$PROJECT/topics/test-topic',
-            expectAsync1((request) {
+            expectAsync1((http.Request request) {
               var requestTopic =
-                  new pubsub.Topic.fromJson(jsonDecode(request.body));
+                  new pubsub.Topic.fromJson(jsonDecode(request.body) as Map);
               expect(requestTopic.name, absoluteName);
               return mock.respond(new pubsub.Topic()..name = absoluteName);
             }, count: 2));
@@ -152,8 +153,9 @@ main() {
 
         // Mock that expect/generates [n] topics in pages of page size
         // [pageSize].
-        registerQueryMock(MockClient mock, n, pageSize, [totalCalls]) {
-          var totalPages = (n + pageSize - 1) ~/ pageSize;
+        registerQueryMock(MockClient mock, int n, int pageSize,
+            [int totalCalls]) {
+          int totalPages = (n + pageSize - 1) ~/ pageSize;
           // No items still generate one request.
           if (totalPages == 0) totalPages = 1;
           // Can pass in total calls if this mock is overwritten before all
@@ -186,7 +188,7 @@ main() {
         }
 
         group('list', () {
-          Future q(count) {
+          Future q(int count) {
             var mock = mockClient();
             registerQueryMock(mock, count, 50);
 
@@ -371,7 +373,7 @@ main() {
           });
 
           test('multiple', () {
-            runTest(n, pageSize) {
+            runTest(int n, int pageSize) {
               var totalPages = (n + pageSize - 1) ~/ pageSize;
               var pageCount = 0;
 
@@ -379,7 +381,7 @@ main() {
               var mock = mockClient();
               registerQueryMock(mock, n, pageSize);
 
-              handlePage(page) {
+              handlePage(Page page) {
                 pageCount++;
                 expect(page.isLast, pageCount == totalPages);
                 expect(page.items.length,
@@ -427,8 +429,8 @@ main() {
             'PUT',
             'projects/$PROJECT/subscriptions',
             expectAsync1((request) {
-              var requestSubscription =
-                  new pubsub.Subscription.fromJson(jsonDecode(request.body));
+              var requestSubscription = new pubsub.Subscription.fromJson(
+                  jsonDecode(request.body) as Map);
               expect(requestSubscription.name, absoluteName);
               return mock
                   .respond(new pubsub.Subscription()..name = absoluteName);
@@ -543,7 +545,7 @@ main() {
 
         // Mock that expect/generates [n] subscriptions in pages of page size
         // [pageSize].
-        registerQueryMock(MockClient mock, n, pageSize,
+        registerQueryMock(MockClient mock, int n, int pageSize,
             {String topic, int totalCalls}) {
           var totalPages = (n + pageSize - 1) ~/ pageSize;
           // No items still generate one request.
@@ -579,7 +581,7 @@ main() {
         }
 
         group('list', () {
-          Future q(topic, count) {
+          Future q(String topic, int count) {
             var mock = mockClient();
             registerQueryMock(mock, count, 50, topic: topic);
 
@@ -793,7 +795,7 @@ main() {
             singleTest('topic');
           });
 
-          multipleTest(n, pageSize, topic) {
+          multipleTest(int n, int pageSize, String topic) {
             var totalPages = (n + pageSize - 1) ~/ pageSize;
             var pageCount = 0;
 
@@ -801,7 +803,7 @@ main() {
             var mock = mockClient();
             registerQueryMock(mock, n, pageSize, topic: topic);
 
-            handlingPage(page) {
+            handlingPage(Page page) {
               pageCount++;
               expect(page.isLast, pageCount == totalPages);
               expect(page.items.length,
@@ -866,13 +868,14 @@ main() {
       }));
     }
 
-    registerPublish(MockClient mock, count, fn) {
+    registerPublish(
+        MockClient mock, int count, Future<http.Response> fn(request)) {
       mock.register(
           'POST',
           'projects/test-project/topics/test-topic:publish',
           expectAsync1((request) {
-            var publishRequest =
-                new pubsub.PublishRequest.fromJson(jsonDecode(request.body));
+            var publishRequest = new pubsub.PublishRequest.fromJson(
+                jsonDecode(request.body) as Map);
             return fn(publishRequest);
           }, count: count));
     }

@@ -140,7 +140,14 @@ The function `query` is used to build a `Query` object which can be run to
 perform the query.
 
 ```dart
-var persons = (await db.query(Person).run()).toList();
+var persons = (await db.query<Person>().run()).toList();
+```
+
+To fetch one or multiple existing entities, use `lookup`.
+
+```dart
+var person = (await db.lookup<Person>([key])).single;
+var people = await db.lookup<Person>([key1, key2]);
 ```
 
 NOTE: This package include a lower level API provided through the class

@@ -199,7 +199,7 @@ class CustomProperty extends StringProperty {
 
   Object decodePrimitiveValue(ModelDB db, Object value) {
     if (value == null) return null;
-    return new Custom()..customValue = value;
+    return new Custom()..customValue = value as String;
   }
 
   Object encodeValue(ModelDB db, Object value, {bool forComparison: false}) {
@@ -243,7 +243,7 @@ class ModelDBMock implements ModelDB {
   }
 
   Map<String, Property> propertiesForModel(modelDescription) => null;
-  Model fromDatastoreEntity(datastore.Entity entity) => null;
+  T fromDatastoreEntity<T extends Model>(datastore.Entity entity) => null;
   datastore.Entity toDatastoreEntity(Model model) => null;
   String fieldNameToPropertyName(String kind, String fieldName) => null;
   String kindName(Type type) => null;

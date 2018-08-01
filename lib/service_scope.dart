@@ -86,7 +86,8 @@ const Symbol _ServiceScopeKey = #gcloud.service_scope;
 final _ServiceScope _emptyServiceScope = new _ServiceScope();
 
 /// Returns the current [_ServiceScope] object.
-_ServiceScope get _serviceScope => Zone.current[_ServiceScopeKey];
+_ServiceScope get _serviceScope =>
+    Zone.current[_ServiceScopeKey] as _ServiceScope;
 
 /// Start a new zone with a new service scope and run [func] inside it.
 ///
@@ -110,7 +111,7 @@ Future fork(Future func(), {Function onError}) {
 ///
 /// The registered on-scope-exit functions are executed in reverse registration
 /// order.
-void register(Object key, Object value, {onScopeExit()}) {
+void register(Object key, Object value, {ScopeExitCallback onScopeExit}) {
   var serviceScope = _serviceScope;
   if (serviceScope == null) {
     throw new StateError('Not running inside a service scope zone.');
@@ -122,7 +123,7 @@ void register(Object key, Object value, {onScopeExit()}) {
 ///
 /// The registered on-scope-exit functions are executed in reverse registration
 /// order.
-void registerScopeExitCallback(onScopeExitCallback()) {
+void registerScopeExitCallback(ScopeExitCallback onScopeExitCallback) {
   var serviceScope = _serviceScope;
   if (serviceScope == null) {
     throw new StateError('Not running inside a service scope zone.');
@@ -167,7 +168,8 @@ class _ServiceScope {
   /// Inserts a new item to the service scope using [serviceScopeKey].
   ///
   /// Optionally calls a [onScopeExit] function once this service scope ends.
-  void register(Object serviceScopeKey, Object value, {onScopeExit()}) {
+  void register(Object serviceScopeKey, Object value,
+      {ScopeExitCallback onScopeExit}) {
     _ensureNotInCleaningState();
     _ensureNotInDestroyingState();
 
@@ -187,7 +189,7 @@ class _ServiceScope {
 
   /// Inserts a new on-scope-exit function to be called once this service scope
   /// ends.
-  void registerOnScopeExitCallback(onScopeExitCallback()) {
+  void registerOnScopeExitCallback(ScopeExitCallback onScopeExitCallback) {
     _ensureNotInCleaningState();
     _ensureNotInDestroyingState();
 
@@ -274,10 +276,12 @@ class _ServiceScope {
   }
 }
 
+typedef Future ScopeExitCallback();
+
 class _RegisteredEntry {
   final Object key;
   final Object value;
-  final Function scopeExitCallback;
+  final ScopeExitCallback scopeExitCallback;
 
   _RegisteredEntry(this.key, this.value, this.scopeExitCallback);
 }

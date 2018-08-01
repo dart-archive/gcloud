@@ -37,8 +37,9 @@ class Transaction {
   /**
    * Looks up [keys] within this transaction.
    */
-  Future<List<Model>> lookup(List<Key> keys) {
-    return _lookupHelper(db, keys, datastoreTransaction: _datastoreTransaction);
+  Future<List<T>> lookup<T extends Model>(List<Key> keys) {
+    return _lookupHelper<T>(db, keys,
+        datastoreTransaction: _datastoreTransaction);
   }
 
   /**
@@ -60,7 +61,7 @@ class Transaction {
    * Note that [ancestorKey] is required, since a transaction is not allowed to
    * touch/look at an arbitrary number of rows.
    */
-  Query query(Type kind, Key ancestorKey, {Partition partition}) {
+  Query<T> query<T extends Model>(Key ancestorKey, {Partition partition}) {
     // TODO(#25): The `partition` element is redundant and should be removed.
     if (partition == null) {
       partition = ancestorKey.partition;
@@ -70,7 +71,7 @@ class Transaction {
           'as the partition where the query executes in.');
     }
     _checkSealed();
-    return new Query(db, kind,
+    return new Query<T>(db,
         partition: partition,
         ancestorKey: ancestorKey,
         datastoreTransaction: _datastoreTransaction);
@@ -107,7 +108,7 @@ class Transaction {
   }
 }
 
-class Query {
+class Query<T extends Model> {
   final _relationMapping = const <String, ds.FilterRelation>{
     '<': ds.FilterRelation.LessThan,
     '<=': ds.FilterRelation.LessThanOrEqual,
@@ -128,12 +129,12 @@ class Query {
   int _offset;
   int _limit;
 
-  Query(DatastoreDB dbImpl, Type kind,
+  Query(DatastoreDB dbImpl,
       {Partition partition,
       Key ancestorKey,
       ds.Transaction datastoreTransaction})
       : _db = dbImpl,
-        _kind = dbImpl.modelDB.kindName(kind),
+        _kind = dbImpl.modelDB.kindName(T),
         _partition = partition,
         _ancestorKey = ancestorKey,
         _transaction = datastoreTransaction;
@@ -215,8 +216,8 @@ class Query {
    * return the newest updates performed on the datastore since updates
    * will be reflected in the indices in an eventual consistent way.
    */
-  Stream<Model> run() {
-    var ancestorKey;
+  Stream<T> run() {
+    ds.Key ancestorKey;
     if (_ancestorKey != null) {
       ancestorKey = _db.modelDB.toDatastoreKey(_ancestorKey);
     }
@@ -228,7 +229,7 @@ class Query {
         offset: _offset,
         limit: _limit);
 
-    var partition;
+    ds.Partition partition;
     if (_partition != null) {
       partition = new ds.Partition(_partition.namespace);
     }
@@ -236,7 +237,7 @@ class Query {
     return new StreamFromPages<ds.Entity>((int pageSize) {
       return _db.datastore
           .query(query, transaction: _transaction, partition: partition);
-    }).stream.map(_db.modelDB.fromDatastoreEntity);
+    }).stream.map<T>(_db.modelDB.fromDatastoreEntity);
   }
 
   // TODO:
@@ -308,7 +309,7 @@ class DatastoreDB {
   /**
    * Build a query for [kind] models.
    */
-  Query query(Type kind, {Partition partition, Key ancestorKey}) {
+  Query<T> query<T extends Model>({Partition partition, Key ancestorKey}) {
     // TODO(#26): There is only one case where `partition` is not redundant
     // Namely if `ancestorKey == null` and `partition != null`. We could
     // say we get rid of `partition` and enforce `ancestorKey` to
@@ -324,8 +325,7 @@ class DatastoreDB {
           'Ancestor queries must have the same partition in the ancestor key '
           'as the partition where the query executes in.');
     }
-    return new Query(this, kind,
-        partition: partition, ancestorKey: ancestorKey);
+    return new Query<T>(this, partition: partition, ancestorKey: ancestorKey);
   }
 
   /**
@@ -334,8 +334,8 @@ class DatastoreDB {
    * For transactions, please use [beginTransaction] and call the [lookup]
    * method on it's returned [Transaction] object.
    */
-  Future<List<Model>> lookup(List<Key> keys) {
-    return _lookupHelper(this, keys);
+  Future<List<T>> lookup<T extends Model>(List<Key> keys) {
+    return _lookupHelper<T>(this, keys);
   }
 
   /**
@@ -357,7 +357,8 @@ Future _commitHelper(DatastoreDB db,
     {List<Model> inserts,
     List<Key> deletes,
     ds.Transaction datastoreTransaction}) {
-  var entityInserts, entityAutoIdInserts, entityDeletes;
+  List<ds.Entity> entityInserts, entityAutoIdInserts;
+  List<ds.Key> entityDeletes;
   var autoIdModelInserts;
   if (inserts != null) {
     entityInserts = <ds.Entity>[];
@@ -399,12 +400,12 @@ Future _commitHelper(DatastoreDB db,
   });
 }
 
-Future<List<Model>> _lookupHelper(DatastoreDB db, List<Key> keys,
+Future<List<T>> _lookupHelper<T extends Model>(DatastoreDB db, List<Key> keys,
     {ds.Transaction datastoreTransaction}) {
   var entityKeys = keys.map(db.modelDB.toDatastoreKey).toList();
   return db.datastore
       .lookup(entityKeys, transaction: datastoreTransaction)
       .then((List<ds.Entity> entities) {
-    return entities.map(db.modelDB.fromDatastoreEntity).toList();
+    return entities.map<T>(db.modelDB.fromDatastoreEntity).toList();
   });
 }
