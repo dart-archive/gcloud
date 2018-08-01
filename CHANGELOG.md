@@ -1,3 +1,8 @@
+## 0.6.0+1
+
+* Add explicit dependency to `package:_discoveryapis_commons`
+* Widen sdk constraint to <3.0.0
+
 ## 0.6.0
 
 * **BREAKING CHANGE:** Add generics support. Instead of writing
