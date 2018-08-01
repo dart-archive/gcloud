@@ -40,12 +40,13 @@ class DatastoreImpl implements datastore.Datastore {
       ..namespaceId = key.partition.namespace;
 
     apiKey.path = key.elements.map((datastore.KeyElement element) {
-      var part = new api.PathElement();
+      final part = new api.PathElement();
       part.kind = element.kind;
-      if (element.id is int) {
-        part.id = '${element.id}';
-      } else if (element.id is String) {
-        part.name = element.id as String;
+      final id = element.id;
+      if (id is int) {
+        part.id = '$id';
+      } else if (id is String) {
+        part.name = id;
       } else if (enforceId) {
         throw new datastore.ApplicationError(
             'Error while encoding entity key: Using `null` as the id is not '
