@@ -1,10 +1,15 @@
+## 0.6.0+1
+
+* Add explicit dependency to `package:_discoveryapis_commons`
+* Widen sdk constraint to <3.0.0
+
 ## 0.6.0
 
 * **BREAKING CHANGE:** Add generics support. Instead of writing
   `db.query(Person).run()` and getting back a generic `Stream<Model>`, you now
   write `db.query<Person>().run()` and get `Stream<Person>`.
   The same goes for `.lookup([key])`, which can now be written as
-  `.lookup<Person>([key])` and will return a `Person`.
+  `.lookup<Person>([key])` and will return a `List<Person>`.
 
 ## 0.5.0
 

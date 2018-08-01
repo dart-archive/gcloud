@@ -404,7 +404,7 @@ class _ModelDescription<T extends Model> {
     properties[propertyName] = prop.encodeValue(db, value);
   }
 
-  T decodeEntity<T extends Model>(ModelDBImpl db, Key key, ds.Entity entity) {
+  H decodeEntity<H extends Model>(ModelDBImpl db, Key key, ds.Entity entity) {
     if (entity == null) return null;
 
     // NOTE: this assumes a default constructor for the model classes!
@@ -418,7 +418,7 @@ class _ModelDescription<T extends Model> {
     db._propertiesForModel(this).forEach((String fieldName, Property prop) {
       _decodeProperty(db, entity, mirror, fieldName, prop);
     });
-    return mirror.reflectee as T;
+    return mirror.reflectee as H;
   }
 
   _decodeProperty(ModelDBImpl db, ds.Entity entity,

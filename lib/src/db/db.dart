@@ -237,7 +237,7 @@ class Query<T extends Model> {
     return new StreamFromPages<ds.Entity>((int pageSize) {
       return _db.datastore
           .query(query, transaction: _transaction, partition: partition);
-    }).stream.map((entity) => _db.modelDB.fromDatastoreEntity<T>(entity));
+    }).stream.map<T>(_db.modelDB.fromDatastoreEntity);
   }
 
   // TODO:
