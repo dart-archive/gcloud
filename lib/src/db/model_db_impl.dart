@@ -135,7 +135,7 @@ class ModelDBImpl implements ModelDB {
   ///
   /// If the model class `type` is not found it will throw an `ArgumentError`.
   String kindName(Type type) {
-    var kind = _modelDesc2Type[type].kind;
+    var kind = _modelDesc2Type[type]?.kind;
     if (kind == null) {
       throw new ArgumentError(
           'The class $type was not associated with a kind.');
