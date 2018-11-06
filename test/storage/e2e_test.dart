@@ -71,7 +71,7 @@ void main() {
     });
 
     test('create-with-predefined-acl-delete', () async {
-      for (var e in <PredefinedAcl, int>{
+      final cases = <PredefinedAcl, int>{
         // See documentation:
         // https://cloud.google.com/storage/docs/access-control/lists
         PredefinedAcl.authenticatedRead: 2,
@@ -79,7 +79,8 @@ void main() {
         PredefinedAcl.projectPrivate: 3,
         PredefinedAcl.publicRead: 2,
         PredefinedAcl.publicReadWrite: 2,
-      }.entries) {
+      };
+      for (var e in cases.entries) {
         var predefinedAcl = e.key;
         var expectedLength = e.value;
         var bucketName = generateBucketName();

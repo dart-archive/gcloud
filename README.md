@@ -233,7 +233,7 @@ of the Google Cloud project to use. The value of the environment variable
 `GCLOUD_E2E_TEST_KEY` is a Google Cloud Storage path (starting with `gs://`)
 to a JSON key file for a service account providing access to the Cloud Project.
 
-To pass the datastore tests you will also need to create indexes as follows:
+You will also need to create indexes as follows:
 
 ```bash
 gcloud --project "$GCLOUD_E2E_TEST_PROJECT" datastore indexes create test/index.yaml
