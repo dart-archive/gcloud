@@ -70,32 +70,32 @@ void main() {
       }));
     });
 
-    test('create-with-predefined-acl-delete', () {
-      Future<Acl> test(PredefinedAcl predefinedAcl, expectedLength) {
+    test('create-with-predefined-acl-delete', () async {
+      final cases = <PredefinedAcl, int>{
+        // See documentation:
+        // https://cloud.google.com/storage/docs/access-control/lists
+        PredefinedAcl.authenticatedRead: 2,
+        PredefinedAcl.private: 1,
+        PredefinedAcl.projectPrivate: 3,
+        PredefinedAcl.publicRead: 2,
+        PredefinedAcl.publicReadWrite: 2,
+      };
+      for (var e in cases.entries) {
+        var predefinedAcl = e.key;
+        var expectedLength = e.value;
         var bucketName = generateBucketName();
-        return storage
-            .createBucket(bucketName, predefinedAcl: predefinedAcl)
-            .then(expectAsync1((result) {
-          expect(result, isNull);
-          return storage.bucketInfo(bucketName).then(expectAsync1((info) {
-            var acl = info.acl;
-            expect(info.bucketName, bucketName);
-            expect(acl.entries.length, expectedLength);
-            return storage.deleteBucket(bucketName).then(expectAsync1((result) {
-              expect(result, isNull);
-            }));
-          }));
-        }));
+        // Sleep for 2 seconds to avoid bucket request limit, see:
+        // https://cloud.google.com/storage/quotas#buckets
+        await Future.delayed(Duration(seconds: 2));
+        var r1 = await storage.createBucket(bucketName,
+            predefinedAcl: predefinedAcl);
+        expect(r1, isNull);
+        var info = await storage.bucketInfo(bucketName);
+        expect(info.bucketName, bucketName);
+        expect(info.acl.entries.length, expectedLength);
+        var r2 = await storage.deleteBucket(bucketName);
+        expect(r2, isNull);
       }
-
-      return Future.forEach([
-        // See documentation: https://cloud.google.com/storage/docs/access-control/lists
-        () => test(PredefinedAcl.authenticatedRead, 2),
-        () => test(PredefinedAcl.private, 1),
-        () => test(PredefinedAcl.projectPrivate, 3),
-        () => test(PredefinedAcl.publicRead, 2),
-        () => test(PredefinedAcl.publicReadWrite, 2),
-      ], (f) => f().then(expectAsync1((_) {})));
     });
 
     test('create-error', () {
