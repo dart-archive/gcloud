@@ -9,7 +9,7 @@ import 'dart:collection';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-import 'package:googleapis_beta/pubsub/v1beta2.dart' as pubsub;
+import 'package:googleapis/pubsub/v1.dart' as pubsub;
 
 import 'common.dart';
 import 'service_scope.dart' as ss;

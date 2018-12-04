@@ -10,13 +10,13 @@ import 'package:test/test.dart';
 
 import 'package:gcloud/pubsub.dart';
 
-import 'package:googleapis_beta/pubsub/v1beta2.dart' as pubsub;
+import 'package:googleapis/pubsub/v1.dart' as pubsub;
 
 import '../common.dart';
 import '../common_e2e.dart';
 
 const String HOSTNAME = 'pubsub.googleapis.com';
-const String ROOT_PATH = '/v1beta2/';
+const String ROOT_PATH = '/v1/';
 
 MockClient mockClient() => new MockClient(HOSTNAME, ROOT_PATH);
 
