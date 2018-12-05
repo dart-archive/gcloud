@@ -186,6 +186,6 @@ void main() {
 
       await pubsub.deleteSubscription(subscriptionName);
       await pubsub.deleteTopic(topicName);
-    });
+    }, timeout: const Timeout(const Duration(minutes: 2)));
   });
 }

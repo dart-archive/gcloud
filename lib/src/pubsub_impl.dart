@@ -15,6 +15,11 @@ class _PubSubImpl implements PubSub {
         _topicPrefix = 'projects/$project/topics/',
         _subscriptionPrefix = 'projects/$project/subscriptions/';
 
+  _PubSubImpl.rootUrl(http.Client client, this.project, String rootUrl)
+      : _api = new pubsub.PubsubApi(client, rootUrl: rootUrl),
+        _topicPrefix = 'projects/$project/topics/',
+        _subscriptionPrefix = 'projects/$project/subscriptions/';
+
   String _fullTopicName(String name) {
     return name.startsWith('projects/') ? name : '${_topicPrefix}$name';
   }
@@ -24,7 +29,7 @@ class _PubSubImpl implements PubSub {
   }
 
   Future<pubsub.Topic> _createTopic(String name) {
-    return _api.projects.topics.create(new pubsub.Topic()..name = name, name);
+    return _api.projects.topics.create(null, name);
   }
 
   Future _deleteTopic(String name) {
@@ -45,7 +50,6 @@ class _PubSubImpl implements PubSub {
   Future<pubsub.Subscription> _createSubscription(
       String name, String topic, Uri endpoint) {
     var subscription = new pubsub.Subscription()
-      ..name = name
       ..topic = topic;
     if (endpoint != null) {
       var pushConfig = new pubsub.PushConfig()

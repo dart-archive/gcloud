@@ -50,9 +50,7 @@ main() {
             'PUT',
             'projects/$PROJECT/topics/test-topic',
             expectAsync1((http.Request request) {
-              var requestTopic =
-                  new pubsub.Topic.fromJson(jsonDecode(request.body) as Map);
-              expect(requestTopic.name, absoluteName);
+              expect(request.body, isEmpty);
               return mock.respond(new pubsub.Topic()..name = absoluteName);
             }, count: 2));
 
@@ -429,9 +427,8 @@ main() {
             'PUT',
             'projects/$PROJECT/subscriptions',
             expectAsync1((request) {
-              var requestSubscription = new pubsub.Subscription.fromJson(
-                  jsonDecode(request.body) as Map);
-              expect(requestSubscription.name, absoluteName);
+              var requestSubscription = jsonDecode(request.body) as Map;
+              expect(requestSubscription['topic'], absoluteTopicName);
               return mock
                   .respond(new pubsub.Subscription()..name = absoluteName);
             }, count: 2));
