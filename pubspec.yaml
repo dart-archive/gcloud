@@ -8,7 +8,6 @@ environment:
 dependencies:
   _discoveryapis_commons: ^0.1.6+1
   googleapis: '>=0.50.2 <1.0.0'
-  googleapis_beta: '>=0.45.2 <1.0.0'
   http: '>=0.11.0 <0.12.0'
 dev_dependencies:
   googleapis_auth: '>=0.2.3 <0.3.0'
