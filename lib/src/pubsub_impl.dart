@@ -49,8 +49,7 @@ class _PubSubImpl implements PubSub {
 
   Future<pubsub.Subscription> _createSubscription(
       String name, String topic, Uri endpoint) {
-    var subscription = new pubsub.Subscription()
-      ..topic = topic;
+    var subscription = new pubsub.Subscription()..topic = topic;
     if (endpoint != null) {
       var pushConfig = new pubsub.PushConfig()
         ..pushEndpoint = endpoint.toString();
