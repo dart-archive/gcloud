@@ -1,3 +1,7 @@
+## 0.6.0+2
+
+* Support the latest `pkg:http`.
+
 ## 0.6.0+1
 
 * Add explicit dependency to `package:_discoveryapis_commons`
