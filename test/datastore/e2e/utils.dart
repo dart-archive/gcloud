@@ -16,12 +16,12 @@ const TEST_INDEXED_PROPERTY = 'indexedProp';
 const TEST_INDEXED_PROPERTY_VALUE_PREFIX = 'indexedValue';
 const TEST_UNINDEXED_PROPERTY = 'unindexedProp';
 const TEST_BLOB_INDEXED_PROPERTY = 'blobPropertyIndexed';
-final TEST_BLOB_INDEXED_VALUE = new BlobValue([0xaa, 0xaa, 0xff, 0xff]);
+final TEST_BLOB_INDEXED_VALUE = BlobValue([0xaa, 0xaa, 0xff, 0xff]);
 
 Key buildKey(int i,
-    {Function idFunction, String kind: TEST_KIND, Partition p}) {
-  var path = [new KeyElement(kind, idFunction == null ? null : idFunction(i))];
-  return new Key(path, partition: p);
+    {Function idFunction, String kind = TEST_KIND, Partition p}) {
+  var path = [KeyElement(kind, idFunction == null ? null : idFunction(i))];
+  return Key(path, partition: p);
 }
 
 Map<String, Object> buildProperties(int i) {
@@ -40,7 +40,7 @@ Map<String, Object> buildProperties(int i) {
 }
 
 List<Key> buildKeys(int from, int to,
-    {Function idFunction, String kind: TEST_KIND, Partition partition}) {
+    {Function idFunction, String kind = TEST_KIND, Partition partition}) {
   var keys = <Key>[];
   for (var i = from; i < to; i++) {
     keys.add(buildKey(i, idFunction: idFunction, kind: kind, p: partition));
@@ -49,23 +49,23 @@ List<Key> buildKeys(int from, int to,
 }
 
 List<Entity> buildEntities(int from, int to,
-    {Function idFunction, String kind: TEST_KIND, Partition partition}) {
+    {Function idFunction, String kind = TEST_KIND, Partition partition}) {
   var entities = <Entity>[];
-  var unIndexedProperties = new Set<String>();
+  var unIndexedProperties = Set<String>();
   for (var i = from; i < to; i++) {
     var key = buildKey(i, idFunction: idFunction, kind: kind, p: partition);
     var properties = buildProperties(i);
     unIndexedProperties.add(TEST_UNINDEXED_PROPERTY);
-    entities.add(
-        new Entity(key, properties, unIndexedProperties: unIndexedProperties));
+    entities
+        .add(Entity(key, properties, unIndexedProperties: unIndexedProperties));
   }
   return entities;
 }
 
 List<Entity> buildEntityWithAllProperties(int from, int to,
-    {String kind: TEST_KIND, Partition partition}) {
+    {String kind = TEST_KIND, Partition partition}) {
   var us42 = const Duration(microseconds: 42);
-  var unIndexed = new Set<String>.from(['blobProperty']);
+  var unIndexed = Set<String>.from(['blobProperty']);
 
   Map<String, dynamic> buildProperties(int i) {
     return {
@@ -74,10 +74,10 @@ List<Entity> buildEntityWithAllProperties(int from, int to,
       'intProperty': 42,
       'doubleProperty': 4.2,
       'stringProperty': 'foobar',
-      'blobProperty': new BlobValue([0xff, 0xff, 0xaa, 0xaa]),
-      'blobPropertyIndexed': new BlobValue([0xaa, 0xaa, 0xff, 0xff]),
+      'blobProperty': BlobValue([0xff, 0xff, 0xaa, 0xaa]),
+      'blobPropertyIndexed': BlobValue([0xaa, 0xaa, 0xff, 0xff]),
       'dateProperty':
-          new DateTime.fromMillisecondsSinceEpoch(1, isUtc: true).add(us42),
+          DateTime.fromMillisecondsSinceEpoch(1, isUtc: true).add(us42),
       'keyProperty': buildKey(1, idFunction: (i) => 's$i', kind: kind),
       'listProperty': [
         42,
@@ -93,7 +93,7 @@ List<Entity> buildEntityWithAllProperties(int from, int to,
     var key =
         buildKey(i, idFunction: (i) => 'allprop$i', kind: kind, p: partition);
     var properties = buildProperties(i);
-    entities.add(new Entity(key, properties, unIndexedProperties: unIndexed));
+    entities.add(Entity(key, properties, unIndexedProperties: unIndexed));
   }
   return entities;
 }

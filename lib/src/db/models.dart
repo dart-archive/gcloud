@@ -4,12 +4,10 @@
 
 part of gcloud.db;
 
-/**
- * Represents a unique identifier for a [Model] stored in a datastore.
- *
- * The [Key] can be incomplete if it's id is `null`. In this case the id will
- * be automatically allocated and set at commit time.
- */
+/// Represents a unique identifier for a [Model] stored in a datastore.
+///
+/// The [Key] can be incomplete if it's id is `null`. In this case the id will
+/// be automatically allocated and set at commit time.
 class Key {
   // Either KeyImpl or PartitionImpl
   final Object _parent;
@@ -19,11 +17,10 @@ class Key {
 
   Key(Key parent, this.type, this.id) : _parent = parent {
     if (type == null) {
-      throw new ArgumentError('The type argument must not be null.');
+      throw ArgumentError('The type argument must not be null.');
     }
     if (id != null && id is! String && id is! int) {
-      throw new ArgumentError(
-          'The id argument must be an integer or a String.');
+      throw ArgumentError('The id argument must be an integer or a String.');
     }
   }
 
@@ -32,9 +29,7 @@ class Key {
         type = null,
         id = null;
 
-  /**
-   * Parent of this [Key].
-   */
+  /// Parent of this [Key].
   Key get parent {
     if (_parent is Key) {
       return _parent as Key;
@@ -42,9 +37,7 @@ class Key {
     return null;
   }
 
-  /**
-   * The partition of this [Key].
-   */
+  /// The partition of this [Key].
   Partition get partition {
     var obj = _parent;
     while (obj is! Partition) {
@@ -54,7 +47,7 @@ class Key {
   }
 
   Key append(Type modelType, {Object id}) {
-    return new Key(this, modelType, id);
+    return Key(this, modelType, id);
   }
 
   bool get isEmpty => _parent is Partition;
@@ -69,28 +62,24 @@ class Key {
   int get hashCode => _parent.hashCode ^ type.hashCode ^ id.hashCode;
 }
 
-/**
- * Represents a datastore partition.
- *
- * A datastore is partitioned into namespaces. The default namespace is
- * `null`.
- */
+/// Represents a datastore partition.
+///
+/// A datastore is partitioned into namespaces. The default namespace is
+/// `null`.
 class Partition {
   final String namespace;
 
   Partition(this.namespace) {
     if (namespace == '') {
-      throw new ArgumentError('The namespace must not be an empty string');
+      throw ArgumentError('The namespace must not be an empty string');
     }
   }
 
-  /**
-   * Returns an empty [Key].
-   *
-   * Entities where the parent [Key] is empty will create their own entity
-   * group.
-   */
-  Key get emptyKey => new Key.emptyKey(this);
+  /// Returns an empty [Key].
+  ///
+  /// Entities where the parent [Key] is empty will create their own entity
+  /// group.
+  Key get emptyKey => Key.emptyKey(this);
 
   operator ==(Object other) {
     return other is Partition && namespace == other.namespace;
@@ -99,12 +88,10 @@ class Partition {
   int get hashCode => namespace.hashCode;
 }
 
-/**
- * Superclass for all model classes.
- *
- * Every model class has a [id] -- which must be an integer or a string, and
- * a [parentKey]. The [key] getter is returning the key for the model object.
- */
+/// Superclass for all model classes.
+///
+/// Every model class has a [id] -- which must be an integer or a string, and
+/// a [parentKey]. The [key] getter is returning the key for the model object.
 abstract class Model {
   Object id;
   Key parentKey;
@@ -112,13 +99,11 @@ abstract class Model {
   Key get key => parentKey.append(this.runtimeType, id: id);
 }
 
-/**
- * Superclass for all expanded model classes.
- *
- * The [ExpandoModel] class adds support for having dynamic properties. You can
- * set arbitrary fields on these models. The expanded values must be values
- * accepted by the [RawDatastore] implementation.
- */
+/// Superclass for all expanded model classes.
+///
+/// The [ExpandoModel] class adds support for having dynamic properties. You can
+/// set arbitrary fields on these models. The expanded values must be values
+/// accepted by the [RawDatastore] implementation.
 abstract class ExpandoModel extends Model {
   final Map<String, Object> additionalProperties = {};
 
@@ -132,7 +117,7 @@ abstract class ExpandoModel extends Model {
       additionalProperties[name] = value;
       return value;
     } else {
-      throw new ArgumentError('Unsupported noSuchMethod call on ExpandoModel');
+      throw ArgumentError('Unsupported noSuchMethod call on ExpandoModel');
     }
   }
 }

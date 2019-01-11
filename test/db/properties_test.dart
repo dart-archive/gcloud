@@ -80,23 +80,23 @@ main() {
       expect((prop.encodeValue(null, [1, 2]) as datastore.BlobValue).bytes,
           equals([1, 2]));
       expect(
-          (prop.encodeValue(null, new Uint8List.fromList([1, 2]))
+          (prop.encodeValue(null, Uint8List.fromList([1, 2]))
                   as datastore.BlobValue)
               .bytes,
           equals([1, 2]));
       expect(prop.decodePrimitiveValue(null, null), equals(null));
-      expect(prop.decodePrimitiveValue(null, new datastore.BlobValue([])),
-          equals([]));
-      expect(prop.decodePrimitiveValue(null, new datastore.BlobValue([5, 6])),
+      expect(
+          prop.decodePrimitiveValue(null, datastore.BlobValue([])), equals([]));
+      expect(prop.decodePrimitiveValue(null, datastore.BlobValue([5, 6])),
           equals([5, 6]));
       expect(
           prop.decodePrimitiveValue(
-              null, new datastore.BlobValue(new Uint8List.fromList([5, 6]))),
+              null, datastore.BlobValue(Uint8List.fromList([5, 6]))),
           equals([5, 6]));
     });
 
     test('datetime_property', () {
-      var utc99 = new DateTime.fromMillisecondsSinceEpoch(99, isUtc: true);
+      var utc99 = DateTime.fromMillisecondsSinceEpoch(99, isUtc: true);
 
       var prop = const DateTimeProperty(required: true);
       expect(prop.validate(null, null), isFalse);
@@ -113,7 +113,7 @@ main() {
     });
 
     test('list_property', () {
-      var prop = const ListProperty(const BoolProperty());
+      var prop = const ListProperty(BoolProperty());
 
       expect(prop.validate(null, null), isFalse);
       expect(prop.validate(null, []), isTrue);
@@ -134,10 +134,10 @@ main() {
     });
 
     test('composed_list_property', () {
-      var prop = const ListProperty(const CustomProperty());
+      var prop = const ListProperty(CustomProperty());
 
-      var c1 = new Custom()..customValue = 'c1';
-      var c2 = new Custom()..customValue = 'c2';
+      var c1 = Custom()..customValue = 'c1';
+      var c2 = Custom()..customValue = 'c2';
 
       expect(prop.validate(null, null), isFalse);
       expect(prop.validate(null, []), isTrue);
@@ -156,11 +156,10 @@ main() {
     });
 
     test('modelkey_property', () {
-      var datastoreKey = new datastore.Key(
-          [new datastore.KeyElement('MyKind', 42)],
-          partition: new datastore.Partition('foonamespace'));
-      var dbKey = new KeyMock(datastoreKey);
-      var modelDBMock = new ModelDBMock(datastoreKey, dbKey);
+      var datastoreKey = datastore.Key([datastore.KeyElement('MyKind', 42)],
+          partition: datastore.Partition('foonamespace'));
+      var dbKey = KeyMock(datastoreKey);
+      var modelDBMock = ModelDBMock(datastoreKey, dbKey);
 
       var prop = const ModelKeyProperty(required: true);
       expect(prop.validate(modelDBMock, null), isFalse);
@@ -190,7 +189,7 @@ class Custom {
 
 class CustomProperty extends StringProperty {
   const CustomProperty(
-      {String propertyName, bool required: false, bool indexed: true});
+      {String propertyName, bool required = false, bool indexed = true});
 
   bool validate(ModelDB db, Object value) {
     if (required && value == null) return false;
@@ -199,10 +198,10 @@ class CustomProperty extends StringProperty {
 
   Object decodePrimitiveValue(ModelDB db, Object value) {
     if (value == null) return null;
-    return new Custom()..customValue = value as String;
+    return Custom()..customValue = value as String;
   }
 
-  Object encodeValue(ModelDB db, Object value, {bool forComparison: false}) {
+  Object encodeValue(ModelDB db, Object value, {bool forComparison = false}) {
     if (value == null) return null;
     return (value as Custom).customValue;
   }
@@ -248,6 +247,6 @@ class ModelDBMock implements ModelDB {
   String fieldNameToPropertyName(String kind, String fieldName) => null;
   String kindName(Type type) => null;
   Object toDatastoreValue(String kind, String fieldName, Object value,
-          {bool forComparison: false}) =>
+          {bool forComparison = false}) =>
       null;
 }

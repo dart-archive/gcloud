@@ -20,32 +20,32 @@ main() {
   // all the Model/ModelDescription classes.
   assert([test1.A, test2.A, test3.A, test4.A, test5.A] != null);
 
-  newModelDB(Symbol symbol) => new ModelDBImpl.fromLibrary(symbol);
+  newModelDB(Symbol symbol) => ModelDBImpl.fromLibrary(symbol);
 
   group('model_db', () {
     group('from_library', () {
       test('duplicate_kind', () {
-        expect(new Future.sync(() {
+        expect(Future.sync(() {
           newModelDB(#gcloud.db.model_test.duplicate_kind);
         }), throwsA(isStateError));
       });
       test('duplicate_property', () {
-        expect(new Future.sync(() {
+        expect(Future.sync(() {
           newModelDB(#gcloud.db.model_test.duplicate_property);
         }), throwsA(isStateError));
       });
       test('multiple_annotations', () {
-        expect(new Future.sync(() {
+        expect(Future.sync(() {
           newModelDB(#gcloud.db.model_test.multiple_annotations);
         }), throwsA(isStateError));
       });
       test('duplicate_fieldname', () {
-        expect(new Future.sync(() {
+        expect(Future.sync(() {
           newModelDB(#gcloud.db.model_test.duplicate_fieldname);
         }), throwsA(isStateError));
       });
       test('no_default_constructor', () {
-        expect(new Future.sync(() {
+        expect(Future.sync(() {
           newModelDB(#gcloud.db.model_test.no_default_constructor);
         }), throwsA(isStateError));
       });

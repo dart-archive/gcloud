@@ -146,8 +146,8 @@ class Key {
       partition = parent.partition;
       elements.addAll(parent.elements);
     }
-    elements.add(new KeyElement(kind, id));
-    return new Key(elements, partition: partition);
+    elements.add(KeyElement(kind, id));
+    return Key(elements, partition: partition);
   }
 
   int get hashCode =>
@@ -182,14 +182,14 @@ class Key {
 ///
 // TODO(Issue #6): Add dataset-id here.
 class Partition {
-  static const Partition DEFAULT = const Partition._default();
+  static const Partition DEFAULT = Partition._default();
 
   /// The namespace of this partition.
   final String namespace;
 
   Partition(this.namespace) {
     if (namespace == '') {
-      throw new ArgumentError("'namespace' must not be empty");
+      throw ArgumentError("'namespace' must not be empty");
     }
   }
 
@@ -215,11 +215,11 @@ class KeyElement {
 
   KeyElement(this.kind, this.id) {
     if (kind == null) {
-      throw new ArgumentError("'kind' must not be null");
+      throw ArgumentError("'kind' must not be null");
     }
     if (id != null) {
       if (id is! int && id is! String) {
-        throw new ArgumentError("'id' must be either null, a String or an int");
+        throw ArgumentError("'id' must be either null, a String or an int");
       }
     }
   }
@@ -234,12 +234,11 @@ class KeyElement {
 
 /// A relation used in query filters.
 class FilterRelation {
-  static const FilterRelation LessThan = const FilterRelation._('<');
-  static const FilterRelation LessThanOrEqual = const FilterRelation._('<=');
-  static const FilterRelation GreatherThan = const FilterRelation._('>');
-  static const FilterRelation GreatherThanOrEqual =
-      const FilterRelation._('>=');
-  static const FilterRelation Equal = const FilterRelation._('==');
+  static const FilterRelation LessThan = FilterRelation._('<');
+  static const FilterRelation LessThanOrEqual = FilterRelation._('<=');
+  static const FilterRelation GreatherThan = FilterRelation._('>');
+  static const FilterRelation GreatherThanOrEqual = FilterRelation._('>=');
+  static const FilterRelation Equal = FilterRelation._('==');
 
   final String name;
 
@@ -268,8 +267,8 @@ class Filter {
 /// 'Order' class.
 /// [i.e. so one can write Order.Ascending, Order.Descending].
 class OrderDirection {
-  static const OrderDirection Ascending = const OrderDirection._('Ascending');
-  static const OrderDirection Decending = const OrderDirection._('Decending');
+  static const OrderDirection Ascending = OrderDirection._('Ascending');
+  static const OrderDirection Decending = OrderDirection._('Decending');
 
   final String name;
 
@@ -364,7 +363,7 @@ abstract class Datastore {
   /// If [crossEntityGroup] is `true`, the transaction can work on up to 5
   /// entity groups. Otherwise the transaction will be limited to only operate
   /// on a single entity group.
-  Future<Transaction> beginTransaction({bool crossEntityGroup: false});
+  Future<Transaction> beginTransaction({bool crossEntityGroup = false});
 
   /// Make modifications to the datastore.
   ///

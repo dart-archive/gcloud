@@ -83,7 +83,7 @@ const Symbol _ServiceScopeKey = #gcloud.service_scope;
 ///
 /// New service scope can be created by calling [fork] on the empty
 /// service scope.
-final _ServiceScope _emptyServiceScope = new _ServiceScope();
+final _ServiceScope _emptyServiceScope = _ServiceScope();
 
 /// Returns the current [_ServiceScope] object.
 _ServiceScope get _serviceScope =>
@@ -114,7 +114,7 @@ Future fork(Future func(), {Function onError}) {
 void register(Object key, Object value, {ScopeExitCallback onScopeExit}) {
   var serviceScope = _serviceScope;
   if (serviceScope == null) {
-    throw new StateError('Not running inside a service scope zone.');
+    throw StateError('Not running inside a service scope zone.');
   }
   serviceScope.register(key, value, onScopeExit: onScopeExit);
 }
@@ -126,7 +126,7 @@ void register(Object key, Object value, {ScopeExitCallback onScopeExit}) {
 void registerScopeExitCallback(ScopeExitCallback onScopeExitCallback) {
   var serviceScope = _serviceScope;
   if (serviceScope == null) {
-    throw new StateError('Not running inside a service scope zone.');
+    throw StateError('Not running inside a service scope zone.');
   }
   serviceScope.registerOnScopeExitCallback(onScopeExitCallback);
 }
@@ -137,7 +137,7 @@ void registerScopeExitCallback(ScopeExitCallback onScopeExitCallback) {
 Object lookup(Object key) {
   var serviceScope = _serviceScope;
   if (serviceScope == null) {
-    throw new StateError('Not running inside a service scope zone.');
+    throw StateError('Not running inside a service scope zone.');
   }
   return serviceScope.lookup(key);
 }
@@ -146,10 +146,10 @@ Object lookup(Object key) {
 class _ServiceScope {
   /// A mapping of keys to values stored inside the service scope.
   final Map<Object, _RegisteredEntry> _key2Values =
-      new Map<Object, _RegisteredEntry>();
+      Map<Object, _RegisteredEntry>();
 
   /// A set which indicates whether an object was copied from it's parent.
-  final Set<Object> _parentCopies = new Set<Object>();
+  final Set<Object> _parentCopies = Set<Object>();
 
   /// On-Scope-Exit functions which will be called in reverse insertion order.
   final List<_RegisteredEntry> _registeredEntries = [];
@@ -175,11 +175,11 @@ class _ServiceScope {
 
     bool isParentCopy = _parentCopies.contains(serviceScopeKey);
     if (!isParentCopy && _key2Values.containsKey(serviceScopeKey)) {
-      throw new ArgumentError(
+      throw ArgumentError(
           'Servie scope already contains key $serviceScopeKey.');
     }
 
-    var entry = new _RegisteredEntry(serviceScopeKey, value, onScopeExit);
+    var entry = _RegisteredEntry(serviceScopeKey, value, onScopeExit);
 
     _key2Values[serviceScopeKey] = entry;
     if (isParentCopy) _parentCopies.remove(serviceScopeKey);
@@ -194,8 +194,7 @@ class _ServiceScope {
     _ensureNotInDestroyingState();
 
     if (onScopeExitCallback != null) {
-      _registeredEntries
-          .add(new _RegisteredEntry(null, null, onScopeExitCallback));
+      _registeredEntries.add(_RegisteredEntry(null, null, onScopeExitCallback));
     }
   }
 
@@ -209,7 +208,7 @@ class _ServiceScope {
     return runZoned(() {
       var f = func();
       if (f is! Future) {
-        throw new ArgumentError('Forking a service scope zone requires the '
+        throw ArgumentError('Forking a service scope zone requires the '
             'callback function to return a future.');
       }
       return f.whenComplete(serviceScope._runScopeExitHandlers);
@@ -218,7 +217,7 @@ class _ServiceScope {
 
   void _ensureNotInDestroyingState() {
     if (_destroyed) {
-      throw new StateError(
+      throw StateError(
           'The service scope has already been exited. It is therefore '
           'forbidden to use this service scope anymore. '
           'Please make sure that your code waits for all asynchronous tasks '
@@ -228,7 +227,7 @@ class _ServiceScope {
 
   void _ensureNotInCleaningState() {
     if (_cleaningUp) {
-      throw new StateError(
+      throw StateError(
           'The service scope is in the process of cleaning up. It is therefore '
           'forbidden to make any modifications to the current service scope. '
           'Please make sure that your code waits for all asynchronous tasks '
@@ -239,7 +238,7 @@ class _ServiceScope {
   /// Copies all service scope entries to a new service scope, but not their
   /// on-scope-exit handlers.
   _ServiceScope _copy() {
-    var serviceScopeCopy = new _ServiceScope();
+    var serviceScopeCopy = _ServiceScope();
     serviceScopeCopy._key2Values.addAll(_key2Values);
     serviceScopeCopy._parentCopies.addAll(_key2Values.keys);
     return serviceScopeCopy;
@@ -259,16 +258,16 @@ class _ServiceScope {
         _key2Values.remove(registeredEntry.key);
       }
       if (registeredEntry.scopeExitCallback != null) {
-        return new Future.sync(registeredEntry.scopeExitCallback)
+        return Future.sync(registeredEntry.scopeExitCallback)
             .catchError((e, s) => errors.add(e));
       } else {
-        return new Future.value();
+        return Future.value();
       }
     }).then((_) {
       _cleaningUp = true;
       _destroyed = true;
-      if (errors.length > 0) {
-        throw new Exception(
+      if (errors.isNotEmpty) {
+        throw Exception(
             'The following errors occured while running scope exit handlers'
             ': $errors');
       }
@@ -276,7 +275,7 @@ class _ServiceScope {
   }
 }
 
-typedef Future ScopeExitCallback();
+typedef ScopeExitCallback = Future Function();
 
 class _RegisteredEntry {
   final Object key;

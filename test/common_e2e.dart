@@ -33,7 +33,7 @@ const String DEFAULT_KEY_LOCATION =
 //
 // So this can make tests flaky. The following delay is introduced as an
 // attempt to account for that.
-const STORAGE_LIST_DELAY = const Duration(seconds: 5);
+const STORAGE_LIST_DELAY = Duration(seconds: 5);
 
 bool onBot() {
   // When running on the package-bot the current user is chrome-bot.
@@ -49,7 +49,7 @@ bool onBot() {
 // Get the service key from the specified location.
 Future<String> serviceKeyJson(String serviceKeyLocation) {
   if (!serviceKeyLocation.startsWith('gs://')) {
-    return new File(serviceKeyLocation).readAsString();
+    return File(serviceKeyLocation).readAsString();
   }
   Future<ProcessResult> future;
   if (onBot()) {
@@ -62,21 +62,21 @@ Future<String> serviceKeyJson(String serviceKeyLocation) {
   }
   return future.then((result) {
     if (result.exitCode != 0) {
-      throw new Exception('Failed to run gsutil, ${result.stderr}');
+      throw Exception('Failed to run gsutil, ${result.stderr}');
     }
     return result.stdout.toString();
   });
 }
 
-typedef Future AuthCallback(String project, http.Client client);
+typedef AuthCallback = Future Function(String project, http.Client client);
 
 Future withAuthClient(List<String> scopes, AuthCallback callback,
-    {bool trace: false}) {
+    {bool trace = false}) {
   String project = Platform.environment[PROJECT_ENV];
   String serviceKeyLocation = Platform.environment[SERVICE_KEY_LOCATION_ENV];
 
   if (!onBot() && (project == null || serviceKeyLocation == null)) {
-    throw new StateError(
+    throw StateError(
         'Environment variables $PROJECT_ENV and $SERVICE_KEY_LOCATION_ENV '
         'required when not running on the package bot');
   }
@@ -86,11 +86,11 @@ Future withAuthClient(List<String> scopes, AuthCallback callback,
       serviceKeyLocation != null ? serviceKeyLocation : DEFAULT_KEY_LOCATION;
 
   return serviceKeyJson(serviceKeyLocation).then((keyJson) {
-    var creds = new auth.ServiceAccountCredentials.fromJson(keyJson);
+    var creds = auth.ServiceAccountCredentials.fromJson(keyJson);
     return auth
         .clientViaServiceAccount(creds, scopes)
         .then((http.Client client) {
-      if (trace) client = new TraceClient(client);
+      if (trace) client = TraceClient(client);
       return callback(project, client);
     });
   });

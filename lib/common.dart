@@ -26,7 +26,7 @@ abstract class Page<T> {
   Future<Page<T>> next({int pageSize});
 }
 
-typedef Future<Page<T>> FirstPageProvider<T>(int pageSize);
+typedef FirstPageProvider<T> = Future<Page<T>> Function(int pageSize);
 
 /// Helper class to turn a series of pages into a stream.
 class StreamFromPages<T> {
@@ -39,7 +39,7 @@ class StreamFromPages<T> {
   StreamController<T> _controller;
 
   StreamFromPages(this._firstPageProvider) {
-    _controller = new StreamController<T>(
+    _controller = StreamController<T>(
         sync: true,
         onListen: _onListen,
         onPause: _onPause,

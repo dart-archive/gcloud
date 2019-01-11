@@ -15,16 +15,16 @@ class _AbsoluteName {
 
   _AbsoluteName.parse(String absoluteName) {
     if (!absoluteName.startsWith(_ABSOLUTE_PREFIX)) {
-      throw new FormatException("Absolute name '$absoluteName' does not start "
+      throw FormatException("Absolute name '$absoluteName' does not start "
           "with '$_ABSOLUTE_PREFIX'");
     }
     int index = absoluteName.indexOf('/', _ABSOLUTE_PREFIX.length);
     if (index == -1 || index == _ABSOLUTE_PREFIX.length) {
-      throw new FormatException("Absolute name '$absoluteName' does not have "
+      throw FormatException("Absolute name '$absoluteName' does not have "
           "a bucket name");
     }
     if (index == absoluteName.length - 1) {
-      throw new FormatException("Absolute name '$absoluteName' does not have "
+      throw FormatException("Absolute name '$absoluteName' does not have "
           "an object name");
     }
     bucketName = absoluteName.substring(_ABSOLUTE_PREFIX.length, index);
@@ -38,11 +38,11 @@ class _StorageImpl implements Storage {
   final storage_api.StorageApi _api;
 
   _StorageImpl(http.Client client, this.project)
-      : _api = new storage_api.StorageApi(client);
+      : _api = storage_api.StorageApi(client);
 
   Future createBucket(String bucketName,
       {PredefinedAcl predefinedAcl, Acl acl}) {
-    var bucket = new storage_api.Bucket()..name = bucketName;
+    var bucket = storage_api.Bucket()..name = bucketName;
     var predefinedName = predefinedAcl != null ? predefinedAcl._name : null;
     if (acl != null) {
       bucket.acl = acl._toBucketAccessControlList();
@@ -58,7 +58,7 @@ class _StorageImpl implements Storage {
 
   Bucket bucket(String bucketName,
       {PredefinedAcl defaultPredefinedObjectAcl, Acl defaultObjectAcl}) {
-    return new _BucketImpl(
+    return _BucketImpl(
         this, bucketName, defaultPredefinedObjectAcl, defaultObjectAcl);
   }
 
@@ -76,27 +76,27 @@ class _StorageImpl implements Storage {
   Future<BucketInfo> bucketInfo(String bucketName) {
     return _api.buckets
         .get(bucketName, projection: 'full')
-        .then((bucket) => new _BucketInfoImpl(bucket));
+        .then((bucket) => _BucketInfoImpl(bucket));
   }
 
   Stream<String> listBucketNames() {
     Future<_BucketPageImpl> firstPage(int pageSize) {
       return _listBuckets(pageSize, null)
-          .then((response) => new _BucketPageImpl(this, pageSize, response));
+          .then((response) => _BucketPageImpl(this, pageSize, response));
     }
 
-    return new StreamFromPages<String>(firstPage).stream;
+    return StreamFromPages<String>(firstPage).stream;
   }
 
-  Future<Page<String>> pageBucketNames({int pageSize: 50}) {
+  Future<Page<String>> pageBucketNames({int pageSize = 50}) {
     return _listBuckets(pageSize, null).then((response) {
-      return new _BucketPageImpl(this, pageSize, response);
+      return _BucketPageImpl(this, pageSize, response);
     });
   }
 
   Future copyObject(String src, String dest) {
-    var srcName = new _AbsoluteName.parse(src);
-    var destName = new _AbsoluteName.parse(dest);
+    var srcName = _AbsoluteName.parse(src);
+    var destName = _AbsoluteName.parse(dest);
     return _api.objects
         .copy(null, srcName.bucketName, srcName.objectName, destName.bucketName,
             destName.objectName)
@@ -122,7 +122,7 @@ class _BucketInfoImpl implements BucketInfo {
 
   String get id => _bucket.id;
 
-  Acl get acl => new Acl._fromBucketAcl(_bucket);
+  Acl get acl => Acl._fromBucketAcl(_bucket);
 }
 
 /// Bucket API implementation providing access to objects.
@@ -148,7 +148,7 @@ class _BucketImpl implements Bucket {
       String contentType}) {
     storage_api.Object object;
     if (metadata == null) {
-      metadata = new _ObjectMetadata(acl: acl, contentType: contentType);
+      metadata = _ObjectMetadata(acl: acl, contentType: contentType);
     } else {
       if (acl != null) {
         metadata = metadata.replace(acl: acl);
@@ -176,7 +176,7 @@ class _BucketImpl implements Bucket {
     // Fill properties not passed in metadata.
     object.name = objectName;
 
-    var sink = new _MediaUploadStreamSink(
+    var sink = _MediaUploadStreamSink(
         _api, bucketName, objectName, object, predefinedName, length);
     return sink;
   }
@@ -202,22 +202,21 @@ class _BucketImpl implements Bucket {
     }
 
     if (offset != 0 && length == null) {
-      throw new ArgumentError(
-          'length must have a value if offset is non-zero.');
+      throw ArgumentError('length must have a value if offset is non-zero.');
     }
 
     var options = storage_api.DownloadOptions.FullMedia;
 
     if (length != null) {
       if (length <= 0) {
-        throw new ArgumentError.value(
+        throw ArgumentError.value(
             length, 'length', 'If provided, length must greater than zero.');
       }
       // For ByteRange, end is *inclusive*.
       var end = offset + length - 1;
-      var range = new storage_api.ByteRange(offset, end);
+      var range = storage_api.ByteRange(offset, end);
       assert(range.length == length);
-      options = new storage_api.PartialDownloadOptions(range);
+      options = storage_api.PartialDownloadOptions(range);
     }
 
     commons.Media media = await _api.objects
@@ -229,7 +228,7 @@ class _BucketImpl implements Bucket {
   Future<ObjectInfo> info(String objectName) {
     return _api.objects
         .get(bucketName, objectName, projection: 'full')
-        .then((object) => new _ObjectInfoImpl(object as storage_api.Object));
+        .then((object) => _ObjectInfoImpl(object as storage_api.Object));
   }
 
   Future delete(String objectName) {
@@ -239,18 +238,18 @@ class _BucketImpl implements Bucket {
   Stream<BucketEntry> list({String prefix}) {
     Future<_ObjectPageImpl> firstPage(int pageSize) {
       return _listObjects(bucketName, prefix, _DIRECTORY_DELIMITER, 50, null)
-          .then((response) =>
-              new _ObjectPageImpl(this, prefix, pageSize, response));
+          .then(
+              (response) => _ObjectPageImpl(this, prefix, pageSize, response));
     }
 
-    return new StreamFromPages<BucketEntry>(firstPage).stream;
+    return StreamFromPages<BucketEntry>(firstPage).stream;
   }
 
-  Future<Page<BucketEntry>> page({String prefix, int pageSize: 50}) {
+  Future<Page<BucketEntry>> page({String prefix, int pageSize = 50}) {
     return _listObjects(
             bucketName, prefix, _DIRECTORY_DELIMITER, pageSize, null)
         .then((response) {
-      return new _ObjectPageImpl(this, prefix, pageSize, response);
+      return _ObjectPageImpl(this, prefix, pageSize, response);
     });
   }
 
@@ -259,10 +258,10 @@ class _BucketImpl implements Bucket {
     _ObjectMetadata md = metadata;
     var object = md._object;
     if (md._object.acl == null && _defaultObjectAcl == null) {
-      throw new ArgumentError('ACL is required for update');
+      throw ArgumentError('ACL is required for update');
     }
     if (md.contentType == null) {
-      throw new ArgumentError('Content-Type is required for update');
+      throw ArgumentError('Content-Type is required for update');
     }
     if (md._object.acl == null) {
       md._object.acl = _defaultObjectAcl._toObjectAccessControlList();
@@ -287,7 +286,7 @@ class _BucketPageImpl implements Page<String> {
   final List<String> items;
 
   _BucketPageImpl(this._storage, this._pageSize, storage_api.Buckets response)
-      : items = new List(response.items != null ? response.items.length : 0),
+      : items = List(response.items != null ? response.items.length : 0),
         _nextPageToken = response.nextPageToken {
     for (int i = 0; i < items.length; i++) {
       items[i] = response.items[i].name;
@@ -297,11 +296,11 @@ class _BucketPageImpl implements Page<String> {
   bool get isLast => _nextPageToken == null;
 
   Future<Page<String>> next({int pageSize}) {
-    if (isLast) return new Future.value(null);
+    if (isLast) return Future.value(null);
     if (pageSize == null) pageSize = this._pageSize;
 
     return _storage._listBuckets(pageSize, _nextPageToken).then((response) {
-      return new _BucketPageImpl(_storage, pageSize, response);
+      return _BucketPageImpl(_storage, pageSize, response);
     });
   }
 }
@@ -315,19 +314,19 @@ class _ObjectPageImpl implements Page<BucketEntry> {
 
   _ObjectPageImpl(
       this._bucket, this._prefix, this._pageSize, storage_api.Objects response)
-      : items = new List((response.items != null ? response.items.length : 0) +
+      : items = List((response.items != null ? response.items.length : 0) +
             (response.prefixes != null ? response.prefixes.length : 0)),
         _nextPageToken = response.nextPageToken {
     var prefixes = 0;
     if (response.prefixes != null) {
       for (int i = 0; i < response.prefixes.length; i++) {
-        items[i] = new BucketEntry._directory(response.prefixes[i]);
+        items[i] = BucketEntry._directory(response.prefixes[i]);
       }
       prefixes = response.prefixes.length;
     }
     if (response.items != null) {
       for (int i = 0; i < response.items.length; i++) {
-        items[prefixes + i] = new BucketEntry._object(response.items[i].name);
+        items[prefixes + i] = BucketEntry._object(response.items[i].name);
       }
     }
   }
@@ -335,14 +334,14 @@ class _ObjectPageImpl implements Page<BucketEntry> {
   bool get isLast => _nextPageToken == null;
 
   Future<Page<BucketEntry>> next({int pageSize}) {
-    if (isLast) return new Future.value(null);
+    if (isLast) return Future.value(null);
     if (pageSize == null) pageSize = this._pageSize;
 
     return _bucket
         ._listObjects(_bucket.bucketName, _prefix, _DIRECTORY_DELIMITER,
             pageSize, _nextPageToken)
         .then((response) {
-      return new _ObjectPageImpl(_bucket, _prefix, pageSize, response);
+      return _ObjectPageImpl(_bucket, _prefix, pageSize, response);
     });
   }
 }
@@ -362,7 +361,7 @@ class _ObjectInfoImpl implements ObjectInfo {
 
   _ObjectInfoImpl(storage_api.Object object)
       : _object = object,
-        _metadata = new _ObjectMetadata._(object);
+        _metadata = _ObjectMetadata._(object);
 
   String get name => _object.name;
 
@@ -388,7 +387,7 @@ class _ObjectInfoImpl implements ObjectInfo {
 
   ObjectGeneration get generation {
     if (_generation == null) {
-      _generation = new _ObjectGenerationImpl(
+      _generation = _ObjectGenerationImpl(
           _object.generation, int.parse(_object.metageneration));
     }
     return _generation;
@@ -412,7 +411,7 @@ class _ObjectMetadata implements ObjectMetadata {
       String contentDisposition,
       String contentLanguage,
       Map<String, String> custom})
-      : _object = new storage_api.Object() {
+      : _object = storage_api.Object() {
     _object.acl = acl != null ? acl._toObjectAccessControlList() : null;
     _object.contentType = contentType;
     _object.contentEncoding = contentEncoding;
@@ -426,7 +425,7 @@ class _ObjectMetadata implements ObjectMetadata {
 
   Acl get acl {
     if (_cachedAcl == null) {
-      _cachedAcl = new Acl._fromObjectAcl(_object);
+      _cachedAcl = Acl._fromObjectAcl(_object);
     }
     return _cachedAcl;
   }
@@ -443,7 +442,7 @@ class _ObjectMetadata implements ObjectMetadata {
 
   ObjectGeneration get generation {
     if (_cachedGeneration == null) {
-      _cachedGeneration = new ObjectGeneration(
+      _cachedGeneration = ObjectGeneration(
           _object.generation, int.parse(_object.metageneration));
     }
     return _cachedGeneration;
@@ -452,7 +451,7 @@ class _ObjectMetadata implements ObjectMetadata {
   Map<String, String> get custom {
     if (_object.metadata == null) return null;
     if (_cachedCustom == null) {
-      _cachedCustom = new UnmodifiableMapView<String, String>(_object.metadata);
+      _cachedCustom = UnmodifiableMapView<String, String>(_object.metadata);
     }
     return _cachedCustom;
   }
@@ -465,7 +464,7 @@ class _ObjectMetadata implements ObjectMetadata {
       String contentDisposition,
       String contentLanguage,
       Map<String, String> custom}) {
-    return new _ObjectMetadata(
+    return _ObjectMetadata(
         acl: acl != null ? acl : this.acl,
         contentType: contentType != null ? contentType : this.contentType,
         contentEncoding:
@@ -476,7 +475,7 @@ class _ObjectMetadata implements ObjectMetadata {
             : this.contentEncoding,
         contentLanguage:
             contentLanguage != null ? contentLanguage : this.contentEncoding,
-        custom: custom != null ? new Map.from(custom) : this.custom);
+        custom: custom != null ? Map.from(custom) : this.custom);
   }
 }
 
@@ -493,11 +492,11 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
   final int _length;
   final int _maxNormalUploadLength;
   int _bufferLength = 0;
-  final List<List<int>> buffer = new List<List<int>>();
-  final _controller = new StreamController<List<int>>(sync: true);
+  final List<List<int>> buffer = List<List<int>>();
+  final _controller = StreamController<List<int>>(sync: true);
   StreamSubscription _subscription;
   StreamController<List<int>> _resumableController;
-  final _doneCompleter = new Completer<ObjectInfo>();
+  final _doneCompleter = Completer<ObjectInfo>();
 
   static const int _STATE_LENGTH_KNOWN = 0;
   static const int _STATE_PROBING_LENGTH = 1;
@@ -552,7 +551,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
       if (_bufferLength > _maxNormalUploadLength) {
         // Start resumable upload.
         // TODO: Avoid using another stream-controller.
-        _resumableController = new StreamController<List<int>>(sync: true);
+        _resumableController = StreamController<List<int>>(sync: true);
         buffer.forEach(_resumableController.add);
         _startResumableUpload(_resumableController.stream, _length);
         _state = _STATE_DECIDED_RESUMABLE;
@@ -567,8 +566,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
     if (_state == _STATE_PROBING_LENGTH) {
       // As the data is already cached don't bother to wait on somebody
       // listening on the stream before adding the data.
-      _startNormalUpload(
-          new Stream<List<int>>.fromIterable(buffer), _bufferLength);
+      _startNormalUpload(Stream<List<int>>.fromIterable(buffer), _bufferLength);
     } else {
       _resumableController.close();
     }
@@ -596,7 +594,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
     var contentType = _object.contentType != null
         ? _object.contentType
         : 'application/octet-stream';
-    var media = new storage_api.Media(stream, length, contentType: contentType);
+    var media = storage_api.Media(stream, length, contentType: contentType);
     _api.objects
         .insert(_object, _bucketName,
             name: _objectName,
@@ -604,7 +602,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
             uploadMedia: media,
             uploadOptions: storage_api.UploadOptions.Default)
         .then((response) {
-      _doneCompleter.complete(new _ObjectInfoImpl(response));
+      _doneCompleter.complete(_ObjectInfoImpl(response));
     }, onError: _completeError);
   }
 
@@ -612,7 +610,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
     var contentType = _object.contentType != null
         ? _object.contentType
         : 'application/octet-stream';
-    var media = new storage_api.Media(stream, length, contentType: contentType);
+    var media = storage_api.Media(stream, length, contentType: contentType);
     _api.objects
         .insert(_object, _bucketName,
             name: _objectName,
@@ -620,7 +618,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
             uploadMedia: media,
             uploadOptions: storage_api.UploadOptions.Resumable)
         .then((response) {
-      _doneCompleter.complete(new _ObjectInfoImpl(response));
+      _doneCompleter.complete(_ObjectInfoImpl(response));
     }, onError: _completeError);
   }
 }

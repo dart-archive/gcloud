@@ -13,7 +13,7 @@ import 'package:test/test.dart';
 import '../common_e2e.dart';
 
 String generateBucketName() {
-  var id = new DateTime.now().millisecondsSinceEpoch;
+  var id = DateTime.now().millisecondsSinceEpoch;
   return 'dart-e2e-test-$id';
 }
 
@@ -24,7 +24,7 @@ const int MB = 1024 * 1024;
 const int maxNormalUpload = 1 * MB;
 const int minResumableUpload = maxNormalUpload + 1;
 final bytesResumableUpload =
-    new List<int>.generate(minResumableUpload, (e) => e & 255);
+    List<int>.generate(minResumableUpload, (e) => e & 255);
 
 void main() {
   Storage storage;
@@ -36,7 +36,7 @@ void main() {
       testBucketName = generateBucketName();
 
       // Share the same storage connection for all tests.
-      storage = new Storage(httpClient, project);
+      storage = Storage(httpClient, project);
 
       // Create a shared bucket for all object tests.
       return storage.createBucket(testBucketName).then((_) {
@@ -48,7 +48,7 @@ void main() {
   tearDownAll(() {
     // Deleting a bucket relies on eventually consistent behaviour, hence
     // the delay in attempt to prevent test flakiness.
-    return new Future.delayed(STORAGE_LIST_DELAY, () {
+    return Future.delayed(STORAGE_LIST_DELAY, () {
       return storage.deleteBucket(testBucketName);
     });
   });
@@ -187,26 +187,22 @@ void main() {
           }));
         }
 
-        Acl acl1 = new Acl(
-            [new AclEntry(AclScope.allAuthenticated, AclPermission.WRITE)]);
-        Acl acl2 = new Acl([
-          new AclEntry(AclScope.allUsers, AclPermission.WRITE),
-          new AclEntry(
-              new AccountScope('sgjesse@google.com'), AclPermission.WRITE)
+        Acl acl1 =
+            Acl([AclEntry(AclScope.allAuthenticated, AclPermission.WRITE)]);
+        Acl acl2 = Acl([
+          AclEntry(AclScope.allUsers, AclPermission.WRITE),
+          AclEntry(AccountScope('sgjesse@google.com'), AclPermission.WRITE)
         ]);
-        Acl acl3 = new Acl([
-          new AclEntry(AclScope.allUsers, AclPermission.WRITE),
-          new AclEntry(
-              new AccountScope('sgjesse@google.com'), AclPermission.WRITE),
-          new AclEntry(new GroupScope('misc@dartlang.org'), AclPermission.READ)
+        Acl acl3 = Acl([
+          AclEntry(AclScope.allUsers, AclPermission.WRITE),
+          AclEntry(AccountScope('sgjesse@google.com'), AclPermission.WRITE),
+          AclEntry(GroupScope('misc@dartlang.org'), AclPermission.READ)
         ]);
-        Acl acl4 = new Acl([
-          new AclEntry(AclScope.allUsers, AclPermission.WRITE),
-          new AclEntry(
-              new AccountScope('sgjesse@google.com'), AclPermission.WRITE),
-          new AclEntry(new GroupScope('misc@dartlang.org'), AclPermission.READ),
-          new AclEntry(
-              new DomainScope('dartlang.org'), AclPermission.FULL_CONTROL)
+        Acl acl4 = Acl([
+          AclEntry(AclScope.allUsers, AclPermission.WRITE),
+          AclEntry(AccountScope('sgjesse@google.com'), AclPermission.WRITE),
+          AclEntry(GroupScope('misc@dartlang.org'), AclPermission.READ),
+          AclEntry(DomainScope('dartlang.org'), AclPermission.FULL_CONTROL)
         ]);
 
         // The expected length of the returned ACL is one longer than the one
@@ -252,8 +248,8 @@ void main() {
           }));
         }
 
-        var metadata1 = new ObjectMetadata(contentType: 'text/plain');
-        var metadata2 = new ObjectMetadata(
+        var metadata1 = ObjectMetadata(contentType: 'text/plain');
+        var metadata2 = ObjectMetadata(
             contentType: 'text/plain',
             cacheControl: 'no-cache',
             contentDisposition: 'attachment; filename="test.txt"',

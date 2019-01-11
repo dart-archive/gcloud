@@ -4,46 +4,30 @@
 
 part of gcloud.db;
 
-/**
- * A database of all registered models.
- *
- * Responsible for converting between dart model objects and datastore entities.
- */
+/// A database of all registered models.
+///
+/// Responsible for converting between dart model objects and datastore entities.
 abstract class ModelDB {
-  /**
-   * Converts a [ds.Key] to a [Key].
-   */
+  /// Converts a [ds.Key] to a [Key].
   Key fromDatastoreKey(ds.Key datastoreKey);
 
-  /**
-   * Converts a [Key] to a [ds.Key].
-   */
+  /// Converts a [Key] to a [ds.Key].
   ds.Key toDatastoreKey(Key dbKey);
 
-  /**
-   * Converts a [Model] instance to a [ds.Entity].
-   */
+  /// Converts a [Model] instance to a [ds.Entity].
   ds.Entity toDatastoreEntity(Model model);
 
-  /**
-   * Converts a [ds.Entity] to a [Model] instance.
-   */
+  /// Converts a [ds.Entity] to a [Model] instance.
   T fromDatastoreEntity<T extends Model>(ds.Entity entity);
 
-  /**
-   * Returns the kind name for instances of [type].
-   */
+  /// Returns the kind name for instances of [type].
   String kindName(Type type);
 
-  /**
-   * Returns the property name used for [fieldName]
-   */
+  /// Returns the property name used for [fieldName]
   // TODO: Get rid of this eventually.
   String fieldNameToPropertyName(String kind, String fieldName);
 
-  /**
-   * Converts [value] according to the [Property] named [fieldName] in [kind].
-   */
+  /// Converts [value] according to the [Property] named [fieldName] in [kind].
   Object toDatastoreValue(String kind, String fieldName, Object value,
-      {bool forComparison: false});
+      {bool forComparison = false});
 }

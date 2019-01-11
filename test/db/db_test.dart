@@ -13,7 +13,7 @@ class Foobar extends Model {}
 main() {
   group('db', () {
     test('default-partition', () {
-      var db = new DatastoreDB(null);
+      var db = DatastoreDB(null);
 
       // Test defaultPartition
       expect(db.defaultPartition.namespace, isNull);
@@ -30,8 +30,8 @@ main() {
     });
 
     test('non-default-partition', () {
-      var nsDb = new DatastoreDB(null,
-          defaultPartition: new Partition('foobar-namespace'));
+      var nsDb =
+          DatastoreDB(null, defaultPartition: Partition('foobar-namespace'));
 
       // Test defaultPartition
       expect(nsDb.defaultPartition.namespace, 'foobar-namespace');

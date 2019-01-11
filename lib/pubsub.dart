@@ -112,7 +112,7 @@ void registerPubSubService(PubSub pubsub) {
 ///
 abstract class PubSub {
   /// List of required OAuth2 scopes for Pub/Sub operation.
-  static const SCOPES = const [pubsub.PubsubApi.PubsubScope];
+  static const SCOPES = [pubsub.PubsubApi.PubsubScope];
 
   /// Access Pub/Sub using an authenticated client.
   ///
@@ -126,8 +126,8 @@ abstract class PubSub {
   factory PubSub(http.Client client, String project) {
     var emulator = Platform.environment['PUBSUB_EMULATOR_HOST'];
     return emulator == null
-        ? new _PubSubImpl(client, project)
-        : new _PubSubImpl.rootUrl(client, project, "http://$emulator/");
+        ? _PubSubImpl(client, project)
+        : _PubSubImpl.rootUrl(client, project, "http://$emulator/");
   }
 
   /// The name of the project.
@@ -166,7 +166,7 @@ abstract class PubSub {
   ///
   /// Returns a `Future` which completes with a `Page` object holding the
   /// first page. Use the `Page` object to move to the next page of topics.
-  Future<Page<Topic>> pageTopics({int pageSize: 50});
+  Future<Page<Topic>> pageTopics({int pageSize = 50});
 
   /// Create a new subscription named [name] listening on topic [topic].
   ///
@@ -220,7 +220,7 @@ abstract class PubSub {
   /// first page. Use the `Page` object to move to the next page of
   /// subscriptions.
   Future<Page<Subscription>> pageSubscriptions(
-      {String topic, int pageSize: 50});
+      {String topic, int pageSize = 50});
 }
 
 /// A Pub/Sub topic.
@@ -337,7 +337,7 @@ abstract class Subscription {
   ///
   /// If [wait] is `false`, the method will complete the returned `Future`
   /// with `null` if it finds that there are no messages available.
-  Future<PullEvent> pull({bool wait: true});
+  Future<PullEvent> pull({bool wait = true});
 }
 
 /// The content of a Pub/Sub message.

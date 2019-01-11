@@ -113,26 +113,26 @@ class Acl {
   int _cachedHashCode;
 
   /// The entries in the ACL.
-  List<AclEntry> get entries => new UnmodifiableListView<AclEntry>(_entries);
+  List<AclEntry> get entries => UnmodifiableListView<AclEntry>(_entries);
 
   /// Create a new ACL with a list of ACL entries.
-  Acl(Iterable<AclEntry> entries) : _entries = new List.from(entries);
+  Acl(Iterable<AclEntry> entries) : _entries = List.from(entries);
 
   Acl._fromBucketAcl(storage_api.Bucket bucket)
-      : _entries = new List(bucket.acl == null ? 0 : bucket.acl.length) {
+      : _entries = List(bucket.acl == null ? 0 : bucket.acl.length) {
     if (bucket.acl != null) {
       for (int i = 0; i < bucket.acl.length; i++) {
-        _entries[i] = new AclEntry(_aclScopeFromEntity(bucket.acl[i].entity),
+        _entries[i] = AclEntry(_aclScopeFromEntity(bucket.acl[i].entity),
             _aclPermissionFromRole(bucket.acl[i].role));
       }
     }
   }
 
   Acl._fromObjectAcl(storage_api.Object object)
-      : _entries = new List(object.acl == null ? 0 : object.acl.length) {
+      : _entries = List(object.acl == null ? 0 : object.acl.length) {
     if (object.acl != null) {
       for (int i = 0; i < object.acl.length; i++) {
-        _entries[i] = new AclEntry(_aclScopeFromEntity(object.acl[i].entity),
+        _entries[i] = AclEntry(_aclScopeFromEntity(object.acl[i].entity),
             _aclPermissionFromRole(object.acl[i].role));
       }
     }
@@ -143,14 +143,14 @@ class Acl {
       String tmp = entity.substring(5);
       int at = tmp.indexOf('@');
       if (at != -1) {
-        return new AccountScope(tmp);
+        return AccountScope(tmp);
       } else {
-        return new StorageIdScope(tmp);
+        return StorageIdScope(tmp);
       }
     } else if (entity.startsWith('group-')) {
-      return new GroupScope(entity.substring(6));
+      return GroupScope(entity.substring(6));
     } else if (entity.startsWith('domain-')) {
-      return new DomainScope(entity.substring(7));
+      return DomainScope(entity.substring(7));
     } else if (entity.startsWith('allAuthenticatedUsers-')) {
       return AclScope.allAuthenticated;
     } else if (entity.startsWith('allUsers-')) {
@@ -159,18 +159,17 @@ class Acl {
       String tmp = entity.substring(8);
       int dash = tmp.indexOf('-');
       if (dash != -1) {
-        return new ProjectScope(
-            tmp.substring(dash + 1), tmp.substring(0, dash));
+        return ProjectScope(tmp.substring(dash + 1), tmp.substring(0, dash));
       }
     }
-    return new OpaqueScope(entity);
+    return OpaqueScope(entity);
   }
 
   AclPermission _aclPermissionFromRole(String role) {
     if (role == 'READER') return AclPermission.READ;
     if (role == 'WRITER') return AclPermission.WRITE;
     if (role == 'OWNER') return AclPermission.FULL_CONTROL;
-    throw new UnsupportedError(
+    throw UnsupportedError(
         "Server returned a unsupported permission role '$role'");
   }
 
@@ -216,14 +215,14 @@ class AclEntry {
   AclEntry(this.scope, this.permission);
 
   storage_api.BucketAccessControl _toBucketAccessControl() {
-    var acl = new storage_api.BucketAccessControl();
+    var acl = storage_api.BucketAccessControl();
     acl.entity = scope._storageEntity;
     acl.role = permission._storageBucketRole;
     return acl;
   }
 
   storage_api.ObjectAccessControl _toObjectAccessControl() {
-    var acl = new storage_api.ObjectAccessControl();
+    var acl = storage_api.ObjectAccessControl();
     acl.entity = scope._storageEntity;
     acl.role = permission._storageObjectRole;
     return acl;
@@ -291,10 +290,10 @@ abstract class AclScope {
   final int _type;
 
   /// ACL scope for all authenticated users.
-  static AllAuthenticatedScope allAuthenticated = new AllAuthenticatedScope();
+  static AllAuthenticatedScope allAuthenticated = AllAuthenticatedScope();
 
   /// ACL scope for all users.
-  static AllUsersScope allUsers = new AllUsersScope();
+  static AllUsersScope allUsers = AllUsersScope();
 
   AclScope._(this._type, this._id);
 
@@ -397,17 +396,17 @@ class AllUsersScope extends AclScope {
 /// Permissions for individual scopes in an ACL.
 class AclPermission {
   /// Provide read access.
-  static const READ = const AclPermission._('READER');
+  static const READ = AclPermission._('READER');
 
   /// Provide write access.
   ///
   /// For objects this permission is the same as [FULL_CONTROL].
-  static const WRITE = const AclPermission._('WRITER');
+  static const WRITE = AclPermission._('WRITER');
 
   /// Provide full control.
   ///
   /// For objects this permission is the same as [WRITE].
-  static const FULL_CONTROL = const AclPermission._('OWNER');
+  static const FULL_CONTROL = AclPermission._('OWNER');
 
   final String _id;
 
@@ -442,34 +441,33 @@ class PredefinedAcl {
   /// Predefined ACL for the 'authenticated-read' ACL. Applies to both buckets
   /// and objects.
   static const PredefinedAcl authenticatedRead =
-      const PredefinedAcl._('authenticatedRead');
+      PredefinedAcl._('authenticatedRead');
 
   /// Predefined ACL for the 'private' ACL. Applies to both buckets
   /// and objects.
-  static const PredefinedAcl private = const PredefinedAcl._('private');
+  static const PredefinedAcl private = PredefinedAcl._('private');
 
   /// Predefined ACL for the 'project-private' ACL. Applies to both buckets
   /// and objects.
-  static const PredefinedAcl projectPrivate =
-      const PredefinedAcl._('projectPrivate');
+  static const PredefinedAcl projectPrivate = PredefinedAcl._('projectPrivate');
 
   /// Predefined ACL for the 'public-read' ACL. Applies to both buckets
   /// and objects.
-  static const PredefinedAcl publicRead = const PredefinedAcl._('publicRead');
+  static const PredefinedAcl publicRead = PredefinedAcl._('publicRead');
 
   /// Predefined ACL for the 'public-read-write' ACL. Applies only to buckets.
   static const PredefinedAcl publicReadWrite =
-      const PredefinedAcl._('publicReadWrite');
+      PredefinedAcl._('publicReadWrite');
 
   /// Predefined ACL for the 'bucket-owner-full-control' ACL. Applies only to
   /// objects.
   static const PredefinedAcl bucketOwnerFullControl =
-      const PredefinedAcl._('bucketOwnerFullControl');
+      PredefinedAcl._('bucketOwnerFullControl');
 
   /// Predefined ACL for the 'bucket-owner-read' ACL. Applies only to
   /// objects.
   static const PredefinedAcl bucketOwnerRead =
-      const PredefinedAcl._('bucketOwnerRead');
+      PredefinedAcl._('bucketOwnerRead');
 
   String toString() => 'PredefinedAcl($_name)';
 }
@@ -495,7 +493,7 @@ abstract class BucketInfo {
 /// Access to Cloud Storage
 abstract class Storage {
   /// List of required OAuth2 scopes for Cloud Storage operation.
-  static const List<String> SCOPES = const <String>[
+  static const List<String> SCOPES = <String>[
     storage_api.StorageApi.DevstorageFullControlScope
   ];
 
@@ -567,7 +565,7 @@ abstract class Storage {
   ///
   /// Returns a [Future] which completes with a `Page` object holding the
   /// first page. Use the `Page` object to move to the next page of buckets.
-  Future<Page<String>> pageBucketNames({int pageSize: 50});
+  Future<Page<String>> pageBucketNames({int pageSize = 50});
 
   /// Copy an object.
   ///
@@ -797,5 +795,5 @@ abstract class Bucket {
   ///
   /// Returns a `Future` which completes with a `Page` object holding the
   /// first page. Use the `Page` object to move to the next page.
-  Future<Page<BucketEntry>> page({String prefix, int pageSize: 50});
+  Future<Page<BucketEntry>> page({String prefix, int pageSize = 50});
 }
