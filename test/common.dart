@@ -13,12 +13,12 @@ import 'package:test/test.dart';
 
 const CONTENT_TYPE_JSON_UTF8 = 'application/json; charset=utf-8';
 
-const RESPONSE_HEADERS = const {'content-type': CONTENT_TYPE_JSON_UTF8};
+const RESPONSE_HEADERS = {'content-type': CONTENT_TYPE_JSON_UTF8};
 
 class MockClient extends http.BaseClient {
-  static const bytes = const [1, 2, 3, 4, 5];
+  static const bytes = [1, 2, 3, 4, 5];
 
-  final _bytesHeaderRegexp = new RegExp(r"bytes=(\d+)-(\d+)");
+  final _bytesHeaderRegexp = RegExp(r"bytes=(\d+)-(\d+)");
 
   final String hostname;
   final String rootPath;
@@ -31,14 +31,14 @@ class MockClient extends http.BaseClient {
       : hostname = hostname,
         rootPath = rootPath,
         rootUri = Uri.parse('https://$hostname$rootPath') {
-    client = new http_testing.MockClient(handler);
+    client = http_testing.MockClient(handler);
   }
 
   void register(
       String method, Pattern path, http_testing.MockClientHandler handler) {
-    var map = mocks.putIfAbsent(method, () => new Map());
+    var map = mocks.putIfAbsent(method, () => Map());
     if (path is RegExp) {
-      map[new RegExp('$rootPath${path.pattern}')] = handler;
+      map[RegExp('$rootPath${path.pattern}')] = handler;
     } else {
       map['$rootPath$path'] = handler;
     }
@@ -46,13 +46,13 @@ class MockClient extends http.BaseClient {
 
   void registerUpload(
       String method, Pattern path, http_testing.MockClientHandler handler) {
-    var map = mocks.putIfAbsent(method, () => new Map());
+    var map = mocks.putIfAbsent(method, () => Map());
     map['/upload$rootPath$path'] = handler;
   }
 
   void registerResumableUpload(
       String method, Pattern path, http_testing.MockClientHandler handler) {
-    var map = mocks.putIfAbsent(method, () => new Map());
+    var map = mocks.putIfAbsent(method, () => Map());
     map['/resumable/upload$rootPath$path'] = handler;
   }
 
@@ -86,35 +86,32 @@ class MockClient extends http.BaseClient {
   }
 
   Future<http.Response> respond(response) {
-    return new Future.value(new http.Response(
-        jsonEncode(response.toJson()), 200,
+    return Future.value(http.Response(jsonEncode(response.toJson()), 200,
         headers: RESPONSE_HEADERS));
   }
 
   Future<http.Response> respondEmpty() {
-    return new Future.value(
-        new http.Response('', 200, headers: RESPONSE_HEADERS));
+    return Future.value(http.Response('', 200, headers: RESPONSE_HEADERS));
   }
 
   Future<http.Response> respondInitiateResumableUpload(project) {
-    final headers = new Map<String, String>.from(RESPONSE_HEADERS);
+    final headers = Map<String, String>.from(RESPONSE_HEADERS);
     headers['location'] = 'https://www.googleapis.com/resumable/upload$rootPath'
         'b/$project/o?uploadType=resumable&alt=json&'
         'upload_id=AEnB2UqucpaWy7d5cr5iVQzmbQcQlLDIKiClrm0SAX3rJ7UN'
         'Mu5bEoC9b4teJcJUKpqceCUeqKzuoP_jz2ps_dV0P0nT8OTuZQ';
-    return new Future.value(new http.Response('', 200, headers: headers));
+    return Future.value(http.Response('', 200, headers: headers));
   }
 
   Future<http.Response> respondContinueResumableUpload() {
-    return new Future.value(
-        new http.Response('', 308, headers: RESPONSE_HEADERS));
+    return Future.value(http.Response('', 308, headers: RESPONSE_HEADERS));
   }
 
   Future<http.Response> respondBytes(http.Request request) async {
     expect(request.url.queryParameters['alt'], 'media');
 
     var myBytes = bytes;
-    var headers = new Map<String, String>.from(RESPONSE_HEADERS);
+    var headers = Map<String, String>.from(RESPONSE_HEADERS);
 
     var range = request.headers['range'];
     if (range != null) {
@@ -128,32 +125,32 @@ class MockClient extends http.BaseClient {
       headers['content-range'] = 'bytes $start-$end/';
     }
 
-    return new http.Response.bytes(myBytes, 200, headers: headers);
+    return http.Response.bytes(myBytes, 200, headers: headers);
   }
 
   Future<http.Response> respondError(int statusCode) {
     var error = {
       'error': {'code': statusCode, 'message': 'error'}
     };
-    return new Future.value(new http.Response(jsonEncode(error), statusCode,
+    return Future.value(http.Response(jsonEncode(error), statusCode,
         headers: RESPONSE_HEADERS));
   }
 
   Future<NormalMediaUpload> processNormalMediaUpload(http.Request request) {
-    var completer = new Completer<NormalMediaUpload>();
+    var completer = Completer<NormalMediaUpload>();
 
     var contentType =
-        new http_parser.MediaType.parse(request.headers['content-type']);
+        http_parser.MediaType.parse(request.headers['content-type']);
     expect(contentType.mimeType, 'multipart/related');
     var boundary = contentType.parameters['boundary'];
 
     var partCount = 0;
     String json;
-    new Stream.fromIterable([
+    Stream.fromIterable([
       request.bodyBytes,
       [13, 10]
     ])
-        .transform(new mime.MimeMultipartTransformer(boundary))
+        .transform(mime.MimeMultipartTransformer(boundary))
         .listen(((mime.MimeMultipart mimeMultipart) {
       var contentType = mimeMultipart.headers['content-type'];
       partCount++;
@@ -171,7 +168,7 @@ class MockClient extends http.BaseClient {
             .fold('', (p, e) => '$p$e')
             .then(base64.decode)
             .then((bytes) {
-          completer.complete(new NormalMediaUpload(json, bytes, contentType));
+          completer.complete(NormalMediaUpload(json, bytes, contentType));
         });
       } else {
         // Exactly two parts expected.
@@ -203,15 +200,15 @@ class TraceClient extends http.BaseClient {
       print('--- START REQUEST ---');
       print(utf8.decode(body));
       print('--- END REQUEST ---');
-      var r = new RequestImpl(request.method, request.url, body);
+      var r = RequestImpl(request.method, request.url, body);
       r.headers.addAll(request.headers);
       return client.send(r).then((http.StreamedResponse rr) {
         return rr.stream.toBytes().then((body) {
           print('--- START RESPONSE ---');
           print(utf8.decode(body));
           print('--- END RESPONSE ---');
-          return new http.StreamedResponse(
-              new http.ByteStream.fromBytes(body), rr.statusCode,
+          return http.StreamedResponse(
+              http.ByteStream.fromBytes(body), rr.statusCode,
               headers: rr.headers);
         });
       });
@@ -231,6 +228,6 @@ class RequestImpl extends http.BaseRequest {
 
   http.ByteStream finalize() {
     super.finalize();
-    return new http.ByteStream.fromBytes(_body);
+    return http.ByteStream.fromBytes(_body);
   }
 }

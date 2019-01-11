@@ -4,21 +4,17 @@
 
 part of gcloud.db;
 
-/**
- * A function definition for transactional functions.
- *
- * The function will be given a [Transaction] object which can be used to make
- * lookups/queries and queue modifications (inserts/updates/deletes).
- */
-typedef Future TransactionHandler(Transaction transaction);
+/// A function definition for transactional functions.
+///
+/// The function will be given a [Transaction] object which can be used to make
+/// lookups/queries and queue modifications (inserts/updates/deletes).
+typedef TransactionHandler = Future Function(Transaction transaction);
 
-/**
- * A datastore transaction.
- *
- * It can be used for making lookups/queries and queue modifications
- * (inserts/updates/deletes). Finally the transaction can be either committed
- * or rolled back.
- */
+/// A datastore transaction.
+///
+/// It can be used for making lookups/queries and queue modifications
+/// (inserts/updates/deletes). Finally the transaction can be either committed
+/// or rolled back.
 class Transaction {
   static const int _TRANSACTION_STARTED = 0;
   static const int _TRANSACTION_ROLLED_BACK = 1;
@@ -34,17 +30,13 @@ class Transaction {
 
   Transaction(this.db, this._datastoreTransaction);
 
-  /**
-   * Looks up [keys] within this transaction.
-   */
+  /// Looks up [keys] within this transaction.
   Future<List<T>> lookup<T extends Model>(List<Key> keys) {
     return _lookupHelper<T>(db, keys,
         datastoreTransaction: _datastoreTransaction);
   }
 
-  /**
-   * Enqueues [inserts] and [deletes] which should be committed at commit time.
-   */
+  /// Enqueues [inserts] and [deletes] which should be committed at commit time.
   void queueMutations({List<Model> inserts, List<Key> deletes}) {
     _checkSealed();
     if (inserts != null) {
@@ -55,39 +47,33 @@ class Transaction {
     }
   }
 
-  /**
-   * Query for [kind] models with [ancestorKey].
-   *
-   * Note that [ancestorKey] is required, since a transaction is not allowed to
-   * touch/look at an arbitrary number of rows.
-   */
+  /// Query for [kind] models with [ancestorKey].
+  ///
+  /// Note that [ancestorKey] is required, since a transaction is not allowed to
+  /// touch/look at an arbitrary number of rows.
   Query<T> query<T extends Model>(Key ancestorKey, {Partition partition}) {
     // TODO(#25): The `partition` element is redundant and should be removed.
     if (partition == null) {
       partition = ancestorKey.partition;
     } else if (ancestorKey.partition != partition) {
-      throw new ArgumentError(
+      throw ArgumentError(
           'Ancestor queries must have the same partition in the ancestor key '
           'as the partition where the query executes in.');
     }
     _checkSealed();
-    return new Query<T>(db,
+    return Query<T>(db,
         partition: partition,
         ancestorKey: ancestorKey,
         datastoreTransaction: _datastoreTransaction);
   }
 
-  /**
-   * Rolls this transaction back.
-   */
+  /// Rolls this transaction back.
   Future rollback() {
     _checkSealed(changeState: _TRANSACTION_ROLLED_BACK);
     return db.datastore.rollback(_datastoreTransaction);
   }
 
-  /**
-   * Commits this transaction including all of the queued mutations.
-   */
+  /// Commits this transaction including all of the queued mutations.
   Future commit() {
     _checkSealed(changeState: _TRANSACTION_COMMITTED);
     return _commitHelper(db,
@@ -98,9 +84,9 @@ class Transaction {
 
   _checkSealed({int changeState}) {
     if (_transactionState == _TRANSACTION_COMMITTED) {
-      throw new StateError('The transaction has already been committed.');
+      throw StateError('The transaction has already been committed.');
     } else if (_transactionState == _TRANSACTION_ROLLED_BACK) {
-      throw new StateError('The transaction has already been rolled back.');
+      throw StateError('The transaction has already been rolled back.');
     }
     if (changeState != null) {
       _transactionState = changeState;
@@ -139,24 +125,22 @@ class Query<T extends Model> {
         _ancestorKey = ancestorKey,
         _transaction = datastoreTransaction;
 
-  /**
-   * Adds a filter to this [Query].
-   *
-   * [filterString] has form "name OP" where 'name' is a fieldName of the
-   * model and OP is an operator. The following operators are supported:
-   *
-   *   * '<' (less than)
-   *   * '<=' (less than or equal)
-   *   * '>' (greater than)
-   *   * '>=' (greater than or equal)
-   *   * '=' (equal)
-   *
-   * [comparisonObject] is the object for comparison.
-   */
+  /// Adds a filter to this [Query].
+  ///
+  /// [filterString] has form "name OP" where 'name' is a fieldName of the
+  /// model and OP is an operator. The following operators are supported:
+  ///
+  ///   * '<' (less than)
+  ///   * '<=' (less than or equal)
+  ///   * '>' (greater than)
+  ///   * '>=' (greater than or equal)
+  ///   * '=' (equal)
+  ///
+  /// [comparisonObject] is the object for comparison.
   void filter(String filterString, Object comparisonObject) {
     var parts = filterString.split(' ');
     if (parts.length != 2 || !_relationMapping.containsKey(parts[1])) {
-      throw new ArgumentError("Invalid filter string '$filterString'.");
+      throw ArgumentError("Invalid filter string '$filterString'.");
     }
 
     var name = parts[0];
@@ -170,58 +154,50 @@ class Query<T extends Model> {
       comparisonObject = _db.modelDB
           .toDatastoreValue(_kind, name, comparisonObject, forComparison: true);
     }
-    _filters.add(new ds.Filter(
+    _filters.add(ds.Filter(
         _relationMapping[comparison], propertyName, comparisonObject));
   }
 
-  /**
-   * Adds an order to this [Query].
-   *
-   * [orderString] has the form "-name" where 'name' is a fieldName of the model
-   * and the optional '-' says whether the order is descending or ascending.
-   */
+  /// Adds an order to this [Query].
+  ///
+  /// [orderString] has the form "-name" where 'name' is a fieldName of the model
+  /// and the optional '-' says whether the order is descending or ascending.
   void order(String orderString) {
     // TODO: validate [orderString] (e.g. is name valid)
     if (orderString.startsWith('-')) {
-      _orders.add(new ds.Order(ds.OrderDirection.Decending,
+      _orders.add(ds.Order(ds.OrderDirection.Decending,
           _convertToDatastoreName(orderString.substring(1))));
     } else {
-      _orders.add(new ds.Order(
+      _orders.add(ds.Order(
           ds.OrderDirection.Ascending, _convertToDatastoreName(orderString)));
     }
   }
 
-  /**
-   * Sets the [offset] of this [Query].
-   *
-   * When running this query, [offset] results will be skipped.
-   */
+  /// Sets the [offset] of this [Query].
+  ///
+  /// When running this query, [offset] results will be skipped.
   void offset(int offset) {
     _offset = offset;
   }
 
-  /**
-   * Sets the [limit] of this [Query].
-   *
-   * When running this query, a maximum of [limit] results will be returned.
-   */
+  /// Sets the [limit] of this [Query].
+  ///
+  /// When running this query, a maximum of [limit] results will be returned.
   void limit(int limit) {
     _limit = limit;
   }
 
-  /**
-   * Execute this [Query] on the datastore.
-   *
-   * Outside of transactions this method might return stale data or may not
-   * return the newest updates performed on the datastore since updates
-   * will be reflected in the indices in an eventual consistent way.
-   */
+  /// Execute this [Query] on the datastore.
+  ///
+  /// Outside of transactions this method might return stale data or may not
+  /// return the newest updates performed on the datastore since updates
+  /// will be reflected in the indices in an eventual consistent way.
   Stream<T> run() {
     ds.Key ancestorKey;
     if (_ancestorKey != null) {
       ancestorKey = _db.modelDB.toDatastoreKey(_ancestorKey);
     }
-    var query = new ds.Query(
+    var query = ds.Query(
         ancestorKey: ancestorKey,
         kind: _kind,
         filters: _filters,
@@ -231,10 +207,10 @@ class Query<T extends Model> {
 
     ds.Partition partition;
     if (_partition != null) {
-      partition = new ds.Partition(_partition.namespace);
+      partition = ds.Partition(_partition.namespace);
     }
 
-    return new StreamFromPages<ds.Entity>((int pageSize) {
+    return StreamFromPages<ds.Entity>((int pageSize) {
       return _db.datastore
           .query(query, transaction: _transaction, partition: partition);
     }).stream.map<T>(_db.modelDB.fromDatastoreEntity);
@@ -248,7 +224,7 @@ class Query<T extends Model> {
   String _convertToDatastoreName(String name) {
     var propertyName = _db.modelDB.fieldNameToPropertyName(_kind, name);
     if (propertyName == null) {
-      throw new ArgumentError("Field $name is not available for kind $_kind");
+      throw ArgumentError("Field $name is not available for kind $_kind");
     }
     return propertyName;
   }
@@ -260,55 +236,43 @@ class DatastoreDB {
   Partition _defaultPartition;
 
   DatastoreDB(this.datastore, {ModelDB modelDB, Partition defaultPartition})
-      : _modelDB = modelDB != null ? modelDB : new ModelDBImpl() {
+      : _modelDB = modelDB != null ? modelDB : ModelDBImpl() {
     _defaultPartition =
-        defaultPartition != null ? defaultPartition : new Partition(null);
+        defaultPartition != null ? defaultPartition : Partition(null);
   }
 
-  /**
-   * The [ModelDB] used to serialize/deserialize objects.
-   */
+  /// The [ModelDB] used to serialize/deserialize objects.
   ModelDB get modelDB => _modelDB;
 
-  /**
-   * Gets the empty key using the default [Partition].
-   *
-   * Model keys with parent set to [emptyKey] will create their own entity
-   * groups.
-   */
+  /// Gets the empty key using the default [Partition].
+  ///
+  /// Model keys with parent set to [emptyKey] will create their own entity
+  /// groups.
   Key get emptyKey => defaultPartition.emptyKey;
 
-  /**
-   * Gets the default [Partition].
-   */
+  /// Gets the default [Partition].
   Partition get defaultPartition => _defaultPartition;
 
-  /**
-   * Creates a new [Partition] with namespace [namespace].
-   */
+  /// Creates a new [Partition] with namespace [namespace].
   Partition newPartition(String namespace) {
-    return new Partition(namespace);
+    return Partition(namespace);
   }
 
-  /**
-   * Begins a new a new transaction.
-   *
-   * A transaction can touch only a limited number of entity groups. This limit
-   * is currently 5.
-   */
+  /// Begins a new a new transaction.
+  ///
+  /// A transaction can touch only a limited number of entity groups. This limit
+  /// is currently 5.
   // TODO: Add retries and/or auto commit/rollback.
   Future withTransaction(TransactionHandler transactionHandler) {
     return datastore
         .beginTransaction(crossEntityGroup: true)
         .then((datastoreTransaction) {
-      var transaction = new Transaction(this, datastoreTransaction);
+      var transaction = Transaction(this, datastoreTransaction);
       return transactionHandler(transaction);
     });
   }
 
-  /**
-   * Build a query for [kind] models.
-   */
+  /// Build a query for [kind] models.
   Query<T> query<T extends Model>({Partition partition, Key ancestorKey}) {
     // TODO(#26): There is only one case where `partition` is not redundant
     // Namely if `ancestorKey == null` and `partition != null`. We could
@@ -321,33 +285,29 @@ class DatastoreDB {
         partition = defaultPartition;
       }
     } else if (ancestorKey != null && partition != ancestorKey.partition) {
-      throw new ArgumentError(
+      throw ArgumentError(
           'Ancestor queries must have the same partition in the ancestor key '
           'as the partition where the query executes in.');
     }
-    return new Query<T>(this, partition: partition, ancestorKey: ancestorKey);
+    return Query<T>(this, partition: partition, ancestorKey: ancestorKey);
   }
 
-  /**
-   * Looks up [keys] in the datastore and returns a list of [Model] objects.
-   *
-   * For transactions, please use [beginTransaction] and call the [lookup]
-   * method on it's returned [Transaction] object.
-   */
+  /// Looks up [keys] in the datastore and returns a list of [Model] objects.
+  ///
+  /// For transactions, please use [beginTransaction] and call the [lookup]
+  /// method on it's returned [Transaction] object.
   Future<List<T>> lookup<T extends Model>(List<Key> keys) {
     return _lookupHelper<T>(this, keys);
   }
 
-  /**
-   * Add [inserts] to the datastore and remove [deletes] from it.
-   *
-   * The order of inserts and deletes is not specified. When the commit is done
-   * direct lookups will see the effect but non-ancestor queries will see the
-   * change in an eventual consistent way.
-   *
-   * For transactions, please use `beginTransaction` and it's returned
-   * [Transaction] object.
-   */
+  /// Add [inserts] to the datastore and remove [deletes] from it.
+  ///
+  /// The order of inserts and deletes is not specified. When the commit is done
+  /// direct lookups will see the effect but non-ancestor queries will see the
+  /// change in an eventual consistent way.
+  ///
+  /// For transactions, please use `beginTransaction` and it's returned
+  /// [Transaction] object.
   Future commit({List<Model> inserts, List<Key> deletes}) {
     return _commitHelper(this, inserts: inserts, deletes: deletes);
   }
@@ -390,7 +350,7 @@ Future _commitHelper(DatastoreDB db,
           deletes: entityDeletes,
           transaction: datastoreTransaction)
       .then((ds.CommitResult result) {
-    if (entityAutoIdInserts != null && entityAutoIdInserts.length > 0) {
+    if (entityAutoIdInserts != null && entityAutoIdInserts.isNotEmpty) {
       for (var i = 0; i < result.autoIdInsertKeys.length; i++) {
         var key = db.modelDB.fromDatastoreKey(result.autoIdInsertKeys[i]);
         autoIdModelInserts[i].parentKey = key.parent;

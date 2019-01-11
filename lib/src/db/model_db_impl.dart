@@ -58,12 +58,12 @@ class ModelDBImpl implements ModelDB {
 
   /// Converts a [ds.Key] to a [Key].
   Key fromDatastoreKey(ds.Key datastoreKey) {
-    var namespace = new Partition(datastoreKey.partition.namespace);
+    var namespace = Partition(datastoreKey.partition.namespace);
     Key key = namespace.emptyKey;
     for (var element in datastoreKey.elements) {
       var type = _type2ModelDesc[_kind2ModelDesc[element.kind]];
       if (type == null) {
-        throw new StateError(
+        throw StateError(
             'Could not find a model associated with kind "${element.kind}". '
             'Please ensure a model class was annotated with '
             '`@Kind(name: "${element.kind}")`.');
@@ -86,20 +86,20 @@ class ModelDBImpl implements ModelDB {
       bool useIntegerId = modelDescription.useIntegerId;
 
       if (useIntegerId && id != null && id is! int) {
-        throw new ArgumentError('Expected an integer id property but '
+        throw ArgumentError('Expected an integer id property but '
             'id was of type ${id.runtimeType}');
       }
       if (!useIntegerId && (id != null && id is! String)) {
-        throw new ArgumentError('Expected a string id property but '
+        throw ArgumentError('Expected a string id property but '
             'id was of type ${id.runtimeType}');
       }
 
-      elements.add(new ds.KeyElement(kind, id));
+      elements.add(ds.KeyElement(kind, id));
       currentKey = currentKey.parent;
     }
     Partition partition = currentKey._parent;
-    return new ds.Key(elements.reversed.toList(),
-        partition: new ds.Partition(partition.namespace));
+    return ds.Key(elements.reversed.toList(),
+        partition: ds.Partition(partition.namespace));
   }
 
   /// Converts a [Model] instance to a [ds.Entity].
@@ -108,7 +108,7 @@ class ModelDBImpl implements ModelDB {
       var modelDescription = _modelDescriptionForType(model.runtimeType);
       return modelDescription.encodeModel(this, model);
     } catch (error, stack) {
-      throw new ArgumentError('Error while encoding entity ($error, $stack).');
+      throw ArgumentError('Error while encoding entity ($error, $stack).');
     }
   }
 
@@ -120,14 +120,14 @@ class ModelDBImpl implements ModelDB {
     var kind = entity.key.elements.last.kind;
     var modelDescription = _kind2ModelDesc[kind];
     if (modelDescription == null) {
-      throw new StateError('Trying to deserialize entity of kind '
+      throw StateError('Trying to deserialize entity of kind '
           '$kind, but no Model class available for it.');
     }
 
     try {
       return modelDescription.decodeEntity<T>(this, key, entity);
     } catch (error, stack) {
-      throw new StateError('Error while decoding entity ($error, $stack).');
+      throw StateError('Error while decoding entity ($error, $stack).');
     }
   }
 
@@ -137,8 +137,7 @@ class ModelDBImpl implements ModelDB {
   String kindName(Type type) {
     var kind = _modelDesc2Type[type]?.kind;
     if (kind == null) {
-      throw new ArgumentError(
-          'The class $type was not associated with a kind.');
+      throw ArgumentError('The class $type was not associated with a kind.');
     }
     return kind;
   }
@@ -148,17 +147,17 @@ class ModelDBImpl implements ModelDB {
   String fieldNameToPropertyName(String kind, String fieldName) {
     var modelDescription = _kind2ModelDesc[kind];
     if (modelDescription == null) {
-      throw new ArgumentError('The kind "$kind" is unknown.');
+      throw ArgumentError('The kind "$kind" is unknown.');
     }
     return modelDescription.fieldNameToPropertyName(fieldName);
   }
 
   /// Converts [value] according to the [Property] named [name] in [type].
   Object toDatastoreValue(String kind, String fieldName, Object value,
-      {bool forComparison: false}) {
+      {bool forComparison = false}) {
     var modelDescription = _kind2ModelDesc[kind];
     if (modelDescription == null) {
-      throw new ArgumentError('The kind "$kind" is unknown.');
+      throw ArgumentError('The kind "$kind" is unknown.');
     }
     return modelDescription.encodeField(this, fieldName, value,
         forComparison: forComparison);
@@ -202,7 +201,7 @@ class ModelDBImpl implements ModelDB {
     for (var modelDescription in _modelDescriptions) {
       var kindName = modelDescription.kindName(this);
       if (_kind2ModelDesc.containsKey(kindName)) {
-        throw new StateError('Cannot have two ModelDescriptions '
+        throw StateError('Cannot have two ModelDescriptions '
             'with the same kind ($kindName)');
       }
       _kind2ModelDesc[kindName] = modelDescription;
@@ -214,7 +213,7 @@ class ModelDBImpl implements ModelDB {
     for (mirrors.InstanceMirror instance in classMirror.metadata) {
       if (instance.reflectee.runtimeType == Kind) {
         if (kindAnnotation != null) {
-          throw new StateError(
+          throw StateError(
               'Cannot have more than one ModelMetadata() annotation '
               'on a Model class');
         }
@@ -245,9 +244,9 @@ class ModelDBImpl implements ModelDB {
 
     _ModelDescription modelDesc;
     if (_isExpandoClass(modelClass)) {
-      modelDesc = new _ExpandoModelDescription(name, useIntegerId);
+      modelDesc = _ExpandoModelDescription(name, useIntegerId);
     } else {
-      modelDesc = new _ModelDescription(name, useIntegerId);
+      modelDesc = _ModelDescription(name, useIntegerId);
     }
 
     _type2ModelDesc[modelDesc] = modelClass.reflectedType;
@@ -262,23 +261,22 @@ class ModelDBImpl implements ModelDB {
       if (declaration is mirrors.MethodMirror) {
         if (declaration.isConstructor &&
             declaration.constructorName == const Symbol('') &&
-            declaration.parameters.length == 0) {
+            declaration.parameters.isEmpty) {
           defaultConstructorFound = true;
           break;
         }
       }
     }
     if (!defaultConstructorFound) {
-      throw new StateError(
-          'Class ${modelClass.simpleName} does not have a default '
+      throw StateError('Class ${modelClass.simpleName} does not have a default '
           'constructor.');
     }
   }
 
   Map<String, Property> _propertiesFromModelDescription(
       mirrors.ClassMirror modelClassMirror) {
-    var properties = new Map<String, Property>();
-    var propertyNames = new Set<String>();
+    var properties = Map<String, Property>();
+    var propertyNames = Set<String>();
 
     // Loop over all classes in the inheritance path up to the Object class.
     while (modelClassMirror.superclass != null) {
@@ -296,7 +294,7 @@ class ModelDBImpl implements ModelDB {
               .toList();
 
           if (propertyAnnotations.length > 1) {
-            throw new StateError(
+            throw StateError(
                 'Cannot have more than one Property annotation on a model '
                 'field.');
           } else if (propertyAnnotations.length == 1) {
@@ -310,13 +308,13 @@ class ModelDBImpl implements ModelDB {
             if (propertyName == null) propertyName = fieldName;
 
             if (properties.containsKey(fieldName)) {
-              throw new StateError(
+              throw StateError(
                   'Cannot have two Property objects describing the same field '
                   'in a model object class hierarchy.');
             }
 
             if (propertyNames.contains(propertyName)) {
-              throw new StateError(
+              throw StateError(
                   'Cannot have two Property objects mapping to the same '
                   'datastore property name "$propertyName".');
             }
@@ -340,17 +338,15 @@ class ModelDBImpl implements ModelDB {
       }
       modelClass = modelClass.superclass;
     }
-    throw new StateError('This should be unreachable.');
+    throw StateError('This should be unreachable.');
   }
 }
 
 class _ModelDescription<T extends Model> {
-  final HashMap<String, String> _property2FieldName =
-      new HashMap<String, String>();
-  final HashMap<String, String> _field2PropertyName =
-      new HashMap<String, String>();
-  final Set<String> _indexedProperties = new Set<String>();
-  final Set<String> _unIndexedProperties = new Set<String>();
+  final HashMap<String, String> _property2FieldName = HashMap<String, String>();
+  final HashMap<String, String> _field2PropertyName = HashMap<String, String>();
+  final Set<String> _indexedProperties = Set<String>();
+  final Set<String> _unIndexedProperties = Set<String>();
 
   final String kind;
   final bool useIntegerId;
@@ -394,7 +390,7 @@ class _ModelDescription<T extends Model> {
       _encodeProperty(db, model, mirror, properties, fieldName, prop);
     });
 
-    return new ds.Entity(key, properties,
+    return ds.Entity(key, properties,
         unIndexedProperties: _unIndexedProperties);
   }
 
@@ -406,7 +402,7 @@ class _ModelDescription<T extends Model> {
     var value =
         mirror.getField(mirrors.MirrorSystem.getSymbol(fieldName)).reflectee;
     if (!prop.validate(db, value)) {
-      throw new StateError('Property validation failed for '
+      throw StateError('Property validation failed for '
           'property $fieldName while trying to serialize entity of kind '
           '${model.runtimeType}. ');
     }
@@ -438,7 +434,7 @@ class _ModelDescription<T extends Model> {
     var value = prop.decodePrimitiveValue(db, rawValue);
 
     if (!prop.validate(db, value)) {
-      throw new StateError('Property validation failed while '
+      throw StateError('Property validation failed while '
           'trying to deserialize entity of kind '
           '${entity.key.elements.last.kind} (property name: $propertyName)');
     }
@@ -455,13 +451,13 @@ class _ModelDescription<T extends Model> {
   }
 
   Object encodeField(ModelDBImpl db, String fieldName, Object value,
-      {bool enforceFieldExists: true, bool forComparison: false}) {
+      {bool enforceFieldExists = true, bool forComparison = false}) {
     Property property = db._propertiesForModel(this)[fieldName];
     if (property != null) {
       return property.encodeValue(db, value, forComparison: forComparison);
     }
     if (enforceFieldExists) {
-      throw new ArgumentError(
+      throw ArgumentError(
           'A field named "$fieldName" does not exist in kind "$kind".');
     }
     return null;
@@ -487,9 +483,9 @@ class _ExpandoModelDescription extends _ModelDescription<ExpandoModel> {
   void initialize(ModelDBImpl db) {
     super.initialize(db);
 
-    realFieldNames = new Set<String>.from(_field2PropertyName.keys);
-    realPropertyNames = new Set<String>.from(_property2FieldName.keys);
-    usedNames = new Set()..addAll(realFieldNames)..addAll(realPropertyNames);
+    realFieldNames = Set<String>.from(_field2PropertyName.keys);
+    realPropertyNames = Set<String>.from(_property2FieldName.keys);
+    usedNames = Set()..addAll(realFieldNames)..addAll(realPropertyNames);
   }
 
   ds.Entity encodeModel(ModelDBImpl db, ExpandoModel model) {
@@ -535,7 +531,7 @@ class _ExpandoModelDescription extends _ModelDescription<ExpandoModel> {
   }
 
   Object encodeField(ModelDBImpl db, String fieldName, Object value,
-      {bool enforceFieldExists: true, bool forComparison: false}) {
+      {bool enforceFieldExists = true, bool forComparison = false}) {
     // The [enforceFieldExists] argument is intentionally ignored.
 
     Object primitiveValue = super.encodeField(db, fieldName, value,

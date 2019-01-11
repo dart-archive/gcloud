@@ -43,16 +43,16 @@ class Kind {
   ///
   /// If `name` is omitted, it will default to the name of class to which this
   /// annotation is attached to.
-  const Kind({this.name, this.idType: IdType.Integer});
+  const Kind({this.name, this.idType = IdType.Integer});
 }
 
 /// The type used for id's of an entity.
 class IdType {
   /// Use integer ids for identifying entities.
-  static const IdType Integer = const IdType('Integer');
+  static const IdType Integer = IdType('Integer');
 
   /// Use string ids for identifying entities.
-  static const IdType String = const IdType('String');
+  static const IdType String = IdType('String');
 
   final core.String _type;
 
@@ -83,14 +83,15 @@ abstract class Property {
   /// `true`.
   final bool indexed;
 
-  const Property({this.propertyName, this.required: false, this.indexed: true});
+  const Property(
+      {this.propertyName, this.required = false, this.indexed = true});
 
   bool validate(ModelDB db, Object value) {
     if (required && value == null) return false;
     return true;
   }
 
-  Object encodeValue(ModelDB db, Object value, {bool forComparison: false});
+  Object encodeValue(ModelDB db, Object value, {bool forComparison = false});
 
   Object decodePrimitiveValue(ModelDB db, Object value);
 }
@@ -99,10 +100,10 @@ abstract class Property {
 /// within a composed `ListProperty`.
 abstract class PrimitiveProperty extends Property {
   const PrimitiveProperty(
-      {String propertyName, bool required: false, bool indexed: true})
+      {String propertyName, bool required = false, bool indexed = true})
       : super(propertyName: propertyName, required: required, indexed: indexed);
 
-  Object encodeValue(ModelDB db, Object value, {bool forComparison: false}) =>
+  Object encodeValue(ModelDB db, Object value, {bool forComparison = false}) =>
       value;
 
   Object decodePrimitiveValue(ModelDB db, Object value) => value;
@@ -114,7 +115,7 @@ abstract class PrimitiveProperty extends Property {
 /// datastore and when reading them back.
 class BoolProperty extends PrimitiveProperty {
   const BoolProperty(
-      {String propertyName, bool required: false, bool indexed: true})
+      {String propertyName, bool required = false, bool indexed = true})
       : super(propertyName: propertyName, required: required, indexed: indexed);
 
   bool validate(ModelDB db, Object value) =>
@@ -127,7 +128,7 @@ class BoolProperty extends PrimitiveProperty {
 /// datastore and when reading them back.
 class IntProperty extends PrimitiveProperty {
   const IntProperty(
-      {String propertyName, bool required: false, bool indexed: true})
+      {String propertyName, bool required = false, bool indexed = true})
       : super(propertyName: propertyName, required: required, indexed: indexed);
 
   bool validate(ModelDB db, Object value) =>
@@ -140,7 +141,7 @@ class IntProperty extends PrimitiveProperty {
 /// datastore and when reading them back.
 class DoubleProperty extends PrimitiveProperty {
   const DoubleProperty(
-      {String propertyName, bool required: false, bool indexed: true})
+      {String propertyName, bool required = false, bool indexed = true})
       : super(propertyName: propertyName, required: required, indexed: indexed);
 
   bool validate(ModelDB db, Object value) =>
@@ -153,7 +154,7 @@ class DoubleProperty extends PrimitiveProperty {
 /// datastore and when reading them back.
 class StringProperty extends PrimitiveProperty {
   const StringProperty(
-      {String propertyName, bool required: false, bool indexed: true})
+      {String propertyName, bool required = false, bool indexed = true})
       : super(propertyName: propertyName, required: required, indexed: indexed);
 
   bool validate(ModelDB db, Object value) =>
@@ -166,13 +167,13 @@ class StringProperty extends PrimitiveProperty {
 /// datastore and when reading them back.
 class ModelKeyProperty extends PrimitiveProperty {
   const ModelKeyProperty(
-      {String propertyName, bool required: false, bool indexed: true})
+      {String propertyName, bool required = false, bool indexed = true})
       : super(propertyName: propertyName, required: required, indexed: indexed);
 
   bool validate(ModelDB db, Object value) =>
       super.validate(db, value) && (value == null || value is Key);
 
-  Object encodeValue(ModelDB db, Object value, {bool forComparison: false}) {
+  Object encodeValue(ModelDB db, Object value, {bool forComparison = false}) {
     if (value == null) return null;
     return db.toDatastoreKey(value as Key);
   }
@@ -189,7 +190,7 @@ class ModelKeyProperty extends PrimitiveProperty {
 /// datastore and when reading them back. Blob values will be represented by
 /// List<int>.
 class BlobProperty extends PrimitiveProperty {
-  const BlobProperty({String propertyName, bool required: false})
+  const BlobProperty({String propertyName, bool required = false})
       : super(propertyName: propertyName, required: required, indexed: false);
 
   // NOTE: We don't validate that the entries of the list are really integers
@@ -199,9 +200,9 @@ class BlobProperty extends PrimitiveProperty {
   bool validate(ModelDB db, Object value) =>
       super.validate(db, value) && (value == null || value is List<int>);
 
-  Object encodeValue(ModelDB db, Object value, {bool forComparison: false}) {
+  Object encodeValue(ModelDB db, Object value, {bool forComparison = false}) {
     if (value == null) return null;
-    return new ds.BlobValue(value as List<int>);
+    return ds.BlobValue(value as List<int>);
   }
 
   Object decodePrimitiveValue(ModelDB db, Object value) {
@@ -217,7 +218,7 @@ class BlobProperty extends PrimitiveProperty {
 /// datastore and when reading them back.
 class DateTimeProperty extends PrimitiveProperty {
   const DateTimeProperty(
-      {String propertyName, bool required: false, bool indexed: true})
+      {String propertyName, bool required = false, bool indexed = true})
       : super(propertyName: propertyName, required: required, indexed: indexed);
 
   bool validate(ModelDB db, Object value) =>
@@ -225,8 +226,7 @@ class DateTimeProperty extends PrimitiveProperty {
 
   Object decodePrimitiveValue(ModelDB db, Object value) {
     if (value is int) {
-      return new DateTime.fromMillisecondsSinceEpoch(value ~/ 1000,
-          isUtc: true);
+      return DateTime.fromMillisecondsSinceEpoch(value ~/ 1000, isUtc: true);
     }
     return value;
   }
@@ -243,7 +243,7 @@ class ListProperty extends Property {
   // TODO: We want to support optional list properties as well.
   // Get rid of "required: true" here.
   const ListProperty(this.subProperty,
-      {String propertyName, bool indexed: true})
+      {String propertyName, bool indexed = true})
       : super(propertyName: propertyName, required: true, indexed: indexed);
 
   bool validate(ModelDB db, Object value) {
@@ -255,7 +255,7 @@ class ListProperty extends Property {
     return true;
   }
 
-  Object encodeValue(ModelDB db, Object value, {bool forComparison: false}) {
+  Object encodeValue(ModelDB db, Object value, {bool forComparison = false}) {
     if (forComparison) {
       // If we have comparison of list properties (i.e. repeated property names)
       // the comparison object must not be a list, but the value itself.
@@ -279,7 +279,7 @@ class ListProperty extends Property {
 
     if (value == null) return null;
     List list = value;
-    if (list.length == 0) return null;
+    if (list.isEmpty) return null;
     if (list.length == 1) return subProperty.encodeValue(db, list[0]);
     return list.map((value) => subProperty.encodeValue(db, value)).toList();
   }
@@ -295,7 +295,7 @@ class ListProperty extends Property {
 
 /// A convenience [Property] for list of strings.
 class StringListProperty extends ListProperty {
-  const StringListProperty({String propertyName, bool indexed: true})
+  const StringListProperty({String propertyName, bool indexed = true})
       : super(const StringProperty(),
             propertyName: propertyName, indexed: indexed);
 

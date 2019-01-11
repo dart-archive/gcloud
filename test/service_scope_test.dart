@@ -15,10 +15,10 @@ main() {
     expect(() => ss.registerScopeExitCallback(() {}), throwsA(isStateError));
     expect(() => ss.lookup(1), throwsA(isStateError));
 
-    var c = new Completer.sync();
+    var c = Completer.sync();
     ss.fork(expectAsync0(() {
       c.complete();
-      return new Future.value();
+      return Future.value();
     }));
 
     // Assert that after fork()ing we still don't have a service scope outside
@@ -33,7 +33,7 @@ main() {
   test('non-existent-key', () {
     return ss.fork(expectAsync0(() {
       expect(ss.lookup(1), isNull);
-      return new Future.value();
+      return Future.value();
     }));
   });
 
@@ -44,14 +44,14 @@ main() {
 
   test('error-on-double-insert', () {
     // Ensure that inserting twice with the same key results in an error.
-    return ss.fork(expectAsync0(() => new Future.sync(() {
+    return ss.fork(expectAsync0(() => Future.sync(() {
           ss.register(1, 'firstValue');
           expect(() => ss.register(1, 'firstValue'), throwsA(isArgumentError));
         })));
   });
 
   test('only-cleanup', () {
-    return ss.fork(expectAsync0(() => new Future.sync(() {
+    return ss.fork(expectAsync0(() => Future.sync(() {
           ss.registerScopeExitCallback(expectAsync0(() {}));
         })));
   });
@@ -60,7 +60,7 @@ main() {
     // Ensure cleanup functions are called in the reverse order of inserting
     // their entries.
     int insertions = 0;
-    return ss.fork(expectAsync0(() => new Future.value(() {
+    return ss.fork(expectAsync0(() => Future.value(() {
           int NUM = 10;
 
           for (int i = 0; i < NUM; i++) {
@@ -104,7 +104,7 @@ main() {
         expect(ss.lookup(1), 'value1');
         expect(ss.lookup(2), 'value2');
       }));
-      return new Future.value();
+      return Future.value();
     }));
   });
 
@@ -115,7 +115,7 @@ main() {
     // failed cleanup() calls.
     int insertions = 0;
     return ss
-        .fork(() => new Future.sync(() {
+        .fork(() => Future.sync(() {
               for (int i = 0; i < 10; i++) {
                 insertions++;
                 ss.register(i, 'value$i');
@@ -136,7 +136,7 @@ main() {
   test('service-scope-destroyed-after-callback-completes', () {
     // Ensure that once the closure passed to fork() completes, the service
     // scope is destroyed.
-    return ss.fork(expectAsync0(() => new Future.sync(() {
+    return ss.fork(expectAsync0(() => Future.sync(() {
           var key = 1;
           ss.register(key, 'firstValue');
           ss.registerScopeExitCallback(Zone.current.bindCallback(() {
@@ -156,12 +156,12 @@ main() {
   test('override-parent-value', () {
     // Ensure that once the closure passed to fork() completes, the service
     // scope is destroyed.
-    return ss.fork(expectAsync0(() => new Future.sync(() {
+    return ss.fork(expectAsync0(() => Future.sync(() {
           var key = 1;
           ss.register(key, 'firstValue');
           expect(ss.lookup(key), equals('firstValue'));
 
-          return ss.fork(expectAsync0(() => new Future.sync(() {
+          return ss.fork(expectAsync0(() => Future.sync(() {
                 ss.register(key, 'secondValue');
                 expect(ss.lookup(key), equals('secondValue'));
               })));
@@ -172,8 +172,8 @@ main() {
     // Ensure that once the closure passed to fork() completes, the service
     // scope is destroyed.
     ss.fork(expectAsync0(() {
-      Timer.run(() => throw new StateError('foobar'));
-      return new Future.value();
+      Timer.run(() => throw StateError('foobar'));
+      return Future.value();
     }), onError: expectAsync2((error, _) {
       expect(error, isStateError);
     }));
@@ -201,7 +201,7 @@ main() {
 
       Future spawnChild(
           ownSubKey, otherSubKey, int i, ss.ScopeExitCallback cleanup) {
-        return ss.fork(expectAsync0(() => new Future.sync(() {
+        return ss.fork(expectAsync0(() => Future.sync(() {
               ss.register(subKey, 'fork$i');
               ss.registerScopeExitCallback(cleanup);
               ss.register(ownSubKey, 'sub$i');

@@ -19,7 +19,7 @@ import 'db/e2e/metamodel_test_impl.dart' as db_metamodel_test;
 
 Future main() async {
   var scopes = datastore_impl.DatastoreImpl.SCOPES;
-  var now = new DateTime.now().millisecondsSinceEpoch;
+  var now = DateTime.now().millisecondsSinceEpoch;
   String namespace = '${Platform.operatingSystem}${now}';
 
   datastore_impl.DatastoreImpl datastore;
@@ -27,8 +27,8 @@ Future main() async {
   Client client;
 
   await withAuthClient(scopes, (String project, httpClient) {
-    datastore = new datastore_impl.DatastoreImpl(httpClient, project);
-    datastoreDB = new db.DatastoreDB(datastore);
+    datastore = datastore_impl.DatastoreImpl(httpClient, project);
+    datastoreDB = db.DatastoreDB(datastore);
     client = httpClient;
   });
 
@@ -45,7 +45,7 @@ Future main() async {
   });
 
   test('sleep-between-test-suites', () {
-    expect(new Future.delayed(const Duration(seconds: 10)), completes);
+    expect(Future.delayed(const Duration(seconds: 10)), completes);
   });
 
   group('datastore_test', () {
@@ -53,7 +53,7 @@ Future main() async {
   });
 
   test('sleep-between-test-suites', () {
-    expect(new Future.delayed(const Duration(seconds: 10)), completes);
+    expect(Future.delayed(const Duration(seconds: 10)), completes);
   });
 
   group('datastore_test', () {

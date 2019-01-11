@@ -31,7 +31,7 @@ http.Client get authClientService =>
 /// Calling this function outside of a service scope will result in an error.
 /// Calling this function more than once inside the same service scope is not
 /// allowed.
-void registerAuthClientService(http.Client client, {bool close: true}) {
+void registerAuthClientService(http.Client client, {bool close = true}) {
   ss.register(_authenticatedClientKey, client);
   if (close) {
     ss.registerScopeExitCallback(() {

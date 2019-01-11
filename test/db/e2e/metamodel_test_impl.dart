@@ -15,12 +15,12 @@ import 'package:gcloud/db/metamodel.dart';
 
 List<Entity> buildEntitiesWithDifferentNamespaces() {
   newKey(String namespace, String kind, int id) {
-    var partition = new Partition(namespace);
-    return new Key([new KeyElement(kind, id)], partition: partition);
+    var partition = Partition(namespace);
+    return Key([KeyElement(kind, id)], partition: partition);
   }
 
-  newEntity(String namespace, String kind, {int id: 1}) {
-    return new Entity(newKey(namespace, kind, id), {'ping': 'pong'});
+  newEntity(String namespace, String kind, {int id = 1}) {
+    return Entity(newKey(namespace, kind, id), {'ping': 'pong'});
   }
 
   return [
@@ -40,8 +40,8 @@ List<Entity> buildEntitiesWithDifferentNamespaces() {
 }
 
 Future sleep(Duration duration) {
-  var completer = new Completer();
-  new Timer(duration, completer.complete);
+  var completer = Completer();
+  Timer(duration, completer.complete);
   return completer.future;
 }
 

@@ -9,13 +9,13 @@ import 'dart:io';
 import 'package:test/test.dart';
 import 'package:gcloud/datastore.dart';
 
-const isApplicationError = const TypeMatcher<ApplicationError>();
+const isApplicationError = TypeMatcher<ApplicationError>();
 
-const isDataStoreError = const TypeMatcher<DatastoreError>();
-const isTransactionAbortedError = const TypeMatcher<TransactionAbortedError>();
-const isNeedIndexError = const TypeMatcher<NeedIndexError>();
-const isTimeoutError = const TypeMatcher<TimeoutError>();
+const isDataStoreError = TypeMatcher<DatastoreError>();
+const isTransactionAbortedError = TypeMatcher<TransactionAbortedError>();
+const isNeedIndexError = TypeMatcher<NeedIndexError>();
+const isTimeoutError = TypeMatcher<TimeoutError>();
 
-const isInt = const TypeMatcher<int>();
+const isInt = TypeMatcher<int>();
 
-const isSocketException = const TypeMatcher<SocketException>();
+const isSocketException = TypeMatcher<SocketException>();
