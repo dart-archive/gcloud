@@ -91,7 +91,7 @@ class User extends Person {
     if (!(super.sameAs(other) && other is User && nickname == other.nickname))
       return false;
 
-    User user = other;
+    User user = other as User;
     if (languages == null) {
       if (user.languages == null) return true;
       return false;

@@ -20,7 +20,7 @@ import 'db/e2e/metamodel_test_impl.dart' as db_metamodel_test;
 Future main() async {
   var scopes = datastore_impl.DatastoreImpl.SCOPES;
   var now = DateTime.now().millisecondsSinceEpoch;
-  String namespace = '${Platform.operatingSystem}${now}';
+  String namespace = '${Platform.operatingSystem}$now';
 
   datastore_impl.DatastoreImpl datastore;
   db.DatastoreDB datastoreDB;

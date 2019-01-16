@@ -137,7 +137,7 @@ class _BucketImpl implements Bucket {
       : this._api = storage._api;
 
   String absoluteObjectName(String objectName) {
-    return '${_ABSOLUTE_PREFIX}$bucketName/$objectName';
+    return '$_ABSOLUTE_PREFIX$bucketName/$objectName';
   }
 
   StreamSink<List<int>> write(String objectName,
@@ -157,7 +157,7 @@ class _BucketImpl implements Bucket {
         metadata = metadata.replace(contentType: contentType);
       }
     }
-    _ObjectMetadata objectMetadata = metadata;
+    _ObjectMetadata objectMetadata = metadata as _ObjectMetadata;
     object = objectMetadata._object;
 
     // If no predefined ACL is passed use the default (if any).
@@ -191,7 +191,7 @@ class _BucketImpl implements Bucket {
         metadata: metadata,
         acl: acl,
         predefinedAcl: predefinedAcl,
-        contentType: contentType);
+        contentType: contentType) as _MediaUploadStreamSink;
     sink.add(bytes);
     return sink.close();
   }
@@ -219,8 +219,8 @@ class _BucketImpl implements Bucket {
       options = storage_api.PartialDownloadOptions(range);
     }
 
-    commons.Media media = await _api.objects
-        .get(bucketName, objectName, downloadOptions: options);
+    commons.Media media = (await _api.objects.get(bucketName, objectName,
+        downloadOptions: options)) as commons.Media;
 
     yield* media.stream;
   }
@@ -255,7 +255,7 @@ class _BucketImpl implements Bucket {
 
   Future updateMetadata(String objectName, ObjectMetadata metadata) {
     // TODO: support other ObjectMetadata implementations?
-    _ObjectMetadata md = metadata;
+    _ObjectMetadata md = metadata as _ObjectMetadata;
     var object = md._object;
     if (md._object.acl == null && _defaultObjectAcl == null) {
       throw ArgumentError('ACL is required for update');

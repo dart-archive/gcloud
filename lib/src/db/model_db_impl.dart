@@ -97,7 +97,7 @@ class ModelDBImpl implements ModelDB {
       elements.add(ds.KeyElement(kind, id));
       currentKey = currentKey.parent;
     }
-    Partition partition = currentKey._parent;
+    Partition partition = currentKey._parent as Partition;
     return ds.Key(elements.reversed.toList(),
         partition: ds.Partition(partition.namespace));
   }
