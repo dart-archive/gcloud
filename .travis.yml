@@ -6,6 +6,7 @@ dart:
 
 dart_task:
   - dartanalyzer: --fatal-infos --fatal-warnings .
+  - test: -P travis
 
 matrix:
   include:
