@@ -278,7 +278,7 @@ class ListProperty extends Property {
     }
 
     if (value == null) return null;
-    List list = value;
+    var list = value as List;
     if (list.isEmpty) return null;
     if (list.length == 1) return subProperty.encodeValue(db, list[0]);
     return list.map((value) => subProperty.encodeValue(db, value)).toList();

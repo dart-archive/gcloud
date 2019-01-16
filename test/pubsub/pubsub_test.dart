@@ -27,8 +27,8 @@ main() {
       'projects/topics',
       'projects/$PROJECT',
       'projects/$PROJECT/',
-      'projects/${PROJECT}/topics',
-      'projects/${PROJECT}/topics/'
+      'projects/$PROJECT/topics',
+      'projects/$PROJECT/topics/'
     ];
 
     var badSubscriptionNames = [
@@ -36,8 +36,8 @@ main() {
       'projects/subscriptions',
       'projects/$PROJECT',
       'projects/$PROJECT/',
-      'projects/${PROJECT}/subscriptions',
-      'projects/${PROJECT}/subscriptions/'
+      'projects/$PROJECT/subscriptions',
+      'projects/$PROJECT/subscriptions/'
     ];
 
     group('topic', () {

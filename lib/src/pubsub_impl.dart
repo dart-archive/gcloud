@@ -21,11 +21,11 @@ class _PubSubImpl implements PubSub {
         _subscriptionPrefix = 'projects/$project/subscriptions/';
 
   String _fullTopicName(String name) {
-    return name.startsWith('projects/') ? name : '${_topicPrefix}$name';
+    return name.startsWith('projects/') ? name : '$_topicPrefix$name';
   }
 
   String _fullSubscriptionName(String name) {
-    return name.startsWith('projects/') ? name : '${_subscriptionPrefix}$name';
+    return name.startsWith('projects/') ? name : '$_subscriptionPrefix$name';
   }
 
   Future<pubsub.Topic> _createTopic(String name) {
@@ -310,16 +310,16 @@ class _PushEventImpl implements PushEvent {
   _PushEventImpl(this._message, this._subscriptionName);
 
   factory _PushEventImpl.fromJson(String json) {
-    Map body = jsonDecode(json);
-    String data = body['message']['data'];
+    Map body = jsonDecode(json) as Map<String, dynamic>;
+    String data = body['message']['data'] as String;
     Map<String, String> labels = HashMap();
     body['message']['labels'].forEach((label) {
-      String key = label['key'];
+      String key = label['key'] as String;
       var value = label['strValue'];
       if (value == null) value = label['numValue'];
       labels[key] = value.toString();
     });
-    String subscription = body['subscription'];
+    String subscription = body['subscription'] as String;
     // TODO(#1): Remove this when the push event subscription name is prefixed
     // with '/subscriptions/'.
     if (!subscription.startsWith(PREFIX)) {
