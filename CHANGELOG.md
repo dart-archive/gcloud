@@ -1,3 +1,7 @@
+## 0.6.0+3
+
+ * Fixed code formatting and lints.
+
 ## 0.6.0+2
 
 * Support the latest `pkg:http`.
