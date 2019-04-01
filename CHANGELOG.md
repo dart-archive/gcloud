@@ -1,3 +1,8 @@
+## 0.6.0+4
+
+ * Updated package description.
+ * Added an example showing how to use Google Cloud Storage.
+
 ## 0.6.0+3
 
  * Fixed code formatting and lints.
