@@ -157,8 +157,9 @@ class DatastoreImpl implements datastore.Datastore {
           .toList();
     else if (value.entityValue != null)
       throw UnsupportedError('Entity values are not supported.');
-    else if (value.geoPointValue != null)
+    else if (value.geoPointValue != null) {
       throw UnsupportedError('GeoPoint values are not supported.');
+    }
     return null;
   }
 
