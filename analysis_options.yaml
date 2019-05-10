@@ -21,7 +21,10 @@ linter:
     - package_names
     - package_prefixed_library_names
     - prefer_final_fields
+    - prefer_generic_function_type_aliases
     - test_types_in_equals
     - throw_in_finally
     - type_init_formals
     - unnecessary_brace_in_string_interps
+    - unnecessary_const
+    - unnecessary_new
