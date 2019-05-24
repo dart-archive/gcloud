@@ -137,27 +137,27 @@ class DatastoreImpl implements datastore.Datastore {
   }
 
   static dynamic _convertApi2DatastoreProperty(api.Value value) {
-    if (value.booleanValue != null)
+    if (value.booleanValue != null) {
       return value.booleanValue;
-    else if (value.integerValue != null)
+    } else if (value.integerValue != null) {
       return int.parse(value.integerValue);
-    else if (value.doubleValue != null)
+    } else if (value.doubleValue != null) {
       return value.doubleValue;
-    else if (value.stringValue != null)
+    } else if (value.stringValue != null) {
       return value.stringValue;
-    else if (value.timestampValue != null)
+    } else if (value.timestampValue != null) {
       return DateTime.parse(value.timestampValue);
-    else if (value.blobValue != null)
+    } else if (value.blobValue != null) {
       return datastore.BlobValue(value.blobValueAsBytes);
-    else if (value.keyValue != null)
+    } else if (value.keyValue != null) {
       return _convertApi2DatastoreKey(value.keyValue);
-    else if (value.arrayValue != null && value.arrayValue.values != null)
+    } else if (value.arrayValue != null && value.arrayValue.values != null) {
       return value.arrayValue.values
           .map(_convertApi2DatastoreProperty)
           .toList();
-    else if (value.entityValue != null)
+    } else if (value.entityValue != null) {
       throw UnsupportedError('Entity values are not supported.');
-    else if (value.geoPointValue != null) {
+    } else if (value.geoPointValue != null) {
       throw UnsupportedError('GeoPoint values are not supported.');
     }
     return null;
