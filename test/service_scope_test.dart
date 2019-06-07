@@ -12,7 +12,8 @@ import 'package:test/test.dart';
 main() {
   test('no-service-scope', () {
     expect(() => ss.register(1, 'foobar'), throwsA(isStateError));
-    expect(() => ss.registerScopeExitCallback(() {}), throwsA(isStateError));
+    expect(
+        () => ss.registerScopeExitCallback(() => null), throwsA(isStateError));
     expect(() => ss.lookup(1), throwsA(isStateError));
 
     var c = Completer.sync();
@@ -25,7 +26,8 @@ main() {
     // of the zone created by the fork()ing.
     c.future.then(expectAsync1((_) {
       expect(() => ss.register(1, 'foobar'), throwsA(isStateError));
-      expect(() => ss.registerScopeExitCallback(() {}), throwsA(isStateError));
+      expect(() => ss.registerScopeExitCallback(() => null),
+          throwsA(isStateError));
       expect(() => ss.lookup(1), throwsA(isStateError));
     }));
   });
@@ -52,7 +54,7 @@ main() {
 
   test('only-cleanup', () {
     return ss.fork(expectAsync0(() => Future.sync(() {
-          ss.registerScopeExitCallback(expectAsync0(() {}));
+          ss.registerScopeExitCallback(expectAsync0(() => null));
         })));
   });
 
@@ -71,6 +73,7 @@ main() {
             ss.registerScopeExitCallback(expectAsync0(() {
               expect(insertions, equals(i + 1));
               insertions--;
+              return null;
             }));
 
             for (int j = 0; j <= NUM; j++) {
@@ -90,19 +93,23 @@ main() {
       ss.registerScopeExitCallback(expectAsync0(() {
         expect(ss.lookup(1), isNull);
         expect(ss.lookup(2), isNull);
+        return null;
       }));
       ss.register(1, 'value1');
       ss.registerScopeExitCallback(expectAsync0(() {
         expect(ss.lookup(1), equals('value1'));
         expect(ss.lookup(2), isNull);
+        return null;
       }));
       ss.register(2, 'value2', onScopeExit: expectAsync0(() {
         expect(ss.lookup(1), equals('value1'));
         expect(ss.lookup(2), isNull);
+        return null;
       }));
       ss.registerScopeExitCallback(expectAsync0(() {
         expect(ss.lookup(1), 'value1');
         expect(ss.lookup(2), 'value2');
+        return null;
       }));
       return Future.value();
     }));
@@ -123,6 +130,7 @@ main() {
                   expect(insertions, equals(i + 1));
                   insertions--;
                   if (i.isEven) throw 'xx${i}yy';
+                  return null;
                 });
               }
             }))
@@ -145,9 +153,10 @@ main() {
             Timer.run(expectAsync0(() {
               expect(() => ss.lookup(key), throwsA(isStateError));
               expect(() => ss.register(2, 'value'), throwsA(isStateError));
-              expect(() => ss.registerScopeExitCallback(() {}),
+              expect(() => ss.registerScopeExitCallback(() => null),
                   throwsA(isStateError));
             }));
+            return null;
           }));
           expect(ss.lookup(key), equals('firstValue'));
         })));
@@ -196,6 +205,7 @@ main() {
       ss.registerScopeExitCallback(expectAsync0(() {
         expect(cleanupFork1, equals(2));
         expect(cleanupFork2, equals(2));
+        return null;
       }));
       expect(ss.lookup(rootKey), equals('root'));
 
@@ -217,9 +227,11 @@ main() {
       return Future.wait([
         spawnChild(subKey1, subKey2, 1, () {
           cleanupFork1++;
+          return null;
         }),
         spawnChild(subKey2, subKey1, 2, () {
           cleanupFork2++;
+          return null;
         }),
       ]);
     }));

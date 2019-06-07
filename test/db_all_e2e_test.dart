@@ -32,6 +32,7 @@ Future main() async {
     datastore = datastore_impl.DatastoreImpl(httpClient, project);
     datastoreDB = db.DatastoreDB(datastore);
     client = httpClient;
+    return null;
   });
 
   tearDownAll(() async {
