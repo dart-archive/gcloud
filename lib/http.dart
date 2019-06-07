@@ -36,6 +36,7 @@ void registerAuthClientService(http.Client client, {bool close = true}) {
   if (close) {
     ss.registerScopeExitCallback(() {
       client.close();
+      return null;
     });
   }
 }

@@ -334,6 +334,7 @@ void runTests(Datastore datastore, String namespace) {
                   .commit(transaction: transaction)
                   .then((_) => null);
             }
+            return null;
           });
         }
 
@@ -398,6 +399,7 @@ void runTests(Datastore datastore, String namespace) {
             if (transaction != null) {
               return datastore.commit(transaction: transaction);
             }
+            return null;
           });
         }
 
