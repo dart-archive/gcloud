@@ -208,7 +208,7 @@ class CustomProperty extends StringProperty {
 }
 
 class KeyMock implements Key {
-  datastore.Key _datastoreKey;
+  final datastore.Key _datastoreKey;
 
   KeyMock(this._datastoreKey);
 

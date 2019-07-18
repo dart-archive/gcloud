@@ -128,8 +128,8 @@ class _BucketInfoImpl implements BucketInfo {
 /// Bucket API implementation providing access to objects.
 class _BucketImpl implements Bucket {
   final storage_api.StorageApi _api;
-  PredefinedAcl _defaultPredefinedObjectAcl;
-  Acl _defaultObjectAcl;
+  final PredefinedAcl _defaultPredefinedObjectAcl;
+  final Acl _defaultObjectAcl;
   final String bucketName;
 
   _BucketImpl(_StorageImpl storage, this.bucketName,
