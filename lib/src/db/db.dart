@@ -8,7 +8,7 @@ part of gcloud.db;
 ///
 /// The function will be given a [Transaction] object which can be used to make
 /// lookups/queries and queue modifications (inserts/updates/deletes).
-typedef TransactionHandler = Future Function(Transaction transaction);
+typedef TransactionHandler<T> = Future<T> Function(Transaction transaction);
 
 /// A datastore transaction.
 ///
@@ -263,7 +263,7 @@ class DatastoreDB {
   /// A transaction can touch only a limited number of entity groups. This limit
   /// is currently 5.
   // TODO: Add retries and/or auto commit/rollback.
-  Future withTransaction(TransactionHandler transactionHandler) {
+  Future<T> withTransaction<T>(TransactionHandler<T> transactionHandler) {
     return datastore
         .beginTransaction(crossEntityGroup: true)
         .then((datastoreTransaction) {

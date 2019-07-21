@@ -238,6 +238,17 @@ class ModelDBImpl implements ModelDB {
     }
   }
 
+  /// Returns true if a  constructor invocation is valid even if the specified
+  /// [parameter] is omitted.
+  ///
+  /// This is  true for named parameters, optional parameters, and parameters
+  /// with a default value.
+  static bool _canBeOmitted(mirrors.ParameterMirror parameter) {
+    return parameter.isOptional ||
+        parameter.isNamed ||
+        parameter.hasDefaultValue;
+  }
+
   void _tryLoadNewModelClassFull(
       mirrors.ClassMirror modelClass, String name, bool useIntegerId) {
     assert(!_modelDesc2Type.containsKey(modelClass.reflectedType));
@@ -261,7 +272,7 @@ class ModelDBImpl implements ModelDB {
       if (declaration is mirrors.MethodMirror) {
         if (declaration.isConstructor &&
             declaration.constructorName == const Symbol('') &&
-            declaration.parameters.isEmpty) {
+            declaration.parameters.every(_canBeOmitted)) {
           defaultConstructorFound = true;
           break;
         }
@@ -439,7 +450,12 @@ class _ModelDescription<T extends Model> {
           '${entity.key.elements.last.kind} (property name: $propertyName)');
     }
 
-    mirror.setField(mirrors.MirrorSystem.getSymbol(fieldName), value);
+    try {
+      mirror.setField(mirrors.MirrorSystem.getSymbol(fieldName), value);
+    } catch (error) {
+      throw StateError('Error trying to set property "${prop.propertyName}" '
+          'to $value for field "$fieldName": $error');
+    }
   }
 
   String fieldNameToPropertyName(String fieldName) {
