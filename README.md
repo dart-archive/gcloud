@@ -146,6 +146,10 @@ var persons = (await db.query<Person>().run()).toList();
 To fetch one or multiple existing entities, use `lookup`.
 
 ```dart
+var key = new Person()
+    ..name = 'UniqueName'
+    ..age = 42
+    ..parentKey = db.emptyKey;
 var person = (await db.lookup<Person>([key])).single;
 var people = await db.lookup<Person>([key1, key2]);
 ```
