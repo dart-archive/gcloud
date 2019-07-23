@@ -4,7 +4,10 @@
 
 library gcloud.db_test;
 
+import 'dart:mirrors' show reflectClass;
+
 import 'package:gcloud/db.dart';
+import 'package:meta/meta.dart';
 import 'package:test/test.dart';
 
 @Kind()
@@ -46,5 +49,52 @@ main() {
       expect(key.id, 42);
       expect(key.type, equals(Foobar));
     });
+
+    test('hasDefaultConstructor', () {
+      expect(hasDefaultConstructor(Empty), isTrue);
+      expect(hasDefaultConstructor(OnlyNamedConstructor), isFalse);
+      expect(hasDefaultConstructor(DefaultAndNamedConstructor), isTrue);
+      expect(hasDefaultConstructor(RequiredArguments), isFalse);
+      expect(hasDefaultConstructor(OnlyPositionalArguments), isTrue);
+      expect(hasDefaultConstructor(OnlyNamedArguments), isTrue);
+      expect(hasDefaultConstructor(RequiredNamedArguments), isFalse);
+      expect(hasDefaultConstructor(DefaultArgumentValues), isTrue);
+    });
   });
+}
+
+bool hasDefaultConstructor(Type type) =>
+    ModelDBImpl.hasDefaultConstructor(reflectClass(type));
+
+class Empty {
+  const Empty();
+}
+
+class OnlyNamedConstructor {
+  const OnlyNamedConstructor.named();
+}
+
+class DefaultAndNamedConstructor {
+  const DefaultAndNamedConstructor();
+  const DefaultAndNamedConstructor.named();
+}
+
+class RequiredArguments {
+  const RequiredArguments(int arg);
+}
+
+class OnlyPositionalArguments {
+  const OnlyPositionalArguments([int arg, int arg2]);
+}
+
+class OnlyNamedArguments {
+  const OnlyNamedArguments({int arg, int arg2});
+}
+
+class RequiredNamedArguments {
+  const RequiredNamedArguments({int arg1, @required int arg2});
+}
+
+class DefaultArgumentValues {
+  const DefaultArgumentValues([int arg1 = 1, int arg2 = 2]);
 }
