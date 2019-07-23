@@ -1,3 +1,11 @@
+## 0.6.1
+
+ * Added examples.
+ * Fixed formatting and lints.
+ * Allow `Model` classes to contain constructors with optional or named
+   arguments (as long as they're annotated with `@required`).
+ * Add generics support to `withTransaction()`.
+
 ## 0.6.0+4
 
  * Updated package description.
