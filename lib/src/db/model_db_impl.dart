@@ -238,6 +238,40 @@ class ModelDBImpl implements ModelDB {
     }
   }
 
+  static bool _isRequiredAnnotation(mirrors.InstanceMirror annotation) {
+    return annotation.type.simpleName == #Required;
+  }
+
+  /// Returns true if a  constructor invocation is valid even if the specified
+  /// [parameter] is omitted.
+  ///
+  /// This is  true for named parameters, optional parameters, and parameters
+  /// with a default value.
+  static bool _canBeOmitted(mirrors.ParameterMirror parameter) {
+    if (parameter.metadata.any(_isRequiredAnnotation)) {
+      return false;
+    }
+    return parameter.isOptional ||
+        parameter.isNamed ||
+        parameter.hasDefaultValue;
+  }
+
+  /// Returns true if the specified [classMirror] has a default (unnamed)
+  /// constructor that accepts an empty arguments list.
+  @visibleForTesting
+  static bool hasDefaultConstructor(mirrors.ClassMirror classMirror) {
+    for (var declaration in classMirror.declarations.values) {
+      if (declaration is mirrors.MethodMirror) {
+        if (declaration.isConstructor &&
+            declaration.constructorName == const Symbol('') &&
+            declaration.parameters.every(_canBeOmitted)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   void _tryLoadNewModelClassFull(
       mirrors.ClassMirror modelClass, String name, bool useIntegerId) {
     assert(!_modelDesc2Type.containsKey(modelClass.reflectedType));
@@ -256,18 +290,7 @@ class ModelDBImpl implements ModelDB {
         _propertiesFromModelDescription(modelClass);
 
     // Ensure we have an empty constructor.
-    bool defaultConstructorFound = false;
-    for (var declaration in modelClass.declarations.values) {
-      if (declaration is mirrors.MethodMirror) {
-        if (declaration.isConstructor &&
-            declaration.constructorName == const Symbol('') &&
-            declaration.parameters.isEmpty) {
-          defaultConstructorFound = true;
-          break;
-        }
-      }
-    }
-    if (!defaultConstructorFound) {
+    if (!hasDefaultConstructor(modelClass)) {
       throw StateError('Class ${modelClass.simpleName} does not have a default '
           'constructor.');
     }
@@ -439,7 +462,12 @@ class _ModelDescription<T extends Model> {
           '${entity.key.elements.last.kind} (property name: $propertyName)');
     }
 
-    mirror.setField(mirrors.MirrorSystem.getSymbol(fieldName), value);
+    try {
+      mirror.setField(mirrors.MirrorSystem.getSymbol(fieldName), value);
+    } on TypeError catch (error) {
+      throw StateError('Error trying to set property "${prop.propertyName}" '
+          'to $value for field "$fieldName": $error');
+    }
   }
 
   String fieldNameToPropertyName(String fieldName) {
