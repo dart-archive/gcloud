@@ -1,3 +1,7 @@
+## 0.6.2
+
+ * Fixed bug in `Transaction.rollback()`.
+
 ## 0.6.1
 
  * Added examples.
