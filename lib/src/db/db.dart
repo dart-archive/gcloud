@@ -19,6 +19,7 @@ class Transaction {
   static const int _TRANSACTION_STARTED = 0;
   static const int _TRANSACTION_ROLLED_BACK = 1;
   static const int _TRANSACTION_COMMITTED = 2;
+  static const int _TRANSACTION_COMMIT_FAILED = 3;
 
   final DatastoreDB db;
   final ds.Transaction _datastoreTransaction;
@@ -26,7 +27,7 @@ class Transaction {
   final List<Model> _inserts = [];
   final List<Key> _deletes = [];
 
-  int _transactionState = _TRANSACTION_STARTED;
+  int _state = _TRANSACTION_STARTED;
 
   Transaction(this.db, this._datastoreTransaction);
 
@@ -69,27 +70,34 @@ class Transaction {
 
   /// Rolls this transaction back.
   Future rollback() {
-    _checkSealed(changeState: _TRANSACTION_ROLLED_BACK);
+    _checkSealed(changeState: _TRANSACTION_ROLLED_BACK, allowFailed: true);
     return db.datastore.rollback(_datastoreTransaction);
   }
 
   /// Commits this transaction including all of the queued mutations.
   Future commit() {
     _checkSealed(changeState: _TRANSACTION_COMMITTED);
-    return _commitHelper(db,
-        inserts: _inserts,
-        deletes: _deletes,
-        datastoreTransaction: _datastoreTransaction);
+    try {
+      return _commitHelper(db,
+          inserts: _inserts,
+          deletes: _deletes,
+          datastoreTransaction: _datastoreTransaction);
+    } catch (error) {
+      _state = _TRANSACTION_COMMIT_FAILED;
+      rethrow;
+    }
   }
 
-  _checkSealed({int changeState}) {
-    if (_transactionState == _TRANSACTION_COMMITTED) {
+  _checkSealed({int changeState, bool allowFailed = false}) {
+    if (_state == _TRANSACTION_COMMITTED) {
       throw StateError('The transaction has already been committed.');
-    } else if (_transactionState == _TRANSACTION_ROLLED_BACK) {
+    } else if (_state == _TRANSACTION_ROLLED_BACK) {
       throw StateError('The transaction has already been rolled back.');
+    } else if (_state == _TRANSACTION_COMMIT_FAILED && !allowFailed) {
+      throw StateError('The transaction has attempted commit and failed.');
     }
     if (changeState != null) {
-      _transactionState = changeState;
+      _state = changeState;
     }
   }
 }
