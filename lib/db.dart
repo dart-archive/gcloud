@@ -22,6 +22,7 @@ import 'service_scope.dart' as ss;
 
 part 'src/db/annotations.dart';
 part 'src/db/db.dart';
+part 'src/db/exceptions.dart';
 part 'src/db/models.dart';
 part 'src/db/model_db.dart';
 part 'src/db/model_db_impl.dart';

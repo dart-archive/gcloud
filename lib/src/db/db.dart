@@ -37,6 +37,29 @@ class Transaction {
         datastoreTransaction: _datastoreTransaction);
   }
 
+  /// Looks up a single [key] within this transaction, and returns the
+  /// associated [Model] object.
+  ///
+  /// If [orElse] is specified, then it will be consulted to provide a default
+  /// value for the model object in the event that [key] was not found within
+  /// the transaction.
+  ///
+  /// If the [key] is not found within the transaction and [orElse] was not
+  /// specified, then a [KeyNotFoundException] will be thrown.
+  Future<T> lookupValue<T extends Model>(Key key, {T orElse()}) async {
+    final List<T> values = await lookup<T>(<Key>[key]);
+    assert(values.length == 1);
+    T value = values.single;
+    if (value == null) {
+      if (orElse != null) {
+        value = orElse();
+      } else {
+        throw KeyNotFoundException(key);
+      }
+    }
+    return value;
+  }
+
   /// Enqueues [inserts] and [deletes] which should be committed at commit time.
   void queueMutations({List<Model> inserts, List<Key> deletes}) {
     _checkSealed();
@@ -324,16 +347,16 @@ class DatastoreDB {
   /// datastore.
   ///
   /// If the [key] is not found in the datastore and [orElse] was not
-  /// specified, then an [ArgumentError] will be thrown.
+  /// specified, then a [KeyNotFoundException] will be thrown.
   Future<T> lookupValue<T extends Model>(Key key, {T orElse()}) async {
-    final List<T> values = await lookup(<Key>[key]);
+    final List<T> values = await lookup<T>(<Key>[key]);
     assert(values.length == 1);
     T value = values.single;
     if (value == null) {
       if (orElse != null) {
         value = orElse();
       } else {
-        throw ArgumentError('No value associated with key: $key');
+        throw KeyNotFoundException(key);
       }
     }
     return value;
