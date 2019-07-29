@@ -1,3 +1,7 @@
+## 0.6.3
+
+ * Added `DatastoreDB.lookupValue()`
+
 ## 0.6.2
 
  * Fixed bug in `Transaction.rollback()`.

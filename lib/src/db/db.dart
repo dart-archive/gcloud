@@ -37,6 +37,29 @@ class Transaction {
         datastoreTransaction: _datastoreTransaction);
   }
 
+  /// Looks up a single [key] within this transaction, and returns the
+  /// associated [Model] object.
+  ///
+  /// If [orElse] is specified, then it will be consulted to provide a default
+  /// value for the model object in the event that [key] was not found within
+  /// the transaction.
+  ///
+  /// If the [key] is not found within the transaction and [orElse] was not
+  /// specified, then a [KeyNotFoundException] will be thrown.
+  Future<T> lookupValue<T extends Model>(Key key, {T orElse()}) async {
+    final List<T> values = await lookup<T>(<Key>[key]);
+    assert(values.length == 1);
+    T value = values.single;
+    if (value == null) {
+      if (orElse != null) {
+        value = orElse();
+      } else {
+        throw KeyNotFoundException(key);
+      }
+    }
+    return value;
+  }
+
   /// Enqueues [inserts] and [deletes] which should be committed at commit time.
   void queueMutations({List<Model> inserts, List<Key> deletes}) {
     _checkSealed();
@@ -302,10 +325,41 @@ class DatastoreDB {
 
   /// Looks up [keys] in the datastore and returns a list of [Model] objects.
   ///
+  /// Any key that is not found in the datastore will have a corresponding
+  /// value of null in the list of model objects that is returned.
+  ///
   /// For transactions, please use [beginTransaction] and call the [lookup]
   /// method on it's returned [Transaction] object.
+  ///
+  /// See also:
+  ///
+  ///  * [lookupValue], which looks a single value up by its key, requiring a
+  ///    successful lookup.
   Future<List<T>> lookup<T extends Model>(List<Key> keys) {
     return _lookupHelper<T>(this, keys);
+  }
+
+  /// Looks up a single [key] in the datastore, and returns the associated
+  /// [Model] object.
+  ///
+  /// If [orElse] is specified, then it will be consulted to provide a default
+  /// value for the model object in the event that [key] was not found in the
+  /// datastore.
+  ///
+  /// If the [key] is not found in the datastore and [orElse] was not
+  /// specified, then a [KeyNotFoundException] will be thrown.
+  Future<T> lookupValue<T extends Model>(Key key, {T orElse()}) async {
+    final List<T> values = await lookup<T>(<Key>[key]);
+    assert(values.length == 1);
+    T value = values.single;
+    if (value == null) {
+      if (orElse != null) {
+        value = orElse();
+      } else {
+        throw KeyNotFoundException(key);
+      }
+    }
+    return value;
   }
 
   /// Add [inserts] to the datastore and remove [deletes] from it.
