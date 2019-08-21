@@ -137,6 +137,22 @@ class ExpandoPerson extends db.ExpandoModel {
   }
 }
 
+@db.Kind()
+class Human extends Person {
+  @db.BoolProperty(defaultValue: true)
+  bool isAlive;
+
+  sameAs(Object other) {
+    if (!(super.sameAs(other) && other is Human && isAlive == other.isAlive)) {
+      return false;
+    }
+    return true;
+  }
+
+  String toString() =>
+      'Person(id: $id, name: $name, age: $age, isAlive: $isAlive)';
+}
+
 Future sleep(Duration duration) => Future.delayed(duration);
 
 void runTests(db.DatastoreDB store, String namespace) {
@@ -239,6 +255,33 @@ void runTests(db.DatastoreDB store, String namespace) {
             ..nickname = 'nickname${i % 3}');
         }
         return testInsertLookupDelete(users);
+      });
+      test('defaultValue', () async {
+        var root = partition.emptyKey;
+        var humans = <Human>[];
+        humans.add(Human()
+          ..id = 2
+          ..parentKey = root
+          ..age = 42 + 2
+          ..name = 'human2'
+          ..isAlive = false);
+        humans.add(Human()
+          ..id = 3
+          ..parentKey = root
+          ..age = 42 + 3
+          ..name = 'human3'
+          ..isAlive = true);
+        await testInsertLookupDelete(humans);
+
+        // Human with a default value
+        final h = Human()
+          ..id = 9
+          ..parentKey = root
+          ..age = 42
+          ..name = 'Bob';
+        await store.commit(inserts: [h]);
+        final h2 = await store.lookupValue<Human>(h.key);
+        expect(h2.isAlive, true);
       });
       test('expando_insert', () {
         var root = partition.emptyKey;

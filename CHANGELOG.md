@@ -1,3 +1,8 @@
+## 0.6.4
+
+ * Added `defaultValue` to `BoolProperty`, `IntProperty`, `DoubleProperty` and
+  `StringProperty`.
+
 ## 0.6.3
 
  * Added `DatastoreDB.lookupValue()`

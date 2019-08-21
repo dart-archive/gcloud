@@ -99,14 +99,21 @@ abstract class Property {
 /// An abstract base class for primitive properties which can e.g. be used
 /// within a composed `ListProperty`.
 abstract class PrimitiveProperty extends Property {
-  const PrimitiveProperty(
-      {String propertyName, bool required = false, bool indexed = true})
-      : super(propertyName: propertyName, required: required, indexed: indexed);
+  final Object _defaultValue;
+
+  const PrimitiveProperty({
+    String propertyName,
+    bool required = false,
+    bool indexed = true,
+    Object defaultValue,
+  })  : _defaultValue = defaultValue,
+        super(propertyName: propertyName, required: required, indexed: indexed);
 
   Object encodeValue(ModelDB db, Object value, {bool forComparison = false}) =>
-      value;
+      value ?? _defaultValue;
 
-  Object decodePrimitiveValue(ModelDB db, Object value) => value;
+  Object decodePrimitiveValue(ModelDB db, Object value) =>
+      value ?? _defaultValue;
 }
 
 /// A boolean [Property].
@@ -114,9 +121,17 @@ abstract class PrimitiveProperty extends Property {
 /// It will validate that values are booleans before writing them to the
 /// datastore and when reading them back.
 class BoolProperty extends PrimitiveProperty {
-  const BoolProperty(
-      {String propertyName, bool required = false, bool indexed = true})
-      : super(propertyName: propertyName, required: required, indexed: indexed);
+  const BoolProperty({
+    String propertyName,
+    bool required = false,
+    bool indexed = true,
+    bool defaultValue,
+  }) : super(
+          propertyName: propertyName,
+          required: required,
+          indexed: indexed,
+          defaultValue: defaultValue,
+        );
 
   bool validate(ModelDB db, Object value) =>
       super.validate(db, value) && (value == null || value is bool);
@@ -127,9 +142,17 @@ class BoolProperty extends PrimitiveProperty {
 /// It will validate that values are integers before writing them to the
 /// datastore and when reading them back.
 class IntProperty extends PrimitiveProperty {
-  const IntProperty(
-      {String propertyName, bool required = false, bool indexed = true})
-      : super(propertyName: propertyName, required: required, indexed: indexed);
+  const IntProperty({
+    String propertyName,
+    bool required = false,
+    bool indexed = true,
+    int defaultValue,
+  }) : super(
+          propertyName: propertyName,
+          required: required,
+          indexed: indexed,
+          defaultValue: defaultValue,
+        );
 
   bool validate(ModelDB db, Object value) =>
       super.validate(db, value) && (value == null || value is int);
@@ -140,9 +163,17 @@ class IntProperty extends PrimitiveProperty {
 /// It will validate that values are doubles before writing them to the
 /// datastore and when reading them back.
 class DoubleProperty extends PrimitiveProperty {
-  const DoubleProperty(
-      {String propertyName, bool required = false, bool indexed = true})
-      : super(propertyName: propertyName, required: required, indexed: indexed);
+  const DoubleProperty({
+    String propertyName,
+    bool required = false,
+    bool indexed = true,
+    double defaultValue,
+  }) : super(
+          propertyName: propertyName,
+          required: required,
+          indexed: indexed,
+          defaultValue: defaultValue,
+        );
 
   bool validate(ModelDB db, Object value) =>
       super.validate(db, value) && (value == null || value is double);
@@ -153,9 +184,17 @@ class DoubleProperty extends PrimitiveProperty {
 /// It will validate that values are strings before writing them to the
 /// datastore and when reading them back.
 class StringProperty extends PrimitiveProperty {
-  const StringProperty(
-      {String propertyName, bool required = false, bool indexed = true})
-      : super(propertyName: propertyName, required: required, indexed: indexed);
+  const StringProperty({
+    String propertyName,
+    bool required = false,
+    bool indexed = true,
+    String defaultValue,
+  }) : super(
+          propertyName: propertyName,
+          required: required,
+          indexed: indexed,
+          defaultValue: defaultValue,
+        );
 
   bool validate(ModelDB db, Object value) =>
       super.validate(db, value) && (value == null || value is String);
