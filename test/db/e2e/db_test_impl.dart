@@ -452,7 +452,12 @@ void runTests(db.DatastoreDB store, String namespace) {
       var allInserts = <db.Model>[]..addAll(users)..addAll(expandoPersons);
       var allKeys = allInserts.map((db.Model model) => model.key).toList();
       return store.commit(inserts: allInserts).then((_) {
-        return waitUntilEntitiesReady(store, allKeys, partition).then((_) {
+        return Future.wait([
+          waitUntilEntitiesReady<User>(
+              store, users.map((u) => u.key).toList(), partition),
+          waitUntilEntitiesReady<ExpandoPerson>(
+              store, expandoPersons.map((u) => u.key).toList(), partition),
+        ]).then((_) {
           var tests = [
             // Queries for [Person] return no results, we only have [User]
             // objects.
@@ -600,7 +605,12 @@ void runTests(db.DatastoreDB store, String namespace) {
             () => store.commit(deletes: allKeys),
 
             // Wait until the entity deletes are reflected in the indices.
-            () => waitUntilEntitiesGone(store, allKeys, partition),
+            () => Future.wait([
+                  waitUntilEntitiesGone<User>(
+                      store, users.map((u) => u.key).toList(), partition),
+                  waitUntilEntitiesGone<ExpandoPerson>(store,
+                      expandoPersons.map((u) => u.key).toList(), partition),
+                ]),
 
             // Make sure queries don't return results
             () => store.lookup(allKeys).then((List<db.Model> models) {
@@ -638,47 +648,44 @@ Future<List<db.Model>> runQueryWithExponentialBackoff(
       "Tried running a query with exponential backoff, giving up now.");
 }
 
-Future waitUntilEntitiesReady(
+Future waitUntilEntitiesReady<T extends db.Model>(
     db.DatastoreDB mdb, List<db.Key> keys, db.Partition partition) {
-  return waitUntilEntitiesHelper(mdb, keys, true, partition);
+  return waitUntilEntitiesHelper<T>(mdb, keys, true, partition);
 }
 
-Future waitUntilEntitiesGone(
+Future waitUntilEntitiesGone<T extends db.Model>(
     db.DatastoreDB mdb, List<db.Key> keys, db.Partition partition) {
-  return waitUntilEntitiesHelper(mdb, keys, false, partition);
+  return waitUntilEntitiesHelper<T>(mdb, keys, false, partition);
 }
 
-Future waitUntilEntitiesHelper(db.DatastoreDB mdb, List<db.Key> keys,
-    bool positive, db.Partition partition) {
-  var keysByKind = <Type, List<db.Key>>{};
-  for (var key in keys) {
-    keysByKind.putIfAbsent(key.type, () => <db.Key>[]).add(key);
-  }
+Future<void> waitUntilEntitiesHelper<T extends db.Model>(
+  db.DatastoreDB mdb,
+  List<db.Key> keys,
+  bool positive,
+  db.Partition partition,
+) async {
+  bool done = false;
+  while (!done) {
+    final models = await mdb.query<T>(partition: partition).run().toList();
 
-  Future waitForKeys(List<db.Key> keys) {
-    return mdb
-        .query<db.Model>(partition: partition)
-        .run()
-        .toList()
-        .then((List<db.Model> models) {
-      for (var key in keys) {
-        bool found = false;
-        for (var model in models) {
-          if (key == model.key) found = true;
+    done = true;
+    for (var key in keys) {
+      bool found = false;
+      for (var model in models) {
+        if (key == model.key) found = true;
+      }
+      if (positive) {
+        if (!found) {
+          done = false;
         }
-        if (positive) {
-          if (!found) return waitForKeys(keys);
-        } else {
-          if (found) return waitForKeys(keys);
+      } else {
+        if (found) {
+          done = false;
         }
       }
-      return null;
-    });
+    }
+    return null;
   }
-
-  return Future.forEach(keysByKind.keys.toList(), (Type kind) {
-    return waitForKeys(keysByKind[kind]);
-  });
 }
 
 Future main() async {
