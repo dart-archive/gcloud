@@ -352,17 +352,8 @@ class ModelDBImpl implements ModelDB {
     return properties;
   }
 
-  bool _isExpandoClass(mirrors.ClassMirror modelClass) {
-    while (modelClass.superclass != modelClass) {
-      if (modelClass.reflectedType == ExpandoModel) {
-        return true;
-      } else if (modelClass.reflectedType == Model) {
-        return false;
-      }
-      modelClass = modelClass.superclass;
-    }
-    throw StateError('This should be unreachable.');
-  }
+  bool _isExpandoClass(mirrors.ClassMirror modelClass) =>
+      modelClass.isSubtypeOf(mirrors.reflectClass(ExpandoModel));
 }
 
 class _ModelDescription<T extends Model> {
