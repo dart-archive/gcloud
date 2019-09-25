@@ -56,7 +56,8 @@ class ModelDBImpl implements ModelDB {
     _initialize([mirrors.currentMirrorSystem().findLibrary(librarySymbol)]);
   }
 
-  /// Converts a [ds.Key] to a [Key].
+  /// Converts a [ds.Key] to a [Key]. The key returned will have the correct
+  /// id type which is either `Key<String>` or `Key<int>`.
   Key fromDatastoreKey(ds.Key datastoreKey) {
     var namespace = Partition(datastoreKey.partition.namespace);
     Key key = namespace.emptyKey;
@@ -68,7 +69,15 @@ class ModelDBImpl implements ModelDB {
             'Please ensure a model class was annotated with '
             '`@Kind(name: "${element.kind}")`.');
       }
-      key = key.append(type, id: element.id);
+      final elementId = element.id;
+      if (elementId is String) {
+        key = key.append<String>(type, id: elementId);
+      } else if (elementId is int) {
+        key = key.append<int>(type, id: elementId);
+      } else {
+        throw StateError('Key must be either String or int, but '
+            'was ${elementId.runtimeType} for key ${element.kind}');
+      }
     }
     return key;
   }
