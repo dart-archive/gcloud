@@ -60,6 +60,9 @@ class Key<T> {
   }
 
   int get hashCode => _parent.hashCode ^ type.hashCode ^ id.hashCode;
+
+  /// Converts `Key<dynamic>` to `Key<U>`.
+  Key<U> cast<U>() => Key<U>(parent, type, id as U);
 }
 
 /// Represents a datastore partition.
