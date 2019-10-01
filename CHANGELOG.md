@@ -1,3 +1,11 @@
+## 0.7.0
+
+ * **BREAKING CHANGE:** Add generics support for `Model.id`.  
+   It is now possible to define the type of the id a model has (either `String`
+   or `int`). A model can now be defined as
+   `class MyModel extends Model<String> {}` and `myModel.id` will then
+   be of type `String` and `myModel.key` of type `Key<String>`.
+
 ## 0.6.3
 
  * Added `DatastoreDB.lookupValue()`
