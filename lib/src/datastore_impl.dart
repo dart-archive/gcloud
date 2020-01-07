@@ -521,18 +521,6 @@ class QueryPageImpl implements Page<datastore.Entity> {
             '(${request.query.limit}) was.');
       }
 
-      // FIXME: TODO: Big hack!
-      // It looks like Apiary/Atlas is currently broken.
-      /*
-      if (limit != null &&
-          returnedEntities.length < batchLimit &&
-          response.batch.moreResults == 'MORE_RESULTS_AFTER_LIMIT') {
-        throw new datastore.DatastoreError(
-            'Server returned response with less entities then the limit was, '
-            'but signals there are more results after the limit.');
-      }
-      */
-
       // In case a limit was specified, we need to subtraction the number of
       // entities we already got.
       // (the checks above guarantee that this subtraction is >= 0).
@@ -541,27 +529,16 @@ class QueryPageImpl implements Page<datastore.Entity> {
         remainingEntities = limit - returnedEntities.length;
       }
 
-      // If the server signals there are more entities and we either have no
-      // limit or our limit has not been reached, we set `moreBatches` to
-      // `true`.
-      bool moreBatches = (remainingEntities == null || remainingEntities > 0) &&
+      // Is this the last page of results for this query?
+      bool isLast = response.batch.moreResults == 'NO_MORE_RESULTS' ||
           response.batch.moreResults == 'MORE_RESULTS_AFTER_LIMIT';
 
-      bool gotAll = limit != null && remainingEntities == 0;
-      bool noMore = response.batch.moreResults == 'NO_MORE_RESULTS';
-      bool isLast = gotAll || noMore;
+      // If this isn't the last page, the state should be 'NOT_FINISHED'.
+      // Other states like 'MORE_RESULTS_AFTER_CURSOR' are unexpected.
+      assert(isLast || (response.batch.moreResults == 'NOT_FINISHED'));
 
-      // As a sanity check, we assert that `moreBatches XOR isLast`.
-      assert(isLast != moreBatches);
-
-      // FIXME: TODO: Big hack!
-      // It looks like Apiary/Atlas is currently broken.
-      if (moreBatches && returnedEntities.isEmpty) {
-        print('Warning: Api to Google Cloud Datastore returned bogus response. '
-            'Trying a workaround.');
-        isLast = true;
-        moreBatches = false;
-      }
+      // If we got zero results, this must also be the last page.
+      assert(returnedEntities.isNotEmpty || isLast);
 
       if (!isLast && response.batch.endCursor == null) {
         throw datastore.DatastoreError(
