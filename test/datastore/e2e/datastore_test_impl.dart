@@ -97,6 +97,30 @@ void runTests(Datastore datastore, String namespace) {
     }
   }
 
+  Future<void> bulkInsert(List<Entity> entities) async {
+    final batchSize = 200;
+    var chunks = <Future<void>>[];
+    for (Iterable<Entity> iter = entities;
+        iter.isNotEmpty;
+        iter = iter.skip(batchSize)) {
+      final batch = iter.take(batchSize).toList();
+      chunks.add(datastore.commit(inserts: batch));
+    }
+    await Future.wait(chunks);
+  }
+
+  Future<void> bulkDelete(List<Key> keys) async {
+    final batchSize = 200;
+    var chunks = <Future<void>>[];
+    for (Iterable<Key> iter = keys;
+        !iter.isNotEmpty;
+        iter = iter.skip(batchSize)) {
+      final batch = iter.take(batchSize).toList();
+      chunks.add(datastore.commit(deletes: batch));
+    }
+    await Future.wait(chunks);
+  }
+
   Future<List<Entity>> lookup(List<Key> keys, {bool transactional = true}) {
     if (transactional) {
       return withTransaction((Transaction transaction) {
@@ -866,6 +890,31 @@ void runTests(Datastore datastore, String namespace) {
 
         // TODO: query by multiple keys, multiple sort orders, ...
       });
+
+      test('bulk_query', () async {
+        const TEST_BULK_KIND = 'TestBulkQueryKind';
+        var bulkEntities = buildEntities(1, 1132,
+            idFunction: (int i) => 'str${i.toString().padLeft(6, '0')}',
+            kind: TEST_BULK_KIND,
+            partition: partition);
+        var bulkKeys = bulkEntities.map((e) => e.key).toList();
+        var sorted = bulkEntities.toList()..sort(reverseOrderFunction);
+        var truncSize = 632;
+        var truncated = sorted.take(truncSize).toList();
+        await bulkInsert(bulkEntities);
+        await waitUntilEntitiesReady(datastore, bulkKeys, partition);
+        await testQueryAndCompare(TEST_BULK_KIND, bulkEntities,
+            correctOrder: false);
+        await testQueryAndCompare(TEST_BULK_KIND, truncated,
+            limit: truncSize, orders: orders, correctOrder: true);
+        await testQueryAndCompare(
+            TEST_BULK_KIND, sorted.skip(123).take(truncSize).toList(),
+            offset: 123, limit: truncSize, orders: orders, correctOrder: true);
+        await testQueryAndCompare(TEST_BULK_KIND, sorted,
+            orders: orders, correctOrder: true);
+        await bulkDelete(bulkKeys);
+        await waitUntilEntitiesGone(datastore, bulkKeys, partition);
+      }, timeout: Timeout(Duration(minutes: 1)));
 
       test('ancestor_query', () {
         /*
