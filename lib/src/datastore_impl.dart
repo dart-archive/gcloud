@@ -28,8 +28,15 @@ class DatastoreImpl implements datastore.Datastore {
 
   /// The [project] parameter is the name of the cloud project (it should not
   /// start with a `s~`).
-  DatastoreImpl(http.Client client, String project)
-      : _api = api.DatastoreApi(client),
+  /// The [rootURL] and [servicePath] parameters may be used to specify an
+  /// alternate datastore host location and path; this is particularly useful
+  /// for the datastore emulator.
+  DatastoreImpl(http.Client client, String project,
+      {String rootUrl, String servicePath = ''})
+      : _api = rootUrl != null
+            ? api.DatastoreApi(client,
+                rootUrl: rootUrl, servicePath: servicePath)
+            : api.DatastoreApi(client, servicePath: servicePath),
         _project = project;
 
   api.Key _convertDatastore2ApiKey(datastore.Key key, {bool enforceId = true}) {

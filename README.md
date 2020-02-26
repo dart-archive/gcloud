@@ -160,6 +160,29 @@ for this additional API level is to bridge the gap between the different APIs
 exposed inside App Engine and through the public REST API. We reserve the
 rights to modify and maybe even remove this additional layer at any time.
 
+### Using the Datastore emulator
+
+The gcloud sdk provides an easy-to-use datastore emulator. The emulator can be launched via
+
+```console
+$ gcloud beta emulators datastore start
+```
+
+To use the Datastore emulator, you must pass the host and address at which the 
+emulator is running to the ApiClient. You can use an empty API key for the client
+authentication details.
+
+```dart
+  final client = auth.clientViaApiKey("");
+  final db = DatastoreDB(
+    datastore_impl.DatastoreImpl(
+      client,
+      project,
+      rootUrl: "http://localhost:8080/",
+    ),
+  );
+```
+
 ## Cloud Storage
 Google Cloud Storage provide a highly available object store (aka BLOB
 store). See the product page [https://cloud.google.com/storage/][GCS]
