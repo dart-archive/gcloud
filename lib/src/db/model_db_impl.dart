@@ -422,8 +422,13 @@ class _ModelDescription<T extends Model> {
         unIndexedProperties: _unIndexedProperties);
   }
 
-  void _encodeProperty(ModelDBImpl db, Model model, mirrors.InstanceMirror mirror,
-      Map properties, String fieldName, Property prop) {
+  void _encodeProperty(
+      ModelDBImpl db,
+      Model model,
+      mirrors.InstanceMirror mirror,
+      Map properties,
+      String fieldName,
+      Property prop) {
     var propertyName = prop.propertyName;
     propertyName ??= fieldName;
 

@@ -348,7 +348,7 @@ class DatastoreDB {
   /// If the [key] is not found in the datastore and [orElse] was not
   /// specified, then a [KeyNotFoundException] will be thrown.
   Future<T> lookupValue<T extends Model>(Key key, {T Function() orElse}) async {
-    final  values = await lookup<T>(<Key>[key]);
+    final values = await lookup<T>(<Key>[key]);
     assert(values.length == 1);
     var value = values.single;
     if (value == null) {

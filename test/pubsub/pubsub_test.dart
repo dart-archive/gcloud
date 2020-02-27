@@ -141,7 +141,8 @@ void main() {
       });
 
       group('query', () {
-        void addTopics(pubsub.ListTopicsResponse response, int first, int count) {
+        void addTopics(
+            pubsub.ListTopicsResponse response, int first, int count) {
           response.topics = [];
           for (var i = 0; i < count; i++) {
             response.topics.add(pubsub.Topic()..name = 'topic-${first + i}');
@@ -150,8 +151,12 @@ void main() {
 
         // Mock that expect/generates [n] topics in pages of page size
         // [pageSize].
-        void registerQueryMock(MockClient mock, int n, int pageSize,
-            [int totalCalls,]) {
+        void registerQueryMock(
+          MockClient mock,
+          int n,
+          int pageSize, [
+          int totalCalls,
+        ]) {
           var totalPages = (n + pageSize - 1) ~/ pageSize;
           // No items still generate one request.
           if (totalPages == 0) totalPages = 1;

@@ -318,9 +318,9 @@ void main() {
     var bytesNormalUpload = [1, 2, 3];
 
     // Generate a list just above the limit when changing to resumable upload.
-    const  MB = 1024 * 1024;
-    const  maxNormalUpload = 1 * MB;
-    const  minResumableUpload = maxNormalUpload + 1;
+    const MB = 1024 * 1024;
+    const maxNormalUpload = 1 * MB;
+    const minResumableUpload = maxNormalUpload + 1;
     var bytesResumableUpload =
         List.generate(minResumableUpload, (e) => e & 255);
 

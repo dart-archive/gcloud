@@ -206,7 +206,7 @@ void runTests(Datastore datastore, String namespace) {
         if (transactional) {
           return withTransaction(test, xg: xg);
         }
-         test(null);
+        test(null);
       }
 
       var unnamedEntities1 = buildEntities(42, 43, partition: partition);
