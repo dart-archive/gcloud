@@ -143,7 +143,7 @@ main() {
       group('query', () {
         addTopics(pubsub.ListTopicsResponse response, int first, int count) {
           response.topics = [];
-          for (int i = 0; i < count; i++) {
+          for (var i = 0; i < count; i++) {
             response.topics.add(pubsub.Topic()..name = 'topic-${first + i}');
           }
         }
@@ -152,14 +152,12 @@ main() {
         // [pageSize].
         registerQueryMock(MockClient mock, int n, int pageSize,
             [int totalCalls]) {
-          int totalPages = (n + pageSize - 1) ~/ pageSize;
+          var totalPages = (n + pageSize - 1) ~/ pageSize;
           // No items still generate one request.
           if (totalPages == 0) totalPages = 1;
           // Can pass in total calls if this mock is overwritten before all
           // expected pages are done, e.g. when testing errors.
-          if (totalCalls == null) {
-            totalCalls = totalPages;
-          }
+          totalCalls ??= totalPages;
           var pageCount = 0;
           mock.register(
               'GET',
@@ -300,7 +298,7 @@ main() {
 
               var api = PubSub(mock, PROJECT);
 
-              int count = 0;
+              var count = 0;
               var subscription;
               subscription = api.listTopics().listen(
                   expectAsync1(((_) {
@@ -531,7 +529,7 @@ main() {
         addSubscriptions(
             pubsub.ListSubscriptionsResponse response, int first, int count) {
           response.subscriptions = [];
-          for (int i = 0; i < count; i++) {
+          for (var i = 0; i < count; i++) {
             response.subscriptions
                 .add(pubsub.Subscription()..name = 'subscription-${first + i}');
           }
@@ -546,9 +544,7 @@ main() {
           if (totalPages == 0) totalPages = 1;
           // Can pass in total calls if this mock is overwritten before all
           // expected pages are done, e.g. when testing errors.
-          if (totalCalls == null) {
-            totalCalls = totalPages;
-          }
+          totalCalls ??= totalPages;
           var pageCount = 0;
           mock.register(
               'GET',
@@ -702,7 +698,7 @@ main() {
 
               var api = PubSub(mock, PROJECT);
 
-              int count = 0;
+              var count = 0;
               var subscription;
               subscription = api.listSubscriptions().listen(
                   expectAsync1(((_) {
@@ -1023,7 +1019,7 @@ main() {
 }
 ''';
       var event = PushEvent.fromJson(requestBody);
-      expect(event.message.asString, "Hello, world 30 of 50!");
+      expect(event.message.asString, 'Hello, world 30 of 50!');
       expect(event.message.attributes['messageNo'], '30');
       expect(event.message.attributes['test'], 'hello');
       expect(event.subscriptionName, absoluteSubscriptionName);
@@ -1049,7 +1045,7 @@ main() {
 }
 ''';
       var event = PushEvent.fromJson(requestBody);
-      expect(event.message.asString, "Hello, world 30 of 50!");
+      expect(event.message.asString, 'Hello, world 30 of 50!');
       expect(event.message.attributes['messageNo'], '30');
       expect(event.message.attributes['test'], 'hello');
       expect(event.subscriptionName, absoluteSubscriptionName);

@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-@Tags(["e2e"])
+@Tags(['e2e'])
 
 library gcloud.test.db_all_test;
 
@@ -22,7 +22,7 @@ import 'db/e2e/metamodel_test_impl.dart' as db_metamodel_test;
 Future main() async {
   var scopes = datastore_impl.DatastoreImpl.SCOPES;
   var now = DateTime.now().millisecondsSinceEpoch;
-  String namespace = '${Platform.operatingSystem}$now';
+  var namespace = '${Platform.operatingSystem}$now';
 
   datastore_impl.DatastoreImpl datastore;
   db.DatastoreDB datastoreDB;

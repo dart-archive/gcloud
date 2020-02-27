@@ -67,7 +67,7 @@ class StreamFromPages<T> {
   }
 
   _onListen() {
-    int pageSize = _PAGE_SIZE;
+    var pageSize = _PAGE_SIZE;
     _pendingRequest = true;
     _firstPageProvider(pageSize).then(_handlePage, onError: _handleError);
   }

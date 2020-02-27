@@ -41,30 +41,30 @@ class ApplicationError implements Exception {
   final String message;
   ApplicationError(this.message);
 
-  String toString() => "ApplicationError: $message";
+  @override
+  String toString() => 'ApplicationError: $message';
 }
 
 class DatastoreError implements Exception {
   final String message;
 
   DatastoreError([String message])
-      : message = (message != null
-            ? message
-            : 'DatastoreError: An unknown error occured');
+      : message = (message ?? 'DatastoreError: An unknown error occured');
 
+  @override
   String toString() => '$message';
 }
 
 class UnknownDatastoreError extends DatastoreError {
-  UnknownDatastoreError(error) : super("An unknown error occured ($error).");
+  UnknownDatastoreError(error) : super('An unknown error occured ($error).');
 }
 
 class TransactionAbortedError extends DatastoreError {
-  TransactionAbortedError() : super("The transaction was aborted.");
+  TransactionAbortedError() : super('The transaction was aborted.');
 }
 
 class TimeoutError extends DatastoreError {
-  TimeoutError() : super("The operation timed out.");
+  TimeoutError() : super('The operation timed out.');
 }
 
 /// Thrown when a query would require an index which was not set.
@@ -72,19 +72,19 @@ class TimeoutError extends DatastoreError {
 /// An application needs to specify indices in a `index.yaml` file and needs to
 /// create indices using the `gcloud preview datastore create-indexes` command.
 class NeedIndexError extends DatastoreError {
-  NeedIndexError() : super("An index is needed for the query to succeed.");
+  NeedIndexError() : super('An index is needed for the query to succeed.');
 }
 
 class PermissionDeniedError extends DatastoreError {
-  PermissionDeniedError() : super("Permission denied.");
+  PermissionDeniedError() : super('Permission denied.');
 }
 
 class InternalError extends DatastoreError {
-  InternalError() : super("Internal service error.");
+  InternalError() : super('Internal service error.');
 }
 
 class QuotaExceededError extends DatastoreError {
-  QuotaExceededError(error) : super("Quota was exceeded ($error).");
+  QuotaExceededError(error) : super('Quota was exceeded ($error).');
 }
 
 /// A datastore Entity
@@ -137,7 +137,7 @@ class Key {
   final List<KeyElement> elements;
 
   Key(this.elements, {Partition partition})
-      : this.partition = (partition == null) ? Partition.DEFAULT : partition;
+      : partition = (partition == null) ? Partition.DEFAULT : partition;
 
   factory Key.fromParent(String kind, int id, {Key parent}) {
     Partition partition;
@@ -150,16 +150,18 @@ class Key {
     return Key(elements, partition: partition);
   }
 
+  @override
   int get hashCode =>
       elements.fold(partition.hashCode, (a, b) => a ^ b.hashCode);
 
+  @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
 
     if (other is Key &&
         partition == other.partition &&
         elements.length == other.elements.length) {
-      for (int i = 0; i < elements.length; i++) {
+      for (var i = 0; i < elements.length; i++) {
         if (elements[i] != other.elements[i]) return false;
       }
       return true;
@@ -167,6 +169,7 @@ class Key {
     return false;
   }
 
+  @override
   String toString() {
     var namespaceString =
         partition.namespace == null ? 'null' : "'${partition.namespace}'";
@@ -193,10 +196,12 @@ class Partition {
     }
   }
 
-  const Partition._default() : this.namespace = null;
+  const Partition._default() : namespace = null;
 
+  @override
   int get hashCode => namespace.hashCode;
 
+  @override
   bool operator ==(Object other) =>
       other is Partition && namespace == other.namespace;
 }
@@ -224,12 +229,15 @@ class KeyElement {
     }
   }
 
+  @override
   int get hashCode => kind.hashCode ^ id.hashCode;
 
+  @override
   bool operator ==(Object other) =>
       other is KeyElement && kind == other.kind && id == other.id;
 
-  String toString() => "$kind.$id";
+  @override
+  String toString() => '$kind.$id';
 }
 
 /// A relation used in query filters.
@@ -244,6 +252,7 @@ class FilterRelation {
 
   const FilterRelation._(this.name);
 
+  @override
   String toString() => name;
 }
 

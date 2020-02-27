@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-@Tags(["e2e"])
+@Tags(['e2e'])
 
 import 'package:gcloud/pubsub.dart';
 import 'package:http/http.dart';
@@ -30,8 +30,8 @@ void main() {
   });
 
   tearDownAll(() async {
-    bool leftovers = false;
-    bool cleanupErrors = false;
+    var leftovers = false;
+    var cleanupErrors = false;
 
     print('checking for leftover subscriptions');
     try {
