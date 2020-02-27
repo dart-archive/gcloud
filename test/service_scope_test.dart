@@ -9,7 +9,7 @@ import 'dart:async';
 import 'package:gcloud/service_scope.dart' as ss;
 import 'package:test/test.dart';
 
-main() {
+void main() {
   test('no-service-scope', () {
     expect(() => ss.register(1, 'foobar'), throwsA(isStateError));
     expect(
@@ -61,11 +61,11 @@ main() {
   test('correct-insertion-and-cleanup-order', () {
     // Ensure cleanup functions are called in the reverse order of inserting
     // their entries.
-    int insertions = 0;
+    var insertions = 0;
     return ss.fork(expectAsync0(() => Future.value(() {
-          int NUM = 10;
+          var NUM = 10;
 
-          for (int i = 0; i < NUM; i++) {
+          for (var i = 0; i < NUM; i++) {
             var key = i;
 
             insertions++;
@@ -76,7 +76,7 @@ main() {
               return null;
             }));
 
-            for (int j = 0; j <= NUM; j++) {
+            for (var j = 0; j <= NUM; j++) {
               if (j <= i) {
                 expect(ss.lookup(key), 'value$i');
               } else {
@@ -120,10 +120,10 @@ main() {
     // result in an error.
     // Ensure the fork() error message contains all error messages from the
     // failed cleanup() calls.
-    int insertions = 0;
+    var insertions = 0;
     return ss
         .fork(() => Future.sync(() {
-              for (int i = 0; i < 10; i++) {
+              for (var i = 0; i < 10; i++) {
                 insertions++;
                 ss.register(i, 'value$i');
                 ss.registerScopeExitCallback(() {
@@ -135,7 +135,7 @@ main() {
               }
             }))
         .catchError(expectAsync2((e, _) {
-      for (int i = 0; i < 10; i++) {
+      for (var i = 0; i < 10; i++) {
         expect('$e'.contains('xx${i}yy'), equals(i.isEven));
       }
     }));
@@ -198,8 +198,8 @@ main() {
     var subKey2 = 4;
 
     return ss.fork(expectAsync0(() {
-      int cleanupFork1 = 0;
-      int cleanupFork2 = 0;
+      var cleanupFork1 = 0;
+      var cleanupFork2 = 0;
 
       ss.register(rootKey, 'root');
       ss.registerScopeExitCallback(expectAsync0(() {

@@ -96,11 +96,9 @@ _ServiceScope get _serviceScope =>
 ///
 /// If an uncaught error occurs and [onError] is given, it will be called. The
 /// `onError` parameter can take the same values as `Zone.current.fork`.
-Future fork(Future func(), {Function onError}) {
+Future fork(Future Function() func, {Function onError}) {
   var currentServiceScope = _serviceScope;
-  if (currentServiceScope == null) {
-    currentServiceScope = _emptyServiceScope;
-  }
+  currentServiceScope ??= _emptyServiceScope;
   return currentServiceScope._fork(func, onError: onError);
 }
 
@@ -146,10 +144,10 @@ Object lookup(Object key) {
 class _ServiceScope {
   /// A mapping of keys to values stored inside the service scope.
   final Map<Object, _RegisteredEntry> _key2Values =
-      Map<Object, _RegisteredEntry>();
+      <Object, _RegisteredEntry>{};
 
   /// A set which indicates whether an object was copied from it's parent.
-  final Set<Object> _parentCopies = Set<Object>();
+  final Set<Object> _parentCopies = <Object>{};
 
   /// On-Scope-Exit functions which will be called in reverse insertion order.
   final List<_RegisteredEntry> _registeredEntries = [];
@@ -173,7 +171,7 @@ class _ServiceScope {
     _ensureNotInCleaningState();
     _ensureNotInDestroyingState();
 
-    bool isParentCopy = _parentCopies.contains(serviceScopeKey);
+    var isParentCopy = _parentCopies.contains(serviceScopeKey);
     if (!isParentCopy && _key2Values.containsKey(serviceScopeKey)) {
       throw ArgumentError(
           'Servie scope already contains key $serviceScopeKey.');
@@ -199,7 +197,7 @@ class _ServiceScope {
   }
 
   /// Start a new zone with a forked service scope.
-  Future _fork(Future func(), {Function onError}) {
+  Future _fork(Future Function() func, {Function onError}) {
     _ensureNotInCleaningState();
     _ensureNotInDestroyingState();
 

@@ -89,9 +89,9 @@ void registerStorageService(Storage storage) {
 
 int _jenkinsHash(List e) {
   const _HASH_MASK = 0x3fffffff;
-  int hash = 0;
-  for (int i = 0; i < e.length; i++) {
-    int c = e[i].hashCode;
+  var hash = 0;
+  for (var i = 0; i < e.length; i++) {
+    var c = e[i].hashCode;
     hash = (hash + c) & _HASH_MASK;
     hash = (hash + (hash << 10)) & _HASH_MASK;
     hash ^= (hash >> 6);
@@ -121,7 +121,7 @@ class Acl {
   Acl._fromBucketAcl(storage_api.Bucket bucket)
       : _entries = List(bucket.acl == null ? 0 : bucket.acl.length) {
     if (bucket.acl != null) {
-      for (int i = 0; i < bucket.acl.length; i++) {
+      for (var i = 0; i < bucket.acl.length; i++) {
         _entries[i] = AclEntry(_aclScopeFromEntity(bucket.acl[i].entity),
             _aclPermissionFromRole(bucket.acl[i].role));
       }
@@ -131,7 +131,7 @@ class Acl {
   Acl._fromObjectAcl(storage_api.Object object)
       : _entries = List(object.acl == null ? 0 : object.acl.length) {
     if (object.acl != null) {
-      for (int i = 0; i < object.acl.length; i++) {
+      for (var i = 0; i < object.acl.length; i++) {
         _entries[i] = AclEntry(_aclScopeFromEntity(object.acl[i].entity),
             _aclPermissionFromRole(object.acl[i].role));
       }
@@ -140,8 +140,8 @@ class Acl {
 
   AclScope _aclScopeFromEntity(String entity) {
     if (entity.startsWith('user-')) {
-      String tmp = entity.substring(5);
-      int at = tmp.indexOf('@');
+      var tmp = entity.substring(5);
+      var at = tmp.indexOf('@');
       if (at != -1) {
         return AccountScope(tmp);
       } else {
@@ -156,8 +156,8 @@ class Acl {
     } else if (entity.startsWith('allUsers-')) {
       return AclScope.allUsers;
     } else if (entity.startsWith('project-')) {
-      String tmp = entity.substring(8);
-      int dash = tmp.indexOf('-');
+      var tmp = entity.substring(8);
+      var dash = tmp.indexOf('-');
       if (dash != -1) {
         return ProjectScope(tmp.substring(dash + 1), tmp.substring(0, dash));
       }
@@ -181,18 +181,16 @@ class Acl {
     return _entries.map((entry) => entry._toObjectAccessControl()).toList();
   }
 
-  int get hashCode {
-    return _cachedHashCode != null
-        ? _cachedHashCode
-        : _cachedHashCode = _jenkinsHash(_entries);
-  }
+  @override
+  int get hashCode => _cachedHashCode ??= _jenkinsHash(_entries);
 
+  @override
   bool operator ==(Object other) {
     if (other is Acl) {
       List entries = _entries;
       List otherEntries = other._entries;
       if (entries.length != otherEntries.length) return false;
-      for (int i = 0; i < entries.length; i++) {
+      for (var i = 0; i < entries.length; i++) {
         if (entries[i] != otherEntries[i]) return false;
       }
       return true;
@@ -201,6 +199,7 @@ class Acl {
     }
   }
 
+  @override
   String toString() => 'Acl($_entries)';
 }
 
@@ -228,18 +227,17 @@ class AclEntry {
     return acl;
   }
 
-  int get hashCode {
-    return _cachedHashCode != null
-        ? _cachedHashCode
-        : _cachedHashCode = _jenkinsHash([scope, permission]);
-  }
+  @override
+  int get hashCode => _cachedHashCode ??= _jenkinsHash([scope, permission]);
 
+  @override
   bool operator ==(Object other) {
     return other is AclEntry &&
         scope == other.scope &&
         permission == other.permission;
   }
 
+  @override
   String toString() => 'AclEntry($scope, $permission)';
 }
 
@@ -297,16 +295,15 @@ abstract class AclScope {
 
   AclScope._(this._type, this._id);
 
-  int get hashCode {
-    return _cachedHashCode != null
-        ? _cachedHashCode
-        : _cachedHashCode = _jenkinsHash([_type, _id]);
-  }
+  @override
+  int get hashCode => _cachedHashCode ??= _jenkinsHash([_type, _id]);
 
+  @override
   bool operator ==(Object other) {
     return other is AclScope && _type == other._type && _id == other._id;
   }
 
+  @override
   String toString() => 'AclScope($_storageEntity)';
 
   String get _storageEntity;
@@ -323,6 +320,7 @@ class StorageIdScope extends AclScope {
   /// Google Storage ID.
   String get storageId => _id;
 
+  @override
   String get _storageEntity => 'user-$_id';
 }
 
@@ -333,6 +331,7 @@ class AccountScope extends AclScope {
   /// Email address.
   String get email => _id;
 
+  @override
   String get _storageEntity => 'user-$_id';
 }
 
@@ -343,6 +342,7 @@ class GroupScope extends AclScope {
   /// Group name.
   String get group => _id;
 
+  @override
   String get _storageEntity => 'group-$_id';
 }
 
@@ -353,6 +353,7 @@ class DomainScope extends AclScope {
   /// Domain name.
   String get domain => _id;
 
+  @override
   String get _storageEntity => 'domain-$_id';
 }
 
@@ -369,6 +370,7 @@ class ProjectScope extends AclScope {
   /// Project ID.
   String get project => _id;
 
+  @override
   String get _storageEntity => 'project-$role-$_id';
 }
 
@@ -376,6 +378,7 @@ class ProjectScope extends AclScope {
 class OpaqueScope extends AclScope {
   OpaqueScope(String id) : super._(AclScope._TYPE_OPAQUE, id);
 
+  @override
   String get _storageEntity => _id;
 }
 
@@ -383,6 +386,7 @@ class OpaqueScope extends AclScope {
 class AllAuthenticatedScope extends AclScope {
   AllAuthenticatedScope() : super._(AclScope._TYPE_ALL_AUTHENTICATED, null);
 
+  @override
   String get _storageEntity => 'allAuthenticatedUsers';
 }
 
@@ -390,6 +394,7 @@ class AllAuthenticatedScope extends AclScope {
 class AllUsersScope extends AclScope {
   AllUsersScope() : super._(AclScope._TYPE_ALL_USERS, null);
 
+  @override
   String get _storageEntity => 'allUsers';
 }
 
@@ -416,12 +421,15 @@ class AclPermission {
 
   String get _storageObjectRole => this == WRITE ? FULL_CONTROL._id : _id;
 
+  @override
   int get hashCode => _id.hashCode;
 
+  @override
   bool operator ==(Object other) {
     return other is AclPermission && _id == other._id;
   }
 
+  @override
   String toString() => 'AclPermission($_id)';
 }
 
@@ -469,6 +477,7 @@ class PredefinedAcl {
   static const PredefinedAcl bucketOwnerRead =
       PredefinedAcl._('bucketOwnerRead');
 
+  @override
   String toString() => 'PredefinedAcl($_name)';
 }
 

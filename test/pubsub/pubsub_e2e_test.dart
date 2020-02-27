@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-@Tags(["e2e"])
+@Tags(['e2e'])
 
 import 'package:gcloud/pubsub.dart';
 import 'package:http/http.dart';
@@ -30,8 +30,8 @@ void main() {
   });
 
   tearDownAll(() async {
-    bool leftovers = false;
-    bool cleanupErrors = false;
+    var leftovers = false;
+    var cleanupErrors = false;
 
     print('checking for leftover subscriptions');
     try {
@@ -115,11 +115,11 @@ void main() {
     });
 
     test('create-list-delete', () async {
-      const int count = 5;
+      const count = 5;
 
       var topicPrefix = generateTopicName();
 
-      name(i) => '$topicPrefix-$i';
+      String name(i) => '$topicPrefix-$i';
 
       for (var i = 0; i < count; i++) {
         await pubsub.createTopic(name(i));
@@ -152,13 +152,13 @@ void main() {
     });
 
     test('create-list-delete', () async {
-      const int count = 5;
+      const count = 5;
       var topicName = generateTopicName();
       await pubsub.createTopic(topicName);
 
       var subscriptionPrefix = generateSubscriptionName();
 
-      name(i) => '$subscriptionPrefix-$i';
+      String name(i) => '$subscriptionPrefix-$i';
 
       for (var i = 0; i < count; i++) {
         await pubsub.createSubscription(name(i), topicName);

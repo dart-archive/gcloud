@@ -18,7 +18,7 @@ const RESPONSE_HEADERS = {'content-type': CONTENT_TYPE_JSON_UTF8};
 class MockClient extends http.BaseClient {
   static const bytes = [1, 2, 3, 4, 5];
 
-  final _bytesHeaderRegexp = RegExp(r"bytes=(\d+)-(\d+)");
+  final _bytesHeaderRegexp = RegExp(r'bytes=(\d+)-(\d+)');
 
   final String hostname;
   final String rootPath;
@@ -36,7 +36,7 @@ class MockClient extends http.BaseClient {
 
   void register(
       String method, Pattern path, http_testing.MockClientHandler handler) {
-    var map = mocks.putIfAbsent(method, () => Map());
+    var map = mocks.putIfAbsent(method, () => {});
     if (path is RegExp) {
       map[RegExp('$rootPath${path.pattern}')] = handler;
     } else {
@@ -46,13 +46,13 @@ class MockClient extends http.BaseClient {
 
   void registerUpload(
       String method, Pattern path, http_testing.MockClientHandler handler) {
-    var map = mocks.putIfAbsent(method, () => Map());
+    var map = mocks.putIfAbsent(method, () => {});
     map['/upload$rootPath$path'] = handler;
   }
 
   void registerResumableUpload(
       String method, Pattern path, http_testing.MockClientHandler handler) {
-    var map = mocks.putIfAbsent(method, () => Map());
+    var map = mocks.putIfAbsent(method, () => {});
     map['/resumable/upload$rootPath$path'] = handler;
   }
 
@@ -81,6 +81,7 @@ class MockClient extends http.BaseClient {
     return mockHandler(request);
   }
 
+  @override
   Future<http.StreamedResponse> send(http.BaseRequest request) {
     return client.send(request);
   }
@@ -194,6 +195,7 @@ class TraceClient extends http.BaseClient {
 
   TraceClient(this.client);
 
+  @override
   Future<http.StreamedResponse> send(http.BaseRequest request) {
     print(request);
     return request.finalize().toBytes().then((body) {
@@ -215,6 +217,7 @@ class TraceClient extends http.BaseClient {
     });
   }
 
+  @override
   void close() {
     client.close();
   }
@@ -226,6 +229,7 @@ class RequestImpl extends http.BaseRequest {
 
   RequestImpl(String method, Uri url, this._body) : super(method, url);
 
+  @override
   http.ByteStream finalize() {
     super.finalize();
     return http.ByteStream.fromBytes(_body);
