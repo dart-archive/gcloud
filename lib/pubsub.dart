@@ -127,7 +127,7 @@ abstract class PubSub {
     var emulator = Platform.environment['PUBSUB_EMULATOR_HOST'];
     return emulator == null
         ? _PubSubImpl(client, project)
-        : _PubSubImpl.rootUrl(client, project, "http://$emulator/");
+        : _PubSubImpl.rootUrl(client, project, 'http://$emulator/');
   }
 
   /// The name of the project.

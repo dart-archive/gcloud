@@ -1,3 +1,7 @@
+## 0.6.4
+
+* Require minimum Dart SDK `2.3.0`.
+
 ## 0.6.3
 
  * Added `DatastoreDB.lookupValue()`

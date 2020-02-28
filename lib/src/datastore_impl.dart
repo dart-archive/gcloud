@@ -90,7 +90,7 @@ class DatastoreImpl implements datastore.Datastore {
       if (b.partitionId != null) return false;
     }
 
-    for (int i = 0; i < a.path.length; i++) {
+    for (var i = 0; i < a.path.length; i++) {
       if (a.path[i].id != b.path[i].id ||
           a.path[i].name != b.path[i].name ||
           a.path[i].kind != b.path[i].kind) return false;
@@ -102,7 +102,7 @@ class DatastoreImpl implements datastore.Datastore {
       {bool lists = true}) {
     var apiValue = api.Value()..excludeFromIndexes = !indexed;
     if (value == null) {
-      return apiValue..nullValue = "NULL_VALUE";
+      return apiValue..nullValue = 'NULL_VALUE';
     } else if (value is bool) {
       return apiValue..booleanValue = value;
     } else if (value is int) {
@@ -124,7 +124,7 @@ class DatastoreImpl implements datastore.Datastore {
         throw Exception('List values are not allowed.');
       }
 
-      convertItem(i) =>
+      api.Value convertItem(i) =>
           _convertDatastore2ApiPropertyValue(i, indexed, lists: false);
 
       return api.Value()
@@ -164,7 +164,7 @@ class DatastoreImpl implements datastore.Datastore {
   }
 
   static datastore.Entity _convertApi2DatastoreEntity(api.Entity entity) {
-    var unindexedProperties = Set<String>();
+    var unindexedProperties = <String>{};
     var properties = <String, Object>{};
 
     if (entity.properties != null) {
@@ -188,7 +188,7 @@ class DatastoreImpl implements datastore.Datastore {
     if (entity.properties != null) {
       for (var key in entity.properties.keys) {
         var value = entity.properties[key];
-        bool indexed = false;
+        var indexed = false;
         if (entity.unIndexedProperties != null) {
           indexed = !entity.unIndexedProperties.contains(key);
         }
@@ -284,6 +284,7 @@ class DatastoreImpl implements datastore.Datastore {
     return Future.error(error, stack);
   }
 
+  @override
   Future<List<datastore.Key>> allocateIds(List<datastore.Key> keys) {
     var request = api.AllocateIdsRequest();
     request
@@ -295,6 +296,7 @@ class DatastoreImpl implements datastore.Datastore {
     }, onError: _handleError);
   }
 
+  @override
   Future<datastore.Transaction> beginTransaction(
       {bool crossEntityGroup = false}) {
     var request = api.BeginTransactionRequest();
@@ -303,6 +305,7 @@ class DatastoreImpl implements datastore.Datastore {
     }, onError: _handleError);
   }
 
+  @override
   Future<datastore.CommitResult> commit(
       {List<datastore.Entity> inserts,
       List<datastore.Entity> autoIdInserts,
@@ -319,22 +322,22 @@ class DatastoreImpl implements datastore.Datastore {
 
     var mutations = request.mutations = <api.Mutation>[];
     if (inserts != null) {
-      for (int i = 0; i < inserts.length; i++) {
+      for (var i = 0; i < inserts.length; i++) {
         mutations.add(api.Mutation()
           ..upsert = _convertDatastore2ApiEntity(inserts[i], enforceId: true));
       }
     }
-    int autoIdStartIndex = -1;
+    var autoIdStartIndex = -1;
     if (autoIdInserts != null) {
       autoIdStartIndex = mutations.length;
-      for (int i = 0; i < autoIdInserts.length; i++) {
+      for (var i = 0; i < autoIdInserts.length; i++) {
         mutations.add(api.Mutation()
           ..insert =
               _convertDatastore2ApiEntity(autoIdInserts[i], enforceId: false));
       }
     }
     if (deletes != null) {
-      for (int i = 0; i < deletes.length; i++) {
+      for (var i = 0; i < deletes.length; i++) {
         mutations.add(api.Mutation()
           ..delete = _convertDatastore2ApiKey(deletes[i], enforceId: true));
       }
@@ -342,7 +345,7 @@ class DatastoreImpl implements datastore.Datastore {
     return _api.projects.commit(request, _project).then((result) {
       List<datastore.Key> keys;
       if (autoIdInserts != null && autoIdInserts.isNotEmpty) {
-        List<api.MutationResult> mutationResults = result.mutationResults;
+        var mutationResults = result.mutationResults;
         assert(autoIdStartIndex != -1);
         assert(mutationResults.length >=
             (autoIdStartIndex + autoIdInserts.length));
@@ -357,6 +360,7 @@ class DatastoreImpl implements datastore.Datastore {
     }, onError: _handleError);
   }
 
+  @override
   Future<List<datastore.Entity>> lookup(List<datastore.Key> keys,
       {datastore.Transaction transaction}) {
     var apiKeys = keys.map((key) {
@@ -392,10 +396,10 @@ class DatastoreImpl implements datastore.Datastore {
       //    repeated Key deferred = 3;
       //  }
       var entities = List<datastore.Entity>(apiKeys.length);
-      for (int i = 0; i < apiKeys.length; i++) {
+      for (var i = 0; i < apiKeys.length; i++) {
         var apiKey = apiKeys[i];
 
-        bool found = false;
+        var found = false;
 
         if (response.found != null) {
           for (var result in response.found) {
@@ -429,6 +433,7 @@ class DatastoreImpl implements datastore.Datastore {
     }, onError: _handleError);
   }
 
+  @override
   Future<Page<datastore.Entity>> query(datastore.Query query,
       {datastore.Partition partition, datastore.Transaction transaction}) {
     // NOTE: We explicitly do not set 'limit' here, since this is handled by
@@ -458,6 +463,7 @@ class DatastoreImpl implements datastore.Datastore {
         .catchError(_handleError);
   }
 
+  @override
   Future rollback(datastore.Transaction transaction) {
     // TODO: Handle [transaction]
     var request = api.RollbackRequest()
@@ -484,10 +490,8 @@ class QueryPageImpl implements Page<datastore.Entity> {
   static Future<QueryPageImpl> runQuery(api.DatastoreApi api, String project,
       api.RunQueryRequest request, int limit,
       {int batchSize}) {
-    int batchLimit = batchSize;
-    if (batchLimit == null) {
-      batchLimit = MAX_ENTITIES_PER_RESPONSE;
-    }
+    var batchLimit = batchSize;
+    batchLimit ??= MAX_ENTITIES_PER_RESPONSE;
     if (limit != null && limit < batchLimit) {
       batchLimit = limit;
     }
@@ -544,12 +548,12 @@ class QueryPageImpl implements Page<datastore.Entity> {
       // If the server signals there are more entities and we either have no
       // limit or our limit has not been reached, we set `moreBatches` to
       // `true`.
-      bool moreBatches = (remainingEntities == null || remainingEntities > 0) &&
+      var moreBatches = (remainingEntities == null || remainingEntities > 0) &&
           response.batch.moreResults == 'MORE_RESULTS_AFTER_LIMIT';
 
-      bool gotAll = limit != null && remainingEntities == 0;
-      bool noMore = response.batch.moreResults == 'NO_MORE_RESULTS';
-      bool isLast = gotAll || noMore;
+      var gotAll = limit != null && remainingEntities == 0;
+      var noMore = response.batch.moreResults == 'NO_MORE_RESULTS';
+      var isLast = gotAll || noMore;
 
       // As a sanity check, we assert that `moreBatches XOR isLast`.
       assert(isLast != moreBatches);
@@ -589,10 +593,13 @@ class QueryPageImpl implements Page<datastore.Entity> {
     });
   }
 
+  @override
   bool get isLast => _isLast;
 
+  @override
   List<datastore.Entity> get items => _entities;
 
+  @override
   Future<Page<datastore.Entity>> next({int pageSize}) {
     // NOTE: We do not respect [pageSize] here, the only mechanism we can
     // really use is `query.limit`, but this is user-specified when making

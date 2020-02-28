@@ -14,6 +14,7 @@ class A extends db.Model {
 
 @db.Kind()
 class B extends A {
+  @override
   @db.IntProperty(propertyName: 'bar')
   int foo;
 }

@@ -13,7 +13,7 @@ import 'package:test/test.dart';
 @Kind()
 class Foobar extends Model {}
 
-main() {
+void main() {
   group('db', () {
     test('default-partition', () {
       var db = DatastoreDB(null);

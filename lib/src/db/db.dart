@@ -46,10 +46,10 @@ class Transaction {
   ///
   /// If the [key] is not found within the transaction and [orElse] was not
   /// specified, then a [KeyNotFoundException] will be thrown.
-  Future<T> lookupValue<T extends Model>(Key key, {T orElse()}) async {
-    final List<T> values = await lookup<T>(<Key>[key]);
+  Future<T> lookupValue<T extends Model>(Key key, {T Function() orElse}) async {
+    final values = await lookup<T>(<Key>[key]);
     assert(values.length == 1);
-    T value = values.single;
+    var value = values.single;
     if (value == null) {
       if (orElse != null) {
         value = orElse();
@@ -111,7 +111,7 @@ class Transaction {
     }
   }
 
-  _checkSealed({int changeState, bool allowFailed = false}) {
+  void _checkSealed({int changeState, bool allowFailed = false}) {
     if (_state == _TRANSACTION_COMMITTED) {
       throw StateError('The transaction has already been committed.');
     } else if (_state == _TRANSACTION_ROLLED_BACK) {
@@ -255,7 +255,7 @@ class Query<T extends Model> {
   String _convertToDatastoreName(String name) {
     var propertyName = _db.modelDB.fieldNameToPropertyName(_kind, name);
     if (propertyName == null) {
-      throw ArgumentError("Field $name is not available for kind $_kind");
+      throw ArgumentError('Field $name is not available for kind $_kind');
     }
     return propertyName;
   }
@@ -267,9 +267,8 @@ class DatastoreDB {
   Partition _defaultPartition;
 
   DatastoreDB(this.datastore, {ModelDB modelDB, Partition defaultPartition})
-      : _modelDB = modelDB != null ? modelDB : ModelDBImpl() {
-    _defaultPartition =
-        defaultPartition != null ? defaultPartition : Partition(null);
+      : _modelDB = modelDB ?? ModelDBImpl() {
+    _defaultPartition = defaultPartition ?? Partition(null);
   }
 
   /// The [ModelDB] used to serialize/deserialize objects.
@@ -348,10 +347,10 @@ class DatastoreDB {
   ///
   /// If the [key] is not found in the datastore and [orElse] was not
   /// specified, then a [KeyNotFoundException] will be thrown.
-  Future<T> lookupValue<T extends Model>(Key key, {T orElse()}) async {
-    final List<T> values = await lookup<T>(<Key>[key]);
+  Future<T> lookupValue<T extends Model>(Key key, {T Function() orElse}) async {
+    final values = await lookup<T>(<Key>[key]);
     assert(values.length == 1);
-    T value = values.single;
+    var value = values.single;
     if (value == null) {
       if (orElse != null) {
         value = orElse();
@@ -390,9 +389,7 @@ Future _commitHelper(DatastoreDB db,
     for (var model in inserts) {
       // If parent was not explicitly set, we assume this model will map to
       // it's own entity group.
-      if (model.parentKey == null) {
-        model.parentKey = db.defaultPartition.emptyKey;
-      }
+      model.parentKey ??= db.defaultPartition.emptyKey;
       if (model.id == null) {
         autoIdModelInserts.add(model);
         entityAutoIdInserts.add(db.modelDB.toDatastoreEntity(model));

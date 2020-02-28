@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-@Tags(["e2e"])
+@Tags(['e2e'])
 
 library gcloud.storage;
 
@@ -110,7 +110,7 @@ void main() {
   group('object', () {
     // Run all object tests in the same bucket to try to avoid the rate-limit
     // for creating and deleting buckets while testing.
-    Future withTestBucket(Future function(Bucket bucket)) {
+    Future withTestBucket(Future Function(Bucket bucket) function) {
       return function(testBucket).whenComplete(() {
         // TODO: Clean the bucket.
       });
@@ -189,18 +189,18 @@ void main() {
           }));
         }
 
-        Acl acl1 =
+        var acl1 =
             Acl([AclEntry(AclScope.allAuthenticated, AclPermission.WRITE)]);
-        Acl acl2 = Acl([
+        var acl2 = Acl([
           AclEntry(AclScope.allUsers, AclPermission.WRITE),
           AclEntry(AccountScope('sgjesse@google.com'), AclPermission.WRITE)
         ]);
-        Acl acl3 = Acl([
+        var acl3 = Acl([
           AclEntry(AclScope.allUsers, AclPermission.WRITE),
           AclEntry(AccountScope('sgjesse@google.com'), AclPermission.WRITE),
           AclEntry(GroupScope('misc@dartlang.org'), AclPermission.READ)
         ]);
-        Acl acl4 = Acl([
+        var acl4 = Acl([
           AclEntry(AclScope.allUsers, AclPermission.WRITE),
           AclEntry(AccountScope('sgjesse@google.com'), AclPermission.WRITE),
           AclEntry(GroupScope('misc@dartlang.org'), AclPermission.READ),

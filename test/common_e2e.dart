@@ -72,8 +72,8 @@ typedef AuthCallback = Future Function(String project, http.Client client);
 
 Future withAuthClient(List<String> scopes, AuthCallback callback,
     {bool trace = false}) {
-  String project = Platform.environment[PROJECT_ENV];
-  String serviceKeyLocation = Platform.environment[SERVICE_KEY_LOCATION_ENV];
+  var project = Platform.environment[PROJECT_ENV];
+  var serviceKeyLocation = Platform.environment[SERVICE_KEY_LOCATION_ENV];
 
   if (!onBot() && (project == null || serviceKeyLocation == null)) {
     throw StateError(
@@ -81,9 +81,8 @@ Future withAuthClient(List<String> scopes, AuthCallback callback,
         'required when not running on the package bot');
   }
 
-  project = project != null ? project : DEFAULT_PROJECT;
-  serviceKeyLocation =
-      serviceKeyLocation != null ? serviceKeyLocation : DEFAULT_KEY_LOCATION;
+  project = project ?? DEFAULT_PROJECT;
+  serviceKeyLocation = serviceKeyLocation ?? DEFAULT_KEY_LOCATION;
 
   return serviceKeyJson(serviceKeyLocation).then((keyJson) {
     var creds = auth.ServiceAccountCredentials.fromJson(keyJson);
