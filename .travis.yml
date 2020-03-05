@@ -1,11 +1,10 @@
 language: dart
 
 dart:
-  - 2.0.0
+  - 2.3.0
   - dev
 
 dart_task:
-  - dartanalyzer: --fatal-infos --fatal-warnings .
   - test: -P travis
 
 matrix:
@@ -13,6 +12,12 @@ matrix:
     # Only validate formatting using the dev release
     - dart: dev
       dart_task: dartfmt
+    - dart: dev
+      dart_task:
+        dartanalyzer: --fatal-infos --fatal-warnings .
+    - dart: 2.3.0
+      dart_task:
+        dartanalyzer: --fatal-warnings .
 
 # Only building master means that we don't run two builds for each pull request.
 branches:

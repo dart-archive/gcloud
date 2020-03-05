@@ -65,7 +65,8 @@ class Person extends db.Model {
   @db.ModelKeyProperty(propertyName: 'mangledWife')
   db.Key wife;
 
-  operator ==(Object other) => sameAs(other);
+  @override
+  bool operator ==(Object other) => sameAs(other);
 
   bool sameAs(Object other) {
     return other is Person &&
@@ -76,6 +77,7 @@ class Person extends db.Model {
         wife == other.wife;
   }
 
+  @override
   String toString() => 'Person(id: $id, name: $name, age: $age)';
 }
 
@@ -87,12 +89,13 @@ class User extends Person {
   @db.StringListProperty(propertyName: 'language')
   List<String> languages = const [];
 
-  sameAs(Object other) {
+  @override
+  bool sameAs(Object other) {
     if (!(super.sameAs(other) && other is User && nickname == other.nickname)) {
       return false;
     }
 
-    User user = other as User;
+    var user = other as User;
     if (languages == null) {
       if (user.languages == null) return true;
       return false;
@@ -101,7 +104,7 @@ class User extends Person {
       return false;
     }
 
-    for (int i = 0; i < languages.length; i++) {
+    for (var i = 0; i < languages.length; i++) {
       if (languages[i] != user.languages[i]) {
         return false;
       }
@@ -109,6 +112,7 @@ class User extends Person {
     return true;
   }
 
+  @override
   String toString() =>
       'User(${super.toString()}, nickname: $nickname, languages: $languages';
 }
@@ -121,7 +125,8 @@ class ExpandoPerson extends db.ExpandoModel {
   @db.StringProperty(propertyName: 'NN')
   String nickname;
 
-  operator ==(Object other) {
+  @override
+  bool operator ==(Object other) {
     if (other is ExpandoPerson && id == other.id && name == other.name) {
       if (additionalProperties.length != other.additionalProperties.length) {
         return false;
@@ -148,7 +153,7 @@ void runTests(db.DatastoreDB store, String namespace) {
     if (anyOrder) {
       // Do expensive O(n^2) search.
       for (var searchModel in expectedModels) {
-        bool found = false;
+        var found = false;
         for (var m in models) {
           if (m == searchModel) {
             found = true;
@@ -307,7 +312,7 @@ void runTests(db.DatastoreDB store, String namespace) {
         persons[0].parentKey = users[0].key;
         users[1].parentKey = persons[1].key;
 
-        return testInsertLookupDelete([]..addAll(users)..addAll(persons));
+        return testInsertLookupDelete([...users, ...persons]);
       });
 
       test('auto_ids', () {
@@ -449,7 +454,7 @@ void runTests(db.DatastoreDB store, String namespace) {
           .where((User u) => u.wife == root.append(User, id: 42 + 3))
           .toList();
 
-      var allInserts = <db.Model>[]..addAll(users)..addAll(expandoPersons);
+      var allInserts = <db.Model>[...users, ...expandoPersons];
       var allKeys = allInserts.map((db.Model model) => model.key).toList();
       return store.commit(inserts: allInserts).then((_) {
         return Future.wait([
@@ -629,23 +634,23 @@ void runTests(db.DatastoreDB store, String namespace) {
 
 Future<List<db.Model>> runQueryWithExponentialBackoff(
     db.Query query, int expectedResults) async {
-  for (int i = 0; i <= 6; i++) {
+  for (var i = 0; i <= 6; i++) {
     if (i > 0) {
       // Wait for 0.1s, 0.2s, ..., 12.8s
       var duration = Duration(milliseconds: 100 * (2 << i));
-      print("Running query did return less results than expected."
-          "Using exponential backoff: Sleeping for $duration.");
+      print('Running query did return less results than expected.'
+          'Using exponential backoff: Sleeping for $duration.');
       await sleep(duration);
     }
 
-    List<db.Model> models = await query.run().toList();
+    var models = await query.run().toList();
     if (models.length >= expectedResults) {
       return models;
     }
   }
 
   throw Exception(
-      "Tried running a query with exponential backoff, giving up now.");
+      'Tried running a query with exponential backoff, giving up now.');
 }
 
 Future waitUntilEntitiesReady<T extends db.Model>(
@@ -664,13 +669,13 @@ Future<void> waitUntilEntitiesHelper<T extends db.Model>(
   bool positive,
   db.Partition partition,
 ) async {
-  bool done = false;
+  var done = false;
   while (!done) {
     final models = await mdb.query<T>(partition: partition).run().toList();
 
     done = true;
     for (var key in keys) {
-      bool found = false;
+      var found = false;
       for (var model in models) {
         if (key == model.key) found = true;
       }

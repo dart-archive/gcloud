@@ -49,9 +49,9 @@ Future<List<Entity>> consumePages(FirstPageProvider<Entity> provider) {
 }
 
 void runTests(Datastore datastore, String namespace) {
-  Partition partition = Partition(namespace);
+  var partition = Partition(namespace);
 
-  Future<T> withTransaction<T>(FutureOr<T> f(Transaction t),
+  Future<T> withTransaction<T>(FutureOr<T> Function(Transaction t) f,
       {bool xg = false}) {
     return datastore.beginTransaction(crossEntityGroup: xg).then(f);
   }
@@ -125,7 +125,7 @@ void runTests(Datastore datastore, String namespace) {
   bool compareKey(Key a, Key b, {bool ignoreIds = false}) {
     if (a.partition != b.partition) return false;
     if (a.elements.length != b.elements.length) return false;
-    for (int i = 0; i < a.elements.length; i++) {
+    for (var i = 0; i < a.elements.length; i++) {
       if (a.elements[i].kind != b.elements[i].kind) return false;
       if (!ignoreIds && a.elements[i].id != b.elements[i].id) return false;
     }
@@ -194,9 +194,9 @@ void runTests(Datastore datastore, String namespace) {
         return test(null);
       }
 
-      Future<List<Key>> testInsertNegative(List<Entity> entities,
+      FutureOr<void> testInsertNegative(List<Entity> entities,
           {bool transactional = false, bool xg = false}) {
-        test(Transaction transaction) {
+        void test(Transaction transaction) {
           expect(
               datastore.commit(
                   autoIdInserts: entities, transaction: transaction),
@@ -206,7 +206,7 @@ void runTests(Datastore datastore, String namespace) {
         if (transactional) {
           return withTransaction(test, xg: xg);
         }
-        return test(null);
+        test(null);
       }
 
       var unnamedEntities1 = buildEntities(42, 43, partition: partition);
@@ -268,18 +268,18 @@ void runTests(Datastore datastore, String namespace) {
 
     group('allocate_ids', () {
       test('allocate_ids_query', () {
-        compareResult(List<Key> keys, List<Key> completedKeys) {
+        void compareResult(List<Key> keys, List<Key> completedKeys) {
           expect(completedKeys.length, equals(keys.length));
-          for (int i = 0; i < keys.length; i++) {
+          for (var i = 0; i < keys.length; i++) {
             var insertedKey = keys[i];
             var completedKey = completedKeys[i];
 
             expect(completedKey.elements.length,
                 equals(insertedKey.elements.length));
-            for (int j = 0; j < insertedKey.elements.length - 1; j++) {
+            for (var j = 0; j < insertedKey.elements.length - 1; j++) {
               expect(completedKey.elements[j], equals(insertedKey.elements[j]));
             }
-            for (int j = insertedKey.elements.length - 1;
+            for (var j = insertedKey.elements.length - 1;
                 j < insertedKey.elements.length;
                 j++) {
               expect(completedKey.elements[j].kind,
@@ -317,7 +317,7 @@ void runTests(Datastore datastore, String namespace) {
           return datastore.lookup(keysToLookup).then((List<Entity> entities) {
             expect(entities.length, equals(keysToLookup.length));
             if (negative) {
-              for (int i = 0; i < entities.length; i++) {
+              for (var i = 0; i < entities.length; i++) {
                 expect(entities[i], isNull);
               }
             } else {
@@ -472,9 +472,9 @@ void runTests(Datastore datastore, String namespace) {
       }
 
       var namedEntities1 =
-          buildEntities(42, 43, idFunction: (i) => "i$i", partition: partition);
+          buildEntities(42, 43, idFunction: (i) => 'i$i', partition: partition);
       var namedEntities5 =
-          buildEntities(1, 6, idFunction: (i) => "i$i", partition: partition);
+          buildEntities(1, 6, idFunction: (i) => 'i$i', partition: partition);
 
       var namedEntities1Keys = namedEntities1.map((e) => e.key).toList();
       var namedEntities5Keys = namedEntities5.map((e) => e.key).toList();
@@ -507,11 +507,11 @@ void runTests(Datastore datastore, String namespace) {
       }
 
       var namedEntities1 =
-          buildEntities(42, 43, idFunction: (i) => "i$i", partition: partition);
+          buildEntities(42, 43, idFunction: (i) => 'i$i', partition: partition);
       var namedEntities5 =
-          buildEntities(1, 6, idFunction: (i) => "i$i", partition: partition);
+          buildEntities(1, 6, idFunction: (i) => 'i$i', partition: partition);
       var namedEntities20 =
-          buildEntities(6, 26, idFunction: (i) => "i$i", partition: partition);
+          buildEntities(6, 26, idFunction: (i) => 'i$i', partition: partition);
 
       var namedEntities1Keys = namedEntities1.map((e) => e.key).toList();
       var namedEntities5Keys = namedEntities5.map((e) => e.key).toList();
@@ -545,11 +545,11 @@ void runTests(Datastore datastore, String namespace) {
         Future test(List<Entity> entities, Transaction transaction, value) {
           // Change entities:
           var changedEntities = List<Entity>(entities.length);
-          for (int i = 0; i < entities.length; i++) {
+          for (var i = 0; i < entities.length; i++) {
             var entity = entities[i];
             var newProperties = Map<String, Object>.from(entity.properties);
             for (var prop in newProperties.keys) {
-              newProperties[prop] = "${newProperties[prop]}conflict$value";
+              newProperties[prop] = '${newProperties[prop]}conflict$value';
             }
             changedEntities[i] = Entity(entity.key, newProperties);
           }
@@ -589,9 +589,9 @@ void runTests(Datastore datastore, String namespace) {
       }
 
       var namedEntities1 =
-          buildEntities(42, 43, idFunction: (i) => "i$i", partition: partition);
+          buildEntities(42, 43, idFunction: (i) => 'i$i', partition: partition);
       var namedEntities5 =
-          buildEntities(1, 6, idFunction: (i) => "i$i", partition: partition);
+          buildEntities(1, 6, idFunction: (i) => 'i$i', partition: partition);
 
       test('conflicting_transaction', () {
         expect(testConflictingTransaction(namedEntities1),
@@ -656,13 +656,13 @@ void runTests(Datastore datastore, String namespace) {
           expect(entities.length, equals(expectedEntities.length));
 
           if (correctOrder) {
-            for (int i = 0; i < entities.length; i++) {
+            for (var i = 0; i < entities.length; i++) {
               expect(compareEntity(entities[i], expectedEntities[i]), isTrue);
             }
           } else {
-            for (int i = 0; i < entities.length; i++) {
-              bool found = false;
-              for (int j = 0; j < expectedEntities.length; j++) {
+            for (var i = 0; i < entities.length; i++) {
+              var found = false;
+              for (var j = 0; j < expectedEntities.length; j++) {
                 if (compareEntity(entities[i], expectedEntities[i])) {
                   found = true;
                 }
@@ -677,11 +677,11 @@ void runTests(Datastore datastore, String namespace) {
           {List<Order> orders, bool transactional = false, bool xg = false}) {
         // We query for all subsets of expectedEntities
         // NOTE: This is O(0.5 * n^2) queries, but n is currently only 6.
-        List<Function> queryTests = [];
-        for (int start = 0; start < expectedEntities.length; start++) {
-          for (int end = start; end < expectedEntities.length; end++) {
-            int offset = start;
-            int limit = end - start;
+        var queryTests = <Function>[];
+        for (var start = 0; start < expectedEntities.length; start++) {
+          for (var end = start; end < expectedEntities.length; end++) {
+            var offset = start;
+            var limit = end - start;
             var entities = expectedEntities.sublist(offset, offset + limit);
             queryTests.add(() {
               return testQueryAndCompare(kind, entities,
@@ -714,8 +714,8 @@ void runTests(Datastore datastore, String namespace) {
       var stringNamedKeys = stringNamedEntities.map((e) => e.key).toList();
 
       var QUERY_KEY = TEST_PROPERTY_KEY_PREFIX;
-      var QUERY_UPPER_BOUND = "${TEST_PROPERTY_VALUE_PREFIX}4";
-      var QUERY_LOWER_BOUND = "${TEST_PROPERTY_VALUE_PREFIX}1";
+      var QUERY_UPPER_BOUND = '${TEST_PROPERTY_VALUE_PREFIX}4';
+      var QUERY_LOWER_BOUND = '${TEST_PROPERTY_VALUE_PREFIX}1';
       var QUERY_LIST_ENTRY = '${TEST_LIST_VALUE}2';
       var QUERY_INDEX_VALUE = '${TEST_INDEXED_PROPERTY_VALUE_PREFIX}1';
 
@@ -1039,7 +1039,7 @@ Future cleanupDB(Datastore db, String namespace) {
   }
 
   // cleanup() will call itself again as long as the DB is not clean.
-  cleanup(String namespace, String kind) {
+  Future<void> cleanup(String namespace, String kind) {
     var partition = Partition(namespace);
     var q = Query(kind: kind, limit: 500);
     return consumePages((_) => db.query(q, partition: partition))
@@ -1078,7 +1078,7 @@ Future waitUntilEntitiesHelper(
     var q = Query(kind: kind);
     return consumePages((_) => db.query(q, partition: p)).then((entities) {
       for (var key in keys) {
-        bool found = false;
+        var found = false;
         for (var entity in entities) {
           if (key == entity.key) found = true;
         }

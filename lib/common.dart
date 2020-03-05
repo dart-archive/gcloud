@@ -66,24 +66,24 @@ class StreamFromPages<T> {
     }
   }
 
-  _onListen() {
-    int pageSize = _PAGE_SIZE;
+  void _onListen() {
+    var pageSize = _PAGE_SIZE;
     _pendingRequest = true;
     _firstPageProvider(pageSize).then(_handlePage, onError: _handleError);
   }
 
-  _onPause() {
+  void _onPause() {
     _paused = true;
   }
 
-  _onResume() {
+  void _onResume() {
     _paused = false;
     if (_pendingRequest) return;
     _pendingRequest = true;
     _currentPage.next().then(_handlePage, onError: _handleError);
   }
 
-  _onCancel() {
+  void _onCancel() {
     _cancelled = true;
   }
 }

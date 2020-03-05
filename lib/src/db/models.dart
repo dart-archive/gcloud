@@ -52,13 +52,15 @@ class Key<T> {
 
   bool get isEmpty => _parent is Partition;
 
-  operator ==(Object other) {
+  @override
+  bool operator ==(Object other) {
     return other is Key &&
         _parent == other._parent &&
         type == other.type &&
         id == other.id;
   }
 
+  @override
   int get hashCode => _parent.hashCode ^ type.hashCode ^ id.hashCode;
 
   /// Converts `Key<dynamic>` to `Key<U>`.
@@ -84,10 +86,12 @@ class Partition {
   /// group.
   Key get emptyKey => Key.emptyKey(this);
 
-  operator ==(Object other) {
+  @override
+  bool operator ==(Object other) {
     return other is Partition && namespace == other.namespace;
   }
 
+  @override
   int get hashCode => namespace.hashCode;
 }
 
@@ -99,7 +103,7 @@ abstract class Model<T> {
   T id;
   Key parentKey;
 
-  Key<T> get key => parentKey.append(this.runtimeType, id: id);
+  Key<T> get key => parentKey.append(runtimeType, id: id);
 }
 
 /// Superclass for all expanded model classes.
@@ -110,6 +114,7 @@ abstract class Model<T> {
 abstract class ExpandoModel extends Model {
   final Map<String, Object> additionalProperties = {};
 
+  @override
   Object noSuchMethod(Invocation invocation) {
     var name = mirrors.MirrorSystem.getName(invocation.memberName);
     if (name.endsWith('=')) name = name.substring(0, name.length - 1);

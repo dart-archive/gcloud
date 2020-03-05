@@ -14,12 +14,12 @@ import 'package:gcloud/db.dart' as db;
 import 'package:gcloud/db/metamodel.dart';
 
 List<Entity> buildEntitiesWithDifferentNamespaces() {
-  newKey(String namespace, String kind, int id) {
+  Key newKey(String namespace, String kind, int id) {
     var partition = Partition(namespace);
     return Key([KeyElement(kind, id)], partition: partition);
   }
 
-  newEntity(String namespace, String kind, {int id = 1}) {
+  Entity newEntity(String namespace, String kind, {int id = 1}) {
     return Entity(newKey(namespace, kind, id), {'ping': 'pong'});
   }
 

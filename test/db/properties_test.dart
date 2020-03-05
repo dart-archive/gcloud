@@ -10,7 +10,7 @@ import 'package:gcloud/db.dart';
 import 'package:gcloud/datastore.dart' as datastore;
 import 'package:test/test.dart';
 
-main() {
+void main() {
   group('properties', () {
     test('bool_property', () {
       var prop = const BoolProperty(required: true);
@@ -180,8 +180,10 @@ main() {
 class Custom {
   String customValue;
 
+  @override
   int get hashCode => customValue.hashCode;
 
+  @override
   bool operator ==(other) {
     return other is Custom && other.customValue == customValue;
   }
@@ -191,16 +193,19 @@ class CustomProperty extends StringProperty {
   const CustomProperty(
       {String propertyName, bool required = false, bool indexed = true});
 
+  @override
   bool validate(ModelDB db, Object value) {
     if (required && value == null) return false;
     return value == null || value is Custom;
   }
 
+  @override
   Object decodePrimitiveValue(ModelDB db, Object value) {
     if (value == null) return null;
     return Custom()..customValue = value as String;
   }
 
+  @override
   Object encodeValue(ModelDB db, Object value, {bool forComparison = false}) {
     if (value == null) return null;
     return (value as Custom).customValue;
@@ -212,13 +217,20 @@ class KeyMock implements Key {
 
   KeyMock(this._datastoreKey);
 
+  @override
   Object id = 1;
+  @override
   Type type;
+  @override
   Key get parent => this;
+  @override
   bool get isEmpty => false;
+  @override
   Partition get partition => null;
   datastore.Key get datastoreKey => _datastoreKey;
+  @override
   Key<T> append<T>(Type modelType, {T id}) => null;
+  @override
   int get hashCode => 1;
 }
 
@@ -227,25 +239,32 @@ class ModelDBMock implements ModelDB {
   final Key _dbKey;
   ModelDBMock(this._datastoreKey, this._dbKey);
 
+  @override
   Key fromDatastoreKey(datastore.Key datastoreKey) {
     if (!identical(_datastoreKey, datastoreKey)) {
-      throw "Broken test";
+      throw 'Broken test';
     }
     return _dbKey;
   }
 
+  @override
   datastore.Key toDatastoreKey(Key key) {
     if (!identical(_dbKey, key)) {
-      throw "Broken test";
+      throw 'Broken test';
     }
     return _datastoreKey;
   }
 
   Map<String, Property> propertiesForModel(modelDescription) => null;
+  @override
   T fromDatastoreEntity<T extends Model>(datastore.Entity entity) => null;
+  @override
   datastore.Entity toDatastoreEntity(Model model) => null;
+  @override
   String fieldNameToPropertyName(String kind, String fieldName) => null;
+  @override
   String kindName(Type type) => null;
+  @override
   Object toDatastoreValue(String kind, String fieldName, Object value,
           {bool forComparison = false}) =>
       null;

@@ -6,6 +6,10 @@
    `class MyModel extends Model<String> {}` and `myModel.id` will then
    be of type `String` and `myModel.key` of type `Key<String>`.
 
+## 0.6.4
+
+* Require minimum Dart SDK `2.3.0`.
+
 ## 0.6.3
 
  * Added `DatastoreDB.lookupValue()`

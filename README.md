@@ -16,7 +16,7 @@ uses the [googleapis_auth][googleapisauth] package.
 
 Note that this package is only intended for being used with the standalone VM
 in a server or command line application. Don't expect this package to work on
-the browser.
+the browser or in Flutter.
 
 The code snippets below demonstrating the use of this package all assume that
 the following imports are present:

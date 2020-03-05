@@ -58,7 +58,8 @@ class IdType {
 
   const IdType(this._type);
 
-  core.String toString() => "IdType: $_type";
+  @override
+  core.String toString() => 'IdType: $_type';
 }
 
 /// Describes a property of an Entity.
@@ -103,9 +104,11 @@ abstract class PrimitiveProperty extends Property {
       {String propertyName, bool required = false, bool indexed = true})
       : super(propertyName: propertyName, required: required, indexed: indexed);
 
+  @override
   Object encodeValue(ModelDB db, Object value, {bool forComparison = false}) =>
       value;
 
+  @override
   Object decodePrimitiveValue(ModelDB db, Object value) => value;
 }
 
@@ -118,6 +121,7 @@ class BoolProperty extends PrimitiveProperty {
       {String propertyName, bool required = false, bool indexed = true})
       : super(propertyName: propertyName, required: required, indexed: indexed);
 
+  @override
   bool validate(ModelDB db, Object value) =>
       super.validate(db, value) && (value == null || value is bool);
 }
@@ -131,6 +135,7 @@ class IntProperty extends PrimitiveProperty {
       {String propertyName, bool required = false, bool indexed = true})
       : super(propertyName: propertyName, required: required, indexed: indexed);
 
+  @override
   bool validate(ModelDB db, Object value) =>
       super.validate(db, value) && (value == null || value is int);
 }
@@ -144,6 +149,7 @@ class DoubleProperty extends PrimitiveProperty {
       {String propertyName, bool required = false, bool indexed = true})
       : super(propertyName: propertyName, required: required, indexed: indexed);
 
+  @override
   bool validate(ModelDB db, Object value) =>
       super.validate(db, value) && (value == null || value is double);
 }
@@ -157,6 +163,7 @@ class StringProperty extends PrimitiveProperty {
       {String propertyName, bool required = false, bool indexed = true})
       : super(propertyName: propertyName, required: required, indexed: indexed);
 
+  @override
   bool validate(ModelDB db, Object value) =>
       super.validate(db, value) && (value == null || value is String);
 }
@@ -170,14 +177,17 @@ class ModelKeyProperty extends PrimitiveProperty {
       {String propertyName, bool required = false, bool indexed = true})
       : super(propertyName: propertyName, required: required, indexed: indexed);
 
+  @override
   bool validate(ModelDB db, Object value) =>
       super.validate(db, value) && (value == null || value is Key);
 
+  @override
   Object encodeValue(ModelDB db, Object value, {bool forComparison = false}) {
     if (value == null) return null;
     return db.toDatastoreKey(value as Key);
   }
 
+  @override
   Object decodePrimitiveValue(ModelDB db, Object value) {
     if (value == null) return null;
     return db.fromDatastoreKey(value as ds.Key);
@@ -197,14 +207,17 @@ class BlobProperty extends PrimitiveProperty {
   // of the range 0..255!
   // If an untyped list was created the type check will always succeed. i.e.
   //   "[1, true, 'bar'] is List<int>" evaluates to `true`
+  @override
   bool validate(ModelDB db, Object value) =>
       super.validate(db, value) && (value == null || value is List<int>);
 
+  @override
   Object encodeValue(ModelDB db, Object value, {bool forComparison = false}) {
     if (value == null) return null;
     return ds.BlobValue(value as List<int>);
   }
 
+  @override
   Object decodePrimitiveValue(ModelDB db, Object value) {
     if (value == null) return null;
 
@@ -221,9 +234,11 @@ class DateTimeProperty extends PrimitiveProperty {
       {String propertyName, bool required = false, bool indexed = true})
       : super(propertyName: propertyName, required: required, indexed: indexed);
 
+  @override
   bool validate(ModelDB db, Object value) =>
       super.validate(db, value) && (value == null || value is DateTime);
 
+  @override
   Object decodePrimitiveValue(ModelDB db, Object value) {
     if (value is int) {
       return DateTime.fromMillisecondsSinceEpoch(value ~/ 1000, isUtc: true);
@@ -246,6 +261,7 @@ class ListProperty extends Property {
       {String propertyName, bool indexed = true})
       : super(propertyName: propertyName, required: true, indexed: indexed);
 
+  @override
   bool validate(ModelDB db, Object value) {
     if (!super.validate(db, value) || value is! List) return false;
 
@@ -255,6 +271,7 @@ class ListProperty extends Property {
     return true;
   }
 
+  @override
   Object encodeValue(ModelDB db, Object value, {bool forComparison = false}) {
     if (forComparison) {
       // If we have comparison of list properties (i.e. repeated property names)
@@ -284,6 +301,7 @@ class ListProperty extends Property {
     return list.map((value) => subProperty.encodeValue(db, value)).toList();
   }
 
+  @override
   Object decodePrimitiveValue(ModelDB db, Object value) {
     if (value == null) return [];
     if (value is! List) return [subProperty.decodePrimitiveValue(db, value)];
