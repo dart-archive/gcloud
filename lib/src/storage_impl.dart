@@ -284,7 +284,7 @@ class _BucketImpl implements Bucket {
       throw ArgumentError('Content-Type is required for update');
     }
     md._object.acl ??= _defaultObjectAcl._toObjectAccessControlList();
-    return _api.objects.update(object, bucketName, objectName);
+    return _api.objects.patch(object, bucketName, objectName);
   }
 
   Future<storage_api.Objects> _listObjects(String bucketName, String prefix,
