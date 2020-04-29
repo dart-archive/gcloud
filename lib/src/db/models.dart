@@ -8,12 +8,12 @@ part of gcloud.db;
 ///
 /// The [Key] can be incomplete if it's id is `null`. In this case the id will
 /// be automatically allocated and set at commit time.
-class Key {
+class Key<T> {
   // Either KeyImpl or PartitionImpl
   final Object _parent;
 
   final Type type;
-  final Object id;
+  final T id;
 
   Key(Key parent, this.type, this.id) : _parent = parent {
     if (type == null) {
@@ -46,8 +46,8 @@ class Key {
     return obj as Partition;
   }
 
-  Key append(Type modelType, {Object id}) {
-    return Key(this, modelType, id);
+  Key<U> append<U>(Type modelType, {U id}) {
+    return Key<U>(this, modelType, id);
   }
 
   bool get isEmpty => _parent is Partition;
@@ -62,6 +62,9 @@ class Key {
 
   @override
   int get hashCode => _parent.hashCode ^ type.hashCode ^ id.hashCode;
+
+  /// Converts `Key<dynamic>` to `Key<U>`.
+  Key<U> cast<U>() => Key<U>(parent, type, id as U);
 }
 
 /// Represents a datastore partition.
@@ -94,13 +97,13 @@ class Partition {
 
 /// Superclass for all model classes.
 ///
-/// Every model class has a [id] -- which must be an integer or a string, and
+/// Every model class has a [id] of type [T] which must be `int` or `String`, and
 /// a [parentKey]. The [key] getter is returning the key for the model object.
-abstract class Model {
-  Object id;
+abstract class Model<T> {
+  T id;
   Key parentKey;
 
-  Key get key => parentKey.append(runtimeType, id: id);
+  Key<T> get key => parentKey.append(runtimeType, id: id);
 }
 
 /// Superclass for all expanded model classes.
