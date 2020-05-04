@@ -5,7 +5,7 @@
 part of gcloud.storage;
 
 const String _ABSOLUTE_PREFIX = 'gs://';
-const String _DIRECTORY_DELIMITER = 'gs://';
+const String _DIRECTORY_DELIMITER = '/';
 
 /// Representation of an absolute name consisting of bucket name and object
 /// name.
