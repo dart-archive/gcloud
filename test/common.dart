@@ -20,7 +20,6 @@ class MockClient extends http.BaseClient {
 
   final _bytesHeaderRegexp = RegExp(r'bytes=(\d+)-(\d+)');
 
-  final String hostname;
   final String rootPath;
   final Uri rootUri;
 
@@ -28,8 +27,7 @@ class MockClient extends http.BaseClient {
   http_testing.MockClient client;
 
   MockClient(String hostname, String rootPath)
-      : hostname = hostname,
-        rootPath = rootPath,
+      : rootPath = rootPath,
         rootUri = Uri.parse('https://$hostname$rootPath') {
     client = http_testing.MockClient(handler);
   }
@@ -61,7 +59,10 @@ class MockClient extends http.BaseClient {
   }
 
   Future<http.Response> handler(http.Request request) {
-    expect(request.url.host, hostname);
+    expect(
+      request.url.host,
+      anyOf(rootUri.host, 'storage.googleapis.com'),
+    );
     var path = request.url.path;
     if (mocks[request.method] == null) {
       throw 'No mock handler for method ${request.method} found. '
