@@ -61,7 +61,7 @@ class MockClient extends http.BaseClient {
   Future<http.Response> handler(http.Request request) {
     expect(
       request.url.host,
-      anyOf('storage.googleapis.com', 'www.googleapis.com'),
+      anyOf(rootUri.host, 'storage.googleapis.com'),
     );
     var path = request.url.path;
     if (mocks[request.method] == null) {
