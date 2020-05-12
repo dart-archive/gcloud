@@ -111,7 +111,7 @@ abstract class Model<T> {
 /// The [ExpandoModel] class adds support for having dynamic properties. You can
 /// set arbitrary fields on these models. The expanded values must be values
 /// accepted by the [RawDatastore] implementation.
-abstract class ExpandoModel extends Model {
+abstract class ExpandoModel<T> extends Model<T> {
   final Map<String, Object> additionalProperties = {};
 
   @override
