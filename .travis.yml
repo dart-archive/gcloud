@@ -2,17 +2,17 @@ language: dart
 
 dart:
   - 2.3.0
-  - dev
+  - stable
 
 dart_task:
   - test: -P travis
 
 matrix:
   include:
-    # Only validate formatting using the dev release
-    - dart: dev
+    # Only validate formatting using the stable release
+    - dart: stable
       dart_task: dartfmt
-    - dart: dev
+    - dart: stable
       dart_task:
         dartanalyzer: --fatal-infos --fatal-warnings .
     - dart: 2.3.0
