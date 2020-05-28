@@ -1,3 +1,9 @@
+## 0.7.0+2
+ 
+ * Upgrade dependency on `_discoveryapis_commons`, changing `ApiRequestError`
+   from an `Error` to an `Exception`. Version constraints on
+   `_discoveryapis_commons` allows both new and old versions.
+
 ## 0.7.0+1
 
  * Fix path separator in Bucket.list().

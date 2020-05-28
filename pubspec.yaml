@@ -1,5 +1,5 @@
 name: gcloud
-version: 0.7.0+1
+version: 0.7.0+2
 description: >-
   High level idiomatic Dart API for Google Cloud Storage, Pub-Sub and Datastore.
 homepage: https://github.com/dart-lang/gcloud
@@ -8,7 +8,7 @@ environment:
   sdk: '>=2.3.0 <3.0.0'
 
 dependencies:
-  _discoveryapis_commons: ^0.1.6+1
+  _discoveryapis_commons: '>=0.1.6+1 <0.3.0'
   googleapis: '>=0.50.2 <1.0.0'
   http: '>=0.11.0 <0.13.0'
   meta: ^1.0.2

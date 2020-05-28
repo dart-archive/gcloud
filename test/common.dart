@@ -20,6 +20,7 @@ class MockClient extends http.BaseClient {
 
   final _bytesHeaderRegexp = RegExp(r'bytes=(\d+)-(\d+)');
 
+  final String hostname;
   final String rootPath;
   final Uri rootUri;
 
@@ -27,7 +28,8 @@ class MockClient extends http.BaseClient {
   http_testing.MockClient client;
 
   MockClient(String hostname, String rootPath)
-      : rootPath = rootPath,
+      : hostname = hostname,
+        rootPath = rootPath,
         rootUri = Uri.parse('https://$hostname$rootPath') {
     client = http_testing.MockClient(handler);
   }
@@ -98,7 +100,7 @@ class MockClient extends http.BaseClient {
 
   Future<http.Response> respondInitiateResumableUpload(project) {
     final headers = Map<String, String>.from(RESPONSE_HEADERS);
-    headers['location'] = 'https://www.googleapis.com/resumable/upload$rootPath'
+    headers['location'] = 'https://$hostname/resumable/upload$rootPath'
         'b/$project/o?uploadType=resumable&alt=json&'
         'upload_id=AEnB2UqucpaWy7d5cr5iVQzmbQcQlLDIKiClrm0SAX3rJ7UN'
         'Mu5bEoC9b4teJcJUKpqceCUeqKzuoP_jz2ps_dV0P0nT8OTuZQ';
