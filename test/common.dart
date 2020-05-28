@@ -28,9 +28,9 @@ class MockClient extends http.BaseClient {
   http_testing.MockClient client;
 
   MockClient(String hostname, String rootPath)
-      : hostname = hostname,
-        rootPath = rootPath,
-        rootUri = Uri.parse('https://$hostname$rootPath') {
+      : this.hostname = hostname,
+        this.rootPath = rootPath,
+        this.rootUri = Uri.parse('https://$hostname$rootPath') {
     client = http_testing.MockClient(handler);
   }
 
