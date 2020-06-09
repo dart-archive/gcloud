@@ -230,12 +230,12 @@ If you want to run the end-to-end tests, a Google Cloud project is required.
 When running these tests the following environment variables need to be set:
 
     GCLOUD_E2E_TEST_PROJECT
-    GCLOUD_E2E_TEST_KEY
 
 The value of the environment variable `GCLOUD_E2E_TEST_PROJECT` is the name
-of the Google Cloud project to use. The value of the environment variable
-`GCLOUD_E2E_TEST_KEY` is a Google Cloud Storage path (starting with `gs://`)
-to a JSON key file for a service account providing access to the Cloud Project.
+of the Google Cloud project to use. Authentication for testing uses
+[Application Default Credentials][ADC] locally you can provide
+`GOOGLE_APPLICATION_CREDENTIALS` or use
+[`gcloud auth application-default login`][gcloud-adc].
 
 You will also need to create indexes as follows:
 
@@ -250,3 +250,5 @@ gcloud --project "$GCLOUD_E2E_TEST_PROJECT" datastore indexes create test/index.
 [googleapisbeta]: https://pub.dartlang.org/packages/googleapis_beta
 [googleapisauth]: https://pub.dartlang.org/packages/googleapis_beta
 [appengine]: https://pub.dartlang.org/packages/appengine
+[ADC]: https://cloud.google.com/docs/authentication/production
+[gcloud-adc]: https://cloud.google.com/sdk/gcloud/reference/auth/application-default/login
