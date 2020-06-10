@@ -253,23 +253,24 @@ class _BucketImpl implements Bucket {
   }
 
   @override
-  Stream<BucketEntry> list({String prefix}) {
-    Future<_ObjectPageImpl> firstPage(int pageSize) {
-      return _listObjects(bucketName, prefix, _DIRECTORY_DELIMITER, 50, null)
-          .then(
-              (response) => _ObjectPageImpl(this, prefix, pageSize, response));
+  Stream<BucketEntry> list({String prefix, String delimiter}) {
+    delimiter ??= _DIRECTORY_DELIMITER;
+    Future<_ObjectPageImpl> firstPage(int pageSize) async {
+      final response =
+          await _listObjects(bucketName, prefix, delimiter, 50, null);
+      return _ObjectPageImpl(this, prefix, delimiter, pageSize, response);
     }
 
     return StreamFromPages<BucketEntry>(firstPage).stream;
   }
 
   @override
-  Future<Page<BucketEntry>> page({String prefix, int pageSize = 50}) {
-    return _listObjects(
-            bucketName, prefix, _DIRECTORY_DELIMITER, pageSize, null)
-        .then((response) {
-      return _ObjectPageImpl(this, prefix, pageSize, response);
-    });
+  Future<Page<BucketEntry>> page(
+      {String prefix, String delimiter, int pageSize = 50}) async {
+    delimiter ??= _DIRECTORY_DELIMITER;
+    final response =
+        await _listObjects(bucketName, prefix, delimiter, pageSize, null);
+    return _ObjectPageImpl(this, prefix, delimiter, pageSize, response);
   }
 
   @override
@@ -329,13 +330,14 @@ class _BucketPageImpl implements Page<String> {
 class _ObjectPageImpl implements Page<BucketEntry> {
   final _BucketImpl _bucket;
   final String _prefix;
+  final String _delimiter;
   final int _pageSize;
   final String _nextPageToken;
   @override
   final List<BucketEntry> items;
 
-  _ObjectPageImpl(
-      this._bucket, this._prefix, this._pageSize, storage_api.Objects response)
+  _ObjectPageImpl(this._bucket, this._prefix, this._delimiter, this._pageSize,
+      storage_api.Objects response)
       : items = List((response.items != null ? response.items.length : 0) +
             (response.prefixes != null ? response.prefixes.length : 0)),
         _nextPageToken = response.nextPageToken {
@@ -362,10 +364,10 @@ class _ObjectPageImpl implements Page<BucketEntry> {
     pageSize ??= _pageSize;
 
     return _bucket
-        ._listObjects(_bucket.bucketName, _prefix, _DIRECTORY_DELIMITER,
-            pageSize, _nextPageToken)
+        ._listObjects(
+            _bucket.bucketName, _prefix, _delimiter, pageSize, _nextPageToken)
         .then((response) {
-      return _ObjectPageImpl(_bucket, _prefix, pageSize, response);
+      return _ObjectPageImpl(_bucket, _prefix, _delimiter, pageSize, response);
     });
   }
 }

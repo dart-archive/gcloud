@@ -1,3 +1,7 @@
+## 0.7.1
+
+ * Added `delimiter` to `Bucket.list` and `Bucket.page`.
+
 ## 0.7.0+2
  
  * Upgrade dependency on `_discoveryapis_commons`, changing `ApiRequestError`
