@@ -1,3 +1,8 @@
+## 0.7.2
+
+ * Added `delimiter` to `Bucket.list` and `Bucket.page`
+   (`0.7.1` only added them the implementation).
+
 ## 0.7.1
 
  * Added `delimiter` to `Bucket.list` and `Bucket.page`.

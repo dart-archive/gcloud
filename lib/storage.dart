@@ -786,15 +786,16 @@ abstract class Bucket {
   /// List objects in the bucket.
   ///
   /// Listing operates like a directory listing, despite the object
-  /// namespace being flat. The character `/` is being used to separate
-  /// object names into directory components.
+  /// namespace being flat. Unless [delimiter] is specified, the character `/`
+  /// is being used to separate object names into directory components.
+  /// To list objects recursively, the [delimiter] can be set to empty string.
   ///
   /// Retrieves a list of objects and directory components starting
   /// with [prefix].
   ///
   /// Returns a [Stream] of [BucketEntry]. Each element of the stream
   /// represents either an object or a directory component.
-  Stream<BucketEntry> list({String prefix});
+  Stream<BucketEntry> list({String prefix, String delimiter});
 
   /// Start paging through objects in the bucket.
   ///
@@ -804,5 +805,6 @@ abstract class Bucket {
   ///
   /// Returns a `Future` which completes with a `Page` object holding the
   /// first page. Use the `Page` object to move to the next page.
-  Future<Page<BucketEntry>> page({String prefix, int pageSize = 50});
+  Future<Page<BucketEntry>> page(
+      {String prefix, String delimiter, int pageSize = 50});
 }
