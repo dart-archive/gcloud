@@ -1,6 +1,8 @@
 ## 0.7.1
 
  * Added `delimiter` to `Bucket.list` and `Bucket.page`.
+ * Fix typing of `ExpandoModel` to `ExpandoModel<T>` as we should have done in
+   version `0.7.0`.
 
 ## 0.7.0+2
  
