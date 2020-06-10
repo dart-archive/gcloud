@@ -254,7 +254,9 @@ void runTests(Datastore datastore, String namespace) {
       test('negative_insert_transactional_xg', () {
         return testInsertNegative(unnamedEntities26,
             transactional: true, xg: true);
-      });
+      },
+          skip: 'With Firestore in Datastore mode, transactions are no longer '
+              'limited to 25 entity groups');
 
       test('negative_insert_20000_entities', () async {
         // Maybe it should not be a [DataStoreError] here?

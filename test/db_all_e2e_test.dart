@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 @Tags(['e2e'])
+@Timeout(Duration(seconds: 120))
 
 library gcloud.test.db_all_test;
 

@@ -1,6 +1,6 @@
 # To run tests for datastore, the following index.yaml must be declared for
 # the project using:
-#         $ gcloud datastore indexes create test/index.yaml
+#         $ gcloud --project "$GCLOUD_E2E_TEST_PROJECT" datastore indexes create test/index.yaml
 indexes:
 # Needed by tests in: test/db/e2e/db_test_impl.dart
 - kind: User
