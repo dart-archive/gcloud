@@ -81,6 +81,31 @@ class Person extends db.Model {
   String toString() => 'Person(id: $id, name: $name, age: $age)';
 }
 
+@db.Kind(idType: db.IdType.String)
+class PersonStringId extends db.Model<String> {
+  String get name => id;
+
+  @db.IntProperty()
+  int age;
+
+  @db.ModelKeyProperty(propertyName: 'mangledWife')
+  db.Key wife;
+
+  @override
+  bool operator ==(Object other) => sameAs(other);
+
+  bool sameAs(Object other) {
+    return other is PersonStringId &&
+        id == other.id &&
+        parentKey == other.parentKey &&
+        age == other.age &&
+        wife == other.wife;
+  }
+
+  @override
+  String toString() => 'PersonStringId(id/name: $name, age: $age)';
+}
+
 @db.Kind()
 class User extends Person {
   @db.StringProperty()
@@ -228,6 +253,18 @@ void runTests(db.DatastoreDB store, String namespace) {
             ..parentKey = root
             ..age = 42 + i
             ..name = 'user$i');
+        }
+        persons.first.wife = persons.last.key;
+        return testInsertLookupDelete(persons);
+      });
+      test('PersonStringId', () {
+        var root = partition.emptyKey;
+        var persons = <PersonStringId>[];
+        for (var i = 1; i <= 10; i++) {
+          persons.add(PersonStringId()
+            ..id = 'user$i'
+            ..parentKey = root
+            ..age = 42 + i);
         }
         persons.first.wife = persons.last.key;
         return testInsertLookupDelete(persons);

@@ -366,13 +366,17 @@ class ModelDBImpl implements ModelDB {
     return properties;
   }
 
+  final _originalExpandoModelClass = mirrors.reflectClass(ExpandoModel);
+  final _originalModelClass = mirrors.reflectClass(Model);
+
   bool _isExpandoClass(mirrors.ClassMirror modelClass) {
-    while (modelClass.superclass != modelClass) {
-      if (modelClass.reflectedType == ExpandoModel) {
+    while (modelClass != null && modelClass.superclass != modelClass) {
+      if (modelClass.originalDeclaration == _originalExpandoModelClass) {
         return true;
-      } else if (modelClass.reflectedType == Model) {
+      } else if (modelClass.originalDeclaration == _originalModelClass) {
         return false;
       }
+
       modelClass = modelClass.superclass;
     }
     throw StateError('This should be unreachable.');

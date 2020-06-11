@@ -1,3 +1,7 @@
+## 0.7.3
+ * Fixed issue in reflection code affecting `Model<int>` and `Model<String>`,
+   but not `Model<dynamic>`.
+
 ## 0.7.2
 
  * Added `delimiter` to `Bucket.list` and `Bucket.page`
