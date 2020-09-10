@@ -229,7 +229,9 @@ class KeyMock implements Key {
   Partition get partition => null;
   datastore.Key get datastoreKey => _datastoreKey;
   @override
-  Key append(Type modelType, {Object id}) => null;
+  Key<T> append<T>(Type modelType, {T id}) => null;
+  @override
+  Key<U> cast<U>() => Key<U>(parent, type, id as U);
   @override
   int get hashCode => 1;
 }

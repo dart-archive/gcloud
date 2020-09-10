@@ -61,7 +61,10 @@ class MockClient extends http.BaseClient {
   }
 
   Future<http.Response> handler(http.Request request) {
-    expect(request.url.host, hostname);
+    expect(
+      request.url.host,
+      anyOf(rootUri.host, 'storage.googleapis.com'),
+    );
     var path = request.url.path;
     if (mocks[request.method] == null) {
       throw 'No mock handler for method ${request.method} found. '
@@ -97,7 +100,7 @@ class MockClient extends http.BaseClient {
 
   Future<http.Response> respondInitiateResumableUpload(project) {
     final headers = Map<String, String>.from(RESPONSE_HEADERS);
-    headers['location'] = 'https://www.googleapis.com/resumable/upload$rootPath'
+    headers['location'] = 'https://$hostname/resumable/upload$rootPath'
         'b/$project/o?uploadType=resumable&alt=json&'
         'upload_id=AEnB2UqucpaWy7d5cr5iVQzmbQcQlLDIKiClrm0SAX3rJ7UN'
         'Mu5bEoC9b4teJcJUKpqceCUeqKzuoP_jz2ps_dV0P0nT8OTuZQ';

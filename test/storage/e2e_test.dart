@@ -47,12 +47,15 @@ void main() {
     });
   });
 
-  tearDownAll(() {
+  tearDownAll(() async {
+    // Don't cleanup if setup failed
+    if (storage == null) {
+      return;
+    }
     // Deleting a bucket relies on eventually consistent behaviour, hence
     // the delay in attempt to prevent test flakiness.
-    return Future.delayed(STORAGE_LIST_DELAY, () {
-      return storage.deleteBucket(testBucketName);
-    });
+    await Future.delayed(STORAGE_LIST_DELAY);
+    await storage.deleteBucket(testBucketName);
   });
 
   group('bucket', () {
@@ -98,7 +101,7 @@ void main() {
         var r2 = await storage.deleteBucket(bucketName);
         expect(r2, isNull);
       }
-    });
+    }, skip: 'unable to test with uniform buckets enforced for account');
 
     test('create-error', () {
       storage.createBucket('goog-reserved').catchError(expectAsync1((e) {
@@ -168,7 +171,7 @@ void main() {
           () => test('test-6', PredefinedAcl.bucketOwnerRead, 2)
         ], (f) => f().then(expectAsync1((_) {})));
       });
-    });
+    }, skip: 'unable to test with uniform buckets enforced for account');
 
     test('create-with-acl-delete', () {
       return withTestBucket((Bucket bucket) {
@@ -217,7 +220,7 @@ void main() {
           () => test('test-4', acl4, acl4.entries.length + 1)
         ], (f) => f().then(expectAsync1((_) {})));
       });
-    });
+    }, skip: 'unable to test with uniform buckets enforced for account');
 
     test('create-with-metadata-delete', () {
       return withTestBucket((Bucket bucket) {

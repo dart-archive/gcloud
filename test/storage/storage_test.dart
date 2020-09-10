@@ -17,7 +17,7 @@ import 'package:googleapis/storage/v1.dart' as storage;
 import '../common.dart';
 import '../common_e2e.dart';
 
-const String HOSTNAME = 'www.googleapis.com';
+const String HOSTNAME = 'storage.googleapis.com';
 const String ROOT_PATH = '/storage/v1/';
 
 MockClient mockClient() => MockClient(HOSTNAME, ROOT_PATH);
