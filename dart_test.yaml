@@ -1,5 +1,5 @@
 presets:
-  travis:
+  ci:
     tags:
       e2e:
-        skip: "e2e tests don't run on Travis"
+        skip: "e2e tests don't run on CI"
