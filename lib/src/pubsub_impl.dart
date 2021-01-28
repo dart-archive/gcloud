@@ -459,7 +459,8 @@ class _TopicPageImpl implements Page<Topic> {
   final List<Topic> items;
 
   _TopicPageImpl(this._api, this._pageSize, pubsub.ListTopicsResponse response)
-      : items = List(response.topics != null ? response.topics.length : 0),
+      : items = List.filled(
+            response.topics != null ? response.topics.length : 0, null),
         _nextPageToken = response.nextPageToken {
     if (response.topics != null) {
       for (var i = 0; i < response.topics.length; i++) {
@@ -492,8 +493,9 @@ class _SubscriptionPageImpl implements Page<Subscription> {
 
   _SubscriptionPageImpl(this._api, this._topic, this._pageSize,
       pubsub.ListSubscriptionsResponse response)
-      : items = List(
-            response.subscriptions != null ? response.subscriptions.length : 0),
+      : items = List.filled(
+            response.subscriptions != null ? response.subscriptions.length : 0,
+            null),
         _nextPageToken = response.nextPageToken {
     if (response.subscriptions != null) {
       for (var i = 0; i < response.subscriptions.length; i++) {

@@ -306,7 +306,8 @@ class _BucketPageImpl implements Page<String> {
   final List<String> items;
 
   _BucketPageImpl(this._storage, this._pageSize, storage_api.Buckets response)
-      : items = List(response.items != null ? response.items.length : 0),
+      : items = List.filled(
+            response.items != null ? response.items.length : 0, null),
         _nextPageToken = response.nextPageToken {
     for (var i = 0; i < items.length; i++) {
       items[i] = response.items[i].name;
@@ -338,8 +339,10 @@ class _ObjectPageImpl implements Page<BucketEntry> {
 
   _ObjectPageImpl(this._bucket, this._prefix, this._delimiter, this._pageSize,
       storage_api.Objects response)
-      : items = List((response.items != null ? response.items.length : 0) +
-            (response.prefixes != null ? response.prefixes.length : 0)),
+      : items = List.filled(
+            (response.items != null ? response.items.length : 0) +
+                (response.prefixes != null ? response.prefixes.length : 0),
+            null),
         _nextPageToken = response.nextPageToken {
     var prefixes = 0;
     if (response.prefixes != null) {

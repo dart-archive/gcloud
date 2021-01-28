@@ -210,6 +210,7 @@ class _ServiceScope {
             'callback function to return a future.');
       }
       return f.whenComplete(serviceScope._runScopeExitHandlers);
+      // ignore: deprecated_member_use
     }, zoneValues: map, onError: onError);
   }
 
