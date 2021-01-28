@@ -119,7 +119,8 @@ class Acl {
   Acl(Iterable<AclEntry> entries) : _entries = List.from(entries);
 
   Acl._fromBucketAcl(storage_api.Bucket bucket)
-      : _entries = List(bucket.acl == null ? 0 : bucket.acl.length) {
+      : _entries =
+            List.filled(bucket.acl == null ? 0 : bucket.acl.length, null) {
     if (bucket.acl != null) {
       for (var i = 0; i < bucket.acl.length; i++) {
         _entries[i] = AclEntry(_aclScopeFromEntity(bucket.acl[i].entity),
@@ -129,7 +130,8 @@ class Acl {
   }
 
   Acl._fromObjectAcl(storage_api.Object object)
-      : _entries = List(object.acl == null ? 0 : object.acl.length) {
+      : _entries =
+            List.filled(object.acl == null ? 0 : object.acl.length, null) {
     if (object.acl != null) {
       for (var i = 0; i < object.acl.length; i++) {
         _entries[i] = AclEntry(_aclScopeFromEntity(object.acl[i].entity),

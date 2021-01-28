@@ -546,7 +546,7 @@ void runTests(Datastore datastore, String namespace) {
           {bool xg = false}) {
         Future test(List<Entity> entities, Transaction transaction, value) {
           // Change entities:
-          var changedEntities = List<Entity>(entities.length);
+          var changedEntities = List<Entity>.filled(entities.length, null);
           for (var i = 0; i < entities.length; i++) {
             var entity = entities[i];
             var newProperties = Map<String, Object>.from(entity.properties);
