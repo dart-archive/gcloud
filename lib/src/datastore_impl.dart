@@ -1,6 +1,7 @@
 // Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+// @dart=2.9
 
 library gcloud.datastore_impl;
 
@@ -19,8 +20,8 @@ class TransactionImpl implements datastore.Transaction {
 
 class DatastoreImpl implements datastore.Datastore {
   static const List<String> SCOPES = <String>[
-    api.DatastoreApi.DatastoreScope,
-    api.DatastoreApi.CloudPlatformScope,
+    api.DatastoreApi.datastoreScope,
+    api.DatastoreApi.cloudPlatformScope,
   ];
 
   final api.DatastoreApi _api;
@@ -287,10 +288,9 @@ class DatastoreImpl implements datastore.Datastore {
   @override
   Future<List<datastore.Key>> allocateIds(List<datastore.Key> keys) {
     var request = api.AllocateIdsRequest();
-    request
-      ..keys = keys.map((key) {
-        return _convertDatastore2ApiKey(key, enforceId: false);
-      }).toList();
+    request.keys = keys.map((key) {
+      return _convertDatastore2ApiKey(key, enforceId: false);
+    }).toList();
     return _api.projects.allocateIds(request, _project).then((response) {
       return response.keys.map(_convertApi2DatastoreKey).toList();
     }, onError: _handleError);

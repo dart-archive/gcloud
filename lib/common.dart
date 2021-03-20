@@ -35,8 +35,8 @@ class StreamFromPages<T> {
   bool _pendingRequest = false;
   bool _paused = false;
   bool _cancelled = false;
-  Page<T> _currentPage;
-  StreamController<T> _controller;
+  late Page<T> _currentPage;
+  late final StreamController<T> _controller;
 
   StreamFromPages(this._firstPageProvider) {
     _controller = StreamController<T>(
@@ -49,7 +49,7 @@ class StreamFromPages<T> {
 
   Stream<T> get stream => _controller.stream;
 
-  void _handleError(e, StackTrace s) {
+  void _handleError(Object e, StackTrace s) {
     _controller.addError(e, s);
     _controller.close();
   }

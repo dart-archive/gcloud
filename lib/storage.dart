@@ -1,6 +1,7 @@
 // Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+// @dart=2.9
 
 /// This library provides access to Google Cloud Storage.
 ///
@@ -505,7 +506,7 @@ abstract class BucketInfo {
 abstract class Storage {
   /// List of required OAuth2 scopes for Cloud Storage operation.
   static const List<String> SCOPES = <String>[
-    storage_api.StorageApi.DevstorageFullControlScope
+    storage_api.StorageApi.devstorageFullControlScope
   ];
 
   /// Initializes access to cloud storage.

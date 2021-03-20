@@ -1,6 +1,7 @@
 // Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+// @dart=2.9
 
 library gcloud.storage;
 
@@ -270,9 +271,11 @@ void main() {
 
       test('immediate-cancel', () {
         withMockClient((mock, api) {
-          api.listBucketNames().listen((_) => throw 'Unexpected',
-              onDone: () => throw 'Unexpected')
-            ..cancel();
+          api
+              .listBucketNames()
+              .listen((_) => throw 'Unexpected',
+                  onDone: () => throw 'Unexpected')
+              .cancel();
         });
       });
 
@@ -1067,9 +1070,11 @@ void main() {
       test('immediate-cancel', () {
         withMockClient((mock, api) {
           var bucket = api.bucket(bucketName);
-          bucket.list().listen((_) => throw 'Unexpected',
-              onDone: () => throw 'Unexpected')
-            ..cancel();
+          bucket
+              .list()
+              .listen((_) => throw 'Unexpected',
+                  onDone: () => throw 'Unexpected')
+              .cancel();
         });
       });
 

@@ -1,6 +1,7 @@
 // Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+// @dart=2.9
 
 part of gcloud.storage;
 
@@ -220,7 +221,7 @@ class _BucketImpl implements Bucket {
       throw ArgumentError('length must have a value if offset is non-zero.');
     }
 
-    var options = storage_api.DownloadOptions.FullMedia;
+    var options = storage_api.DownloadOptions.fullMedia;
 
     if (length != null) {
       if (length <= 0) {
@@ -637,7 +638,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
             name: _objectName,
             predefinedAcl: _predefinedAcl,
             uploadMedia: media,
-            uploadOptions: storage_api.UploadOptions.Default)
+            uploadOptions: storage_api.UploadOptions.defaultOptions)
         .then((response) {
       _doneCompleter.complete(_ObjectInfoImpl(response));
     }, onError: _completeError);
@@ -651,7 +652,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
             name: _objectName,
             predefinedAcl: _predefinedAcl,
             uploadMedia: media,
-            uploadOptions: storage_api.UploadOptions.Resumable)
+            uploadOptions: storage_api.UploadOptions.resumable)
         .then((response) {
       _doneCompleter.complete(_ObjectInfoImpl(response));
     }, onError: _completeError);

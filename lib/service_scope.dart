@@ -86,8 +86,8 @@ const Symbol _ServiceScopeKey = #gcloud.service_scope;
 final _ServiceScope _emptyServiceScope = _ServiceScope();
 
 /// Returns the current [_ServiceScope] object.
-_ServiceScope get _serviceScope =>
-    Zone.current[_ServiceScopeKey] as _ServiceScope;
+_ServiceScope? get _serviceScope =>
+    Zone.current[_ServiceScopeKey] as _ServiceScope?;
 
 /// Start a new zone with a new service scope and run [func] inside it.
 ///
@@ -96,7 +96,7 @@ _ServiceScope get _serviceScope =>
 ///
 /// If an uncaught error occurs and [onError] is given, it will be called. The
 /// `onError` parameter can take the same values as `Zone.current.fork`.
-Future fork(Future Function() func, {Function onError}) {
+Future fork(Future Function() func, {Function? onError}) {
   var currentServiceScope = _serviceScope;
   currentServiceScope ??= _emptyServiceScope;
   return currentServiceScope._fork(func, onError: onError);
@@ -109,7 +109,7 @@ Future fork(Future Function() func, {Function onError}) {
 ///
 /// The registered on-scope-exit functions are executed in reverse registration
 /// order.
-void register(Object key, Object value, {ScopeExitCallback onScopeExit}) {
+void register(Object key, Object value, {ScopeExitCallback? onScopeExit}) {
   var serviceScope = _serviceScope;
   if (serviceScope == null) {
     throw StateError('Not running inside a service scope zone.');
@@ -132,7 +132,7 @@ void registerScopeExitCallback(ScopeExitCallback onScopeExitCallback) {
 /// Look up an item by it's key in the currently active service scope.
 ///
 /// Returns `null` if there is no entry with the given key.
-Object lookup(Object key) {
+Object? lookup(Object key) {
   var serviceScope = _serviceScope;
   if (serviceScope == null) {
     throw StateError('Not running inside a service scope zone.');
@@ -157,7 +157,7 @@ class _ServiceScope {
 
   /// Looks up an object by it's service scope key - returns `null` if not
   /// found.
-  Object lookup(Object serviceScope) {
+  Object? lookup(Object serviceScope) {
     _ensureNotInDestroyingState();
     var entry = _key2Values[serviceScope];
     return entry != null ? entry.value : null;
@@ -167,7 +167,7 @@ class _ServiceScope {
   ///
   /// Optionally calls a [onScopeExit] function once this service scope ends.
   void register(Object serviceScopeKey, Object value,
-      {ScopeExitCallback onScopeExit}) {
+      {ScopeExitCallback? onScopeExit}) {
     _ensureNotInCleaningState();
     _ensureNotInDestroyingState();
 
@@ -191,13 +191,11 @@ class _ServiceScope {
     _ensureNotInCleaningState();
     _ensureNotInDestroyingState();
 
-    if (onScopeExitCallback != null) {
-      _registeredEntries.add(_RegisteredEntry(null, null, onScopeExitCallback));
-    }
+    _registeredEntries.add(_RegisteredEntry(null, null, onScopeExitCallback));
   }
 
   /// Start a new zone with a forked service scope.
-  Future _fork(Future Function() func, {Function onError}) {
+  Future _fork(Future Function() func, {Function? onError}) {
     _ensureNotInCleaningState();
     _ensureNotInDestroyingState();
 
@@ -257,7 +255,7 @@ class _ServiceScope {
         _key2Values.remove(registeredEntry.key);
       }
       if (registeredEntry.scopeExitCallback != null) {
-        return Future.sync(registeredEntry.scopeExitCallback)
+        return Future.sync(registeredEntry.scopeExitCallback!)
             .catchError((e, s) => errors.add(e));
       } else {
         return Future.value();
@@ -274,12 +272,12 @@ class _ServiceScope {
   }
 }
 
-typedef ScopeExitCallback = Future Function();
+typedef ScopeExitCallback = FutureOr Function();
 
 class _RegisteredEntry {
-  final Object key;
-  final Object value;
-  final ScopeExitCallback scopeExitCallback;
+  final Object? key;
+  final Object? value;
+  final ScopeExitCallback? scopeExitCallback;
 
   _RegisteredEntry(this.key, this.value, this.scopeExitCallback);
 }
