@@ -203,10 +203,6 @@ class _ServiceScope {
     var map = {_ServiceScopeKey: serviceScope};
     return runZoned(() {
       var f = func();
-      if (f is! Future) {
-        throw ArgumentError('Forking a service scope zone requires the '
-            'callback function to return a future.');
-      }
       return f.whenComplete(serviceScope._runScopeExitHandlers);
       // ignore: deprecated_member_use
     }, zoneValues: map, onError: onError);

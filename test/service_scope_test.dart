@@ -39,12 +39,6 @@ void main() {
     }));
   });
 
-  test('fork-callback-returns-non-future', () {
-    // The closure passed to fork() must return a future.
-    expect(() => ss.fork(expectAsync0(() => Future.value())),
-        throwsA(isArgumentError));
-  });
-
   test('error-on-double-insert', () {
     // Ensure that inserting twice with the same key results in an error.
     return ss.fork(expectAsync0(() => Future.sync(() {

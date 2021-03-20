@@ -51,7 +51,7 @@ void main() {
             'PUT',
             'projects/$PROJECT/topics/test-topic',
             expectAsync1((http.Request request) {
-              expect(request.body, isEmpty);
+              expect(request.body, '{}');
               return mock.respond(pubsub.Topic()..name = absoluteName);
             }, count: 2));
 

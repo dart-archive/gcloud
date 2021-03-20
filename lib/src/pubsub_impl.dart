@@ -31,7 +31,7 @@ class _PubSubImpl implements PubSub {
   }
 
   Future<pubsub.Topic> _createTopic(String name) {
-    return _api.projects.topics.create(null, name);
+    return _api.projects.topics.create(pubsub.Topic(), name);
   }
 
   Future _deleteTopic(String name) {

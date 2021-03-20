@@ -107,8 +107,8 @@ class _StorageImpl implements Storage {
     var srcName = _AbsoluteName.parse(src);
     var destName = _AbsoluteName.parse(dest);
     return _api.objects
-        .copy(null, srcName.bucketName, srcName.objectName, destName.bucketName,
-            destName.objectName)
+        .copy(storage_api.Object(), srcName.bucketName, srcName.objectName,
+            destName.bucketName, destName.objectName)
         .then((_) => null);
   }
 
