@@ -14,6 +14,7 @@ import '../datastore.dart' as datastore;
 
 class TransactionImpl implements datastore.Transaction {
   final String data;
+
   TransactionImpl(this.data);
 }
 
@@ -287,10 +288,9 @@ class DatastoreImpl implements datastore.Datastore {
   @override
   Future<List<datastore.Key>> allocateIds(List<datastore.Key> keys) {
     var request = api.AllocateIdsRequest();
-    request
-      ..keys = keys.map((key) {
-        return _convertDatastore2ApiKey(key, enforceId: false);
-      }).toList();
+    request.keys = keys.map((key) {
+      return _convertDatastore2ApiKey(key, enforceId: false);
+    }).toList();
     return _api.projects.allocateIds(request, _project).then((response) {
       return response.keys.map(_convertApi2DatastoreKey).toList();
     }, onError: _handleError);

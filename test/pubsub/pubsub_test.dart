@@ -255,9 +255,11 @@ void main() {
             registerQueryMock(mock, 70, 50, 1);
 
             var api = PubSub(mock, PROJECT);
-            api.listTopics().listen((_) => throw 'Unexpected',
-                onDone: () => throw 'Unexpected')
-              ..cancel();
+            api
+                .listTopics()
+                .listen((_) => throw 'Unexpected',
+                    onDone: () => throw 'Unexpected')
+                .cancel();
           });
 
           test('cancel', () {
@@ -654,9 +656,11 @@ void main() {
             registerQueryMock(mock, 70, 50, totalCalls: 1);
 
             var api = PubSub(mock, PROJECT);
-            api.listSubscriptions().listen((_) => throw 'Unexpected',
-                onDone: () => throw 'Unexpected')
-              ..cancel();
+            api
+                .listSubscriptions()
+                .listen((_) => throw 'Unexpected',
+                    onDone: () => throw 'Unexpected')
+                .cancel();
           });
 
           test('cancel', () {
