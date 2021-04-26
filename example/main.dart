@@ -4,8 +4,9 @@
 
 import 'dart:async' show Future;
 import 'dart:convert' show utf8;
-import 'package:googleapis_auth/auth_io.dart' as auth;
+
 import 'package:gcloud/storage.dart';
+import 'package:googleapis_auth/auth_io.dart' as auth;
 
 // Note: The README.md contains more details on how to use this package.
 

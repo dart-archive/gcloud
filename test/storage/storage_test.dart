@@ -7,12 +7,10 @@ library gcloud.storage;
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:gcloud/storage.dart';
+import 'package:googleapis/storage/v1.dart' as storage;
 import 'package:http/http.dart' as http;
 import 'package:test/test.dart';
-
-import 'package:gcloud/storage.dart';
-
-import 'package:googleapis/storage/v1.dart' as storage;
 
 import '../common.dart';
 import '../common_e2e.dart';
