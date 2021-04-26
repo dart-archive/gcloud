@@ -25,12 +25,11 @@ library datastore_test;
 /// $ gcloud datastore create-indexes index.yaml
 ///
 /// Now, wait for indexing done
-
 import 'dart:async';
 
+import 'package:gcloud/common.dart';
 import 'package:gcloud/datastore.dart';
 import 'package:gcloud/src/datastore_impl.dart' as datastore_impl;
-import 'package:gcloud/common.dart';
 import 'package:http/http.dart';
 import 'package:test/test.dart';
 

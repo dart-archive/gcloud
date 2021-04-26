@@ -6,8 +6,8 @@ library gcloud.db.properties_test;
 
 import 'dart:typed_data';
 
-import 'package:gcloud/db.dart';
 import 'package:gcloud/datastore.dart' as datastore;
+import 'package:gcloud/db.dart';
 import 'package:test/test.dart';
 
 void main() {

@@ -8,8 +8,8 @@ library gcloud.storage;
 
 import 'dart:async';
 
-import 'package:googleapis/storage/v1.dart' as storage_api;
 import 'package:gcloud/storage.dart';
+import 'package:googleapis/storage/v1.dart' as storage_api;
 import 'package:test/test.dart';
 
 import '../common_e2e.dart';

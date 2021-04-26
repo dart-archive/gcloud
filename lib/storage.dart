@@ -52,10 +52,9 @@ import 'dart:async';
 import 'dart:collection' show UnmodifiableListView, UnmodifiableMapView;
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
-
-import 'package:googleapis/storage/v1.dart' as storage_api;
 import 'package:_discoveryapis_commons/_discoveryapis_commons.dart' as commons;
+import 'package:googleapis/storage/v1.dart' as storage_api;
+import 'package:http/http.dart' as http;
 
 import 'common.dart';
 import 'service_scope.dart' as ss;

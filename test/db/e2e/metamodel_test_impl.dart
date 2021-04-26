@@ -6,12 +6,11 @@ library metamodel_test;
 
 import 'dart:async';
 
-import 'package:test/test.dart';
-
 import 'package:gcloud/datastore.dart';
 import 'package:gcloud/datastore.dart' show Key, Partition;
 import 'package:gcloud/db.dart' as db;
 import 'package:gcloud/db/metamodel.dart';
+import 'package:test/test.dart';
 
 List<Entity> buildEntitiesWithDifferentNamespaces() {
   Key newKey(String namespace, String kind, int id) {

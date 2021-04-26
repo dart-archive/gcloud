@@ -6,8 +6,8 @@ library error_matchers;
 
 import 'dart:io';
 
-import 'package:test/test.dart';
 import 'package:gcloud/datastore.dart';
+import 'package:test/test.dart';
 
 const isApplicationError = TypeMatcher<ApplicationError>();
 

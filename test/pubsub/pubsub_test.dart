@@ -5,12 +5,10 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:gcloud/pubsub.dart';
+import 'package:googleapis/pubsub/v1.dart' as pubsub;
 import 'package:http/http.dart' as http;
 import 'package:test/test.dart';
-
-import 'package:gcloud/pubsub.dart';
-
-import 'package:googleapis/pubsub/v1.dart' as pubsub;
 
 import '../common.dart';
 import '../common_e2e.dart';
