@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-
 /// This library provides access to Google Cloud Storage.
 ///
 /// Google Cloud Storage is an object store for binary objects. Each
@@ -110,7 +109,6 @@ int _jenkinsHash(List e) {
 /// The access controls are described by [AclEntry] objects.
 class Acl {
   final List<AclEntry> _entries;
-  int? _cachedHashCode; // todo: late final
 
   /// The entries in the ACL.
   List<AclEntry> get entries => UnmodifiableListView<AclEntry>(_entries);
@@ -177,7 +175,7 @@ class Acl {
   }
 
   @override
-  int get hashCode => _cachedHashCode ??= _jenkinsHash(_entries);
+  late final int hashCode = _jenkinsHash(_entries);
 
   @override
   bool operator ==(Object other) {
@@ -204,7 +202,6 @@ class Acl {
 class AclEntry {
   final AclScope scope;
   final AclPermission permission;
-  int? _cachedHashCode; // todo: Late final
 
   AclEntry(this.scope, this.permission);
 
@@ -223,7 +220,7 @@ class AclEntry {
   }
 
   @override
-  int get hashCode => _cachedHashCode ??= _jenkinsHash([scope, permission]);
+  late final int hashCode = _jenkinsHash([scope, permission]);
 
   @override
   bool operator ==(Object other) {
@@ -249,8 +246,6 @@ class AclEntry {
 ///
 /// See https://cloud.google.com/storage/docs/accesscontrol for more details.
 abstract class AclScope {
-  int? _cachedHashCode; // todo: late final
-
   /// ACL type for scope representing a Google Storage id.
   static const int _TYPE_STORAGE_ID = 0;
 
@@ -291,7 +286,7 @@ abstract class AclScope {
   AclScope._(this._type, this._id);
 
   @override
-  int get hashCode => _cachedHashCode ??= _jenkinsHash([_type, _id]);
+  late final int hashCode = _jenkinsHash([_type, _id]);
 
   @override
   bool operator ==(Object other) {
@@ -562,7 +557,7 @@ abstract class Storage {
   /// List names of all buckets.
   ///
   /// Returns a [Stream] of bucket names.
-  Stream<String > listBucketNames();
+  Stream<String> listBucketNames();
 
   /// Start paging through names of all buckets.
   ///
@@ -570,7 +565,7 @@ abstract class Storage {
   ///
   /// Returns a [Future] which completes with a `Page` object holding the
   /// first page. Use the `Page` object to move to the next page of buckets.
-  Future<Page<String >> pageBucketNames({int pageSize = 50});
+  Future<Page<String>> pageBucketNames({int pageSize = 50});
 
   /// Copy an object.
   ///
@@ -791,7 +786,7 @@ abstract class Bucket {
   ///
   /// Returns a [Stream] of [BucketEntry]. Each element of the stream
   /// represents either an object or a directory component.
-  Stream<BucketEntry > list({String? prefix, String? delimiter});
+  Stream<BucketEntry> list({String? prefix, String? delimiter});
 
   /// Start paging through objects in the bucket.
   ///
@@ -801,6 +796,6 @@ abstract class Bucket {
   ///
   /// Returns a `Future` which completes with a `Page` object holding the
   /// first page. Use the `Page` object to move to the next page.
-  Future<Page<BucketEntry >> page(
+  Future<Page<BucketEntry>> page(
       {String? prefix, String? delimiter, int pageSize = 50});
 }
