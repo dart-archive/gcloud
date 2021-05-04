@@ -62,7 +62,7 @@ jobs:
 
   # Run tests on a matrix consisting of two dimensions:
   # 1. OS: ubuntu-latest, (macos-latest, windows-latest)
-  # 2. release: 2.3.0
+  # 2. release: 2.12.0
   test-legacy-sdk:
     needs: analyze
     runs-on: ${{ matrix.os }}
@@ -71,7 +71,7 @@ jobs:
       matrix:
         # Add macos-latest and/or windows-latest if relevant for this package.
         os: [ubuntu-latest]
-        sdk: [2.3.0]
+        sdk: [2.12.0]
     steps:
       - uses: actions/checkout@v2
       - uses: dart-lang/setup-dart@v0.3

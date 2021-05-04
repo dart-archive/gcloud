@@ -1,6 +1,7 @@
 // Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+// @dart=2.9
 
 library gcloud.datastore_impl;
 
@@ -20,8 +21,8 @@ class TransactionImpl implements datastore.Transaction {
 
 class DatastoreImpl implements datastore.Datastore {
   static const List<String> SCOPES = <String>[
-    api.DatastoreApi.DatastoreScope,
-    api.DatastoreApi.CloudPlatformScope,
+    api.DatastoreApi.datastoreScope,
+    api.DatastoreApi.cloudPlatformScope,
   ];
 
   final api.DatastoreApi _api;

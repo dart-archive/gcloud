@@ -39,11 +39,6 @@ void main() {
     }));
   });
 
-  test('fork-callback-returns-non-future', () {
-    // The closure passed to fork() must return a future.
-    expect(() => ss.fork(expectAsync0(() => null)), throwsA(isArgumentError));
-  });
-
   test('error-on-double-insert', () {
     // Ensure that inserting twice with the same key results in an error.
     return ss.fork(expectAsync0(() => Future.sync(() {
@@ -209,8 +204,8 @@ void main() {
       }));
       expect(ss.lookup(rootKey), equals('root'));
 
-      Future spawnChild(
-          ownSubKey, otherSubKey, int i, ss.ScopeExitCallback cleanup) {
+      Future spawnChild(Object ownSubKey, Object otherSubKey, int i,
+          ss.ScopeExitCallback cleanup) {
         return ss.fork(expectAsync0(() => Future.sync(() {
               ss.register(subKey, 'fork$i');
               ss.registerScopeExitCallback(cleanup);
