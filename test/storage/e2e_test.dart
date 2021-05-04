@@ -1,8 +1,6 @@
 // Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-// @dart=2.9
-
 @Tags(['e2e'])
 
 library gcloud.storage;
@@ -30,9 +28,10 @@ final bytesResumableUpload =
     List<int>.generate(minResumableUpload, (e) => e & 255);
 
 void main() {
-  Storage storage;
-  String testBucketName;
-  Bucket testBucket;
+  var didSetUp = false;
+  late Storage storage;
+  late String testBucketName;
+  late Bucket testBucket;
 
   setUpAll(() {
     return withAuthClient(Storage.SCOPES, (String project, httpClient) {
@@ -44,13 +43,14 @@ void main() {
       // Create a shared bucket for all object tests.
       return storage.createBucket(testBucketName).then((_) {
         testBucket = storage.bucket(testBucketName);
+        didSetUp = true;
       });
     });
   });
 
   tearDownAll(() async {
     // Don't cleanup if setup failed
-    if (storage == null) {
+    if (!didSetUp) {
       return;
     }
     // Deleting a bucket relies on eventually consistent behaviour, hence
@@ -125,9 +125,8 @@ void main() {
         return withTestBucket((Bucket bucket) {
           return bucket.writeBytes('test', bytes).then(expectAsync1((info) {
             expect(info, isNotNull);
-            return bucket
-                .read('test')
-                .fold([], (p, e) => p..addAll(e)).then(expectAsync1((result) {
+            return bucket.read('test').fold<List<int>>(
+                [], (p, e) => p..addAll(e)).then(expectAsync1((result) {
               expect(result, bytes);
               return bucket.delete('test').then(expectAsync1((result) {
                 expect(result, isNull);
@@ -140,7 +139,7 @@ void main() {
       return Future.forEach([
         () => test('test-1', [1, 2, 3]),
         () => test('test-2', bytesResumableUpload)
-      ], (f) => f().then(expectAsync1((_) {})));
+      ], (Function f) => f().then(expectAsync1((_) {})));
     });
 
     test('create-with-predefined-acl-delete', () {
@@ -155,7 +154,7 @@ void main() {
               var acl = info.metadata.acl;
               expect(info.name, objectName);
               expect(info.etag, isNotNull);
-              expect(acl.entries.length, expectedLength);
+              expect(acl!.entries.length, expectedLength);
               return bucket.delete(objectName).then(expectAsync1((result) {
                 expect(result, isNull);
               }));
@@ -170,7 +169,7 @@ void main() {
           () => test('test-4', PredefinedAcl.publicRead, 2),
           () => test('test-5', PredefinedAcl.bucketOwnerFullControl, 2),
           () => test('test-6', PredefinedAcl.bucketOwnerRead, 2)
-        ], (f) => f().then(expectAsync1((_) {})));
+        ], (Function f) => f().then(expectAsync1((_) {})));
       });
     }, skip: 'unable to test with uniform buckets enforced for account');
 
@@ -185,7 +184,7 @@ void main() {
               var acl = info.metadata.acl;
               expect(info.name, objectName);
               expect(info.etag, isNotNull);
-              expect(acl.entries.length, expectedLength);
+              expect(acl!.entries.length, expectedLength);
               return bucket.delete(objectName).then(expectAsync1((result) {
                 expect(result, isNull);
               }));
@@ -219,7 +218,7 @@ void main() {
           () => test('test-2', acl2, acl2.entries.length + 1),
           () => test('test-3', acl3, acl3.entries.length + 1),
           () => test('test-4', acl4, acl4.entries.length + 1)
-        ], (f) => f().then(expectAsync1((_) {})));
+        ], (Function f) => f().then(expectAsync1((_) {})));
       });
     }, skip: 'unable to test with uniform buckets enforced for account');
 
@@ -268,7 +267,7 @@ void main() {
           () => test('test-2', metadata2, [65, 66, 67]),
           () => test('test-3', metadata1, bytesResumableUpload),
           () => test('test-4', metadata2, bytesResumableUpload)
-        ], (f) => f().then(expectAsync1((_) {})));
+        ], (Function f) => f().then(expectAsync1((_) {})));
       });
     });
   });

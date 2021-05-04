@@ -1,7 +1,6 @@
 // Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-// @dart=2.9
 
 import 'dart:async';
 import 'dart:convert';
@@ -26,7 +25,7 @@ class MockClient extends http.BaseClient {
   final Uri rootUri;
 
   Map<String, Map<Pattern, http_testing.MockClientHandler>> mocks = {};
-  http_testing.MockClient client;
+  late http_testing.MockClient client;
 
   MockClient(String hostname, String rootPath)
       : hostname = hostname,
@@ -71,8 +70,8 @@ class MockClient extends http.BaseClient {
       throw 'No mock handler for method ${request.method} found. '
           'Request URL was: ${request.url}';
     }
-    http_testing.MockClientHandler mockHandler;
-    mocks[request.method]
+    http_testing.MockClientHandler? mockHandler;
+    mocks[request.method]!
         .forEach((pattern, http_testing.MockClientHandler handler) {
       if (pattern.matchAsPrefix(path) != null) {
         mockHandler = handler;
@@ -82,7 +81,7 @@ class MockClient extends http.BaseClient {
       throw 'No mock handler for method ${request.method} and path '
           '[$path] found. Request URL was: ${request.url}';
     }
-    return mockHandler(request);
+    return mockHandler!(request);
   }
 
   @override
@@ -122,8 +121,8 @@ class MockClient extends http.BaseClient {
     if (range != null) {
       var match = _bytesHeaderRegexp.allMatches(range).single;
 
-      var start = int.parse(match[1]);
-      var end = int.parse(match[2]);
+      var start = int.parse(match[1]!);
+      var end = int.parse(match[2]!);
 
       myBytes = bytes.sublist(start, end + 1);
       headers['content-length'] = myBytes.length.toString();
@@ -145,19 +144,19 @@ class MockClient extends http.BaseClient {
     var completer = Completer<NormalMediaUpload>();
 
     var contentType =
-        http_parser.MediaType.parse(request.headers['content-type']);
+        http_parser.MediaType.parse(request.headers['content-type']!);
     expect(contentType.mimeType, 'multipart/related');
     var boundary = contentType.parameters['boundary'];
 
     var partCount = 0;
-    String json;
+    String? json;
     Stream.fromIterable([
       request.bodyBytes,
       [13, 10]
     ])
-        .transform(mime.MimeMultipartTransformer(boundary))
+        .transform(mime.MimeMultipartTransformer(boundary!))
         .listen(((mime.MimeMultipart mimeMultipart) {
-      var contentType = mimeMultipart.headers['content-type'];
+      var contentType = mimeMultipart.headers['content-type']!;
       partCount++;
       if (partCount == 1) {
         // First part in the object JSON.
@@ -173,7 +172,7 @@ class MockClient extends http.BaseClient {
             .fold('', (p, e) => '$p$e')
             .then(base64.decode)
             .then((bytes) {
-          completer.complete(NormalMediaUpload(json, bytes, contentType));
+          completer.complete(NormalMediaUpload(json!, bytes, contentType));
         });
       } else {
         // Exactly two parts expected.
