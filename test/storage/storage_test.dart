@@ -324,12 +324,7 @@ void main() {
     var bytesResumableUpload =
         List.generate(minResumableUpload, (e) => e & 255);
 
-    bool testArgumentError(e) => e is ArgumentError;
-    bool testDetailedApiError(e) => e is storage.DetailedApiRequestError;
-    final expectNotNull = (o) async {
-      expect(o, isNotNull);
-      return null;
-    };
+    final isDetailedApiError = isA<storage.DetailedApiRequestError>();
 
     void expectNormalUpload(MockClient mock, data, String objectName) {
       var bytes = data.fold([], (p, e) => p..addAll(e));
@@ -466,16 +461,10 @@ void main() {
 
           var bucket = api.bucket(bucketName);
           var sink = bucket.write(bucketName, length: length);
-          sink.done.then<Null>((_) => throw 'Unexpected').catchError(
-              expectAsync1(expectNotNull),
-              test: testDetailedApiError);
-          sink.done.catchError(expectAsync1(expectNotNull),
-              test: testDetailedApiError);
-          return Stream.fromIterable([bytesNormalUpload])
-              .pipe(sink)
-              .then<Null>((_) => throw 'Unexpected')
-              .catchError(expectAsync1(expectNotNull),
-                  test: testDetailedApiError);
+          expect(sink.done, throwsA(isDetailedApiError));
+          return expectLater(
+              Stream.fromIterable([bytesNormalUpload]).pipe(sink),
+              throwsA(isDetailedApiError));
         }
 
         test(null) // Unknown length.
@@ -503,14 +492,10 @@ void main() {
 
           var bucket = api.bucket(bucketName);
           var sink = bucket.write(bucketName);
-          sink.done.then<Null>((_) => throw 'Unexpected').catchError(
-              expectAsync1(expectNotNull),
-              test: testDetailedApiError);
-          return Stream.fromIterable([bytesResumableUpload])
-              .pipe(sink)
-              .then<Null>((_) => throw 'Unexpected')
-              .catchError(expectAsync1(expectNotNull),
-                  test: testDetailedApiError);
+          expect(sink.done, throwsA(isDetailedApiError));
+          return expectLater(
+              Stream.fromIterable([bytesResumableUpload]).pipe(sink),
+              throwsA(isDetailedApiError));
         }
 
         test(null) // Unknown length.
@@ -533,14 +518,10 @@ void main() {
 
           var bucket = api.bucket(bucketName);
           var sink = bucket.write(bucketName, length: length);
-          sink.done.then<Null>((_) => throw 'Unexpected').catchError(
-              expectAsync1(expectNotNull),
-              test: (e) => e is String || e is storage.ApiRequestError);
-          return Stream<List<int>>.fromIterable(data)
-              .pipe(sink)
-              .then<Null>((_) => throw 'Unexpected')
-              .catchError(expectAsync1(expectNotNull),
-                  test: (e) => e is String || e is storage.ApiRequestError);
+          expect(sink.done,
+              throwsA(anyOf(isA<String>(), isA<storage.ApiRequestError>())));
+          return expectLater(Stream<List<int>>.fromIterable(data).pipe(sink),
+              throwsA(anyOf(isA<String>(), isA<storage.ApiRequestError>())));
         }
 
         test([bytesResumableUpload], bytesResumableUpload.length + 1)
@@ -555,17 +536,13 @@ void main() {
       withMockClient((mock, api) {
         var bucket = api.bucket(bucketName);
         var sink = bucket.write(bucketName);
-        sink.done
-            .then<Null>((_) => throw 'Unexpected')
-            .catchError(expectAsync1(expectNotNull), test: testArgumentError);
+        expect(sink.done, throwsArgumentError);
         var stream = Stream.fromIterable([
           [1, 2, 3]
         ]);
         sink.addStream(stream).then((_) {
           sink.addError(ArgumentError());
-          sink
-              .close()
-              .catchError(expectAsync1(expectNotNull), test: testArgumentError);
+          expect(sink.close(), throwsArgumentError);
         });
       });
     });
@@ -587,15 +564,11 @@ void main() {
 
         var bucket = api.bucket(bucketName);
         var sink = bucket.write(bucketName);
-        sink.done
-            .then<Null>((_) => throw 'Unexpected')
-            .catchError(expectAsync1(expectNotNull), test: testArgumentError);
+        expect(sink.done, throwsArgumentError);
         var stream = Stream.fromIterable([bytesResumableUpload]);
         sink.addStream(stream).then((_) {
           sink.addError(ArgumentError());
-          sink
-              .close()
-              .catchError(expectAsync1(expectNotNull), test: testArgumentError);
+          expect(sink.close(), throwsArgumentError);
         });
       });
     });
