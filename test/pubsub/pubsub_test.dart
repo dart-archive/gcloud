@@ -1,16 +1,15 @@
 // Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+// @dart=2.9
 
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:gcloud/pubsub.dart';
+import 'package:googleapis/pubsub/v1.dart' as pubsub;
 import 'package:http/http.dart' as http;
 import 'package:test/test.dart';
-
-import 'package:gcloud/pubsub.dart';
-
-import 'package:googleapis/pubsub/v1.dart' as pubsub;
 
 import '../common.dart';
 import '../common_e2e.dart';
@@ -50,7 +49,7 @@ void main() {
             'PUT',
             'projects/$PROJECT/topics/test-topic',
             expectAsync1((http.Request request) {
-              expect(request.body, isEmpty);
+              expect(request.body, '{}');
               return mock.respond(pubsub.Topic()..name = absoluteName);
             }, count: 2));
 
@@ -255,9 +254,11 @@ void main() {
             registerQueryMock(mock, 70, 50, 1);
 
             var api = PubSub(mock, PROJECT);
-            api.listTopics().listen((_) => throw 'Unexpected',
-                onDone: () => throw 'Unexpected')
-              ..cancel();
+            api
+                .listTopics()
+                .listen((_) => throw 'Unexpected',
+                    onDone: () => throw 'Unexpected')
+                .cancel();
           });
 
           test('cancel', () {
@@ -654,9 +655,11 @@ void main() {
             registerQueryMock(mock, 70, 50, totalCalls: 1);
 
             var api = PubSub(mock, PROJECT);
-            api.listSubscriptions().listen((_) => throw 'Unexpected',
-                onDone: () => throw 'Unexpected')
-              ..cancel();
+            api
+                .listSubscriptions()
+                .listen((_) => throw 'Unexpected',
+                    onDone: () => throw 'Unexpected')
+                .cancel();
           });
 
           test('cancel', () {

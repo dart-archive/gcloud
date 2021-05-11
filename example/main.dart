@@ -1,11 +1,13 @@
 // Copyright (c) 2019, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+// @dart=2.9
 
 import 'dart:async' show Future;
 import 'dart:convert' show utf8;
-import 'package:googleapis_auth/auth_io.dart' as auth;
+
 import 'package:gcloud/storage.dart';
+import 'package:googleapis_auth/auth_io.dart' as auth;
 
 // Note: The README.md contains more details on how to use this package.
 

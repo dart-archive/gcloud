@@ -1,6 +1,7 @@
 // Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+// @dart=2.9
 
 /// This library provides access to Google Cloud Storage.
 ///
@@ -52,10 +53,9 @@ import 'dart:async';
 import 'dart:collection' show UnmodifiableListView, UnmodifiableMapView;
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
-
-import 'package:googleapis/storage/v1.dart' as storage_api;
 import 'package:_discoveryapis_commons/_discoveryapis_commons.dart' as commons;
+import 'package:googleapis/storage/v1.dart' as storage_api;
+import 'package:http/http.dart' as http;
 
 import 'common.dart';
 import 'service_scope.dart' as ss;
@@ -119,7 +119,8 @@ class Acl {
   Acl(Iterable<AclEntry> entries) : _entries = List.from(entries);
 
   Acl._fromBucketAcl(storage_api.Bucket bucket)
-      : _entries = List(bucket.acl == null ? 0 : bucket.acl.length) {
+      : _entries =
+            List.filled(bucket.acl == null ? 0 : bucket.acl.length, null) {
     if (bucket.acl != null) {
       for (var i = 0; i < bucket.acl.length; i++) {
         _entries[i] = AclEntry(_aclScopeFromEntity(bucket.acl[i].entity),
@@ -129,7 +130,8 @@ class Acl {
   }
 
   Acl._fromObjectAcl(storage_api.Object object)
-      : _entries = List(object.acl == null ? 0 : object.acl.length) {
+      : _entries =
+            List.filled(object.acl == null ? 0 : object.acl.length, null) {
     if (object.acl != null) {
       for (var i = 0; i < object.acl.length; i++) {
         _entries[i] = AclEntry(_aclScopeFromEntity(object.acl[i].entity),
@@ -503,7 +505,7 @@ abstract class BucketInfo {
 abstract class Storage {
   /// List of required OAuth2 scopes for Cloud Storage operation.
   static const List<String> SCOPES = <String>[
-    storage_api.StorageApi.DevstorageFullControlScope
+    storage_api.StorageApi.devstorageFullControlScope
   ];
 
   /// Initializes access to cloud storage.

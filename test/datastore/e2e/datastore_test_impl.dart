@@ -1,6 +1,7 @@
 // Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+// @dart=2.9
 
 library datastore_test;
 
@@ -25,12 +26,11 @@ library datastore_test;
 /// $ gcloud datastore create-indexes index.yaml
 ///
 /// Now, wait for indexing done
-
 import 'dart:async';
 
+import 'package:gcloud/common.dart';
 import 'package:gcloud/datastore.dart';
 import 'package:gcloud/src/datastore_impl.dart' as datastore_impl;
-import 'package:gcloud/common.dart';
 import 'package:http/http.dart';
 import 'package:test/test.dart';
 
@@ -546,7 +546,7 @@ void runTests(Datastore datastore, String namespace) {
           {bool xg = false}) {
         Future test(List<Entity> entities, Transaction transaction, value) {
           // Change entities:
-          var changedEntities = List<Entity>(entities.length);
+          var changedEntities = List<Entity>.filled(entities.length, null);
           for (var i = 0; i < entities.length; i++) {
             var entity = entities[i];
             var newProperties = Map<String, Object>.from(entity.properties);

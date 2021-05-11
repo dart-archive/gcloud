@@ -1,6 +1,7 @@
 // Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+// @dart=2.9
 
 part of gcloud.storage;
 
@@ -106,8 +107,8 @@ class _StorageImpl implements Storage {
     var srcName = _AbsoluteName.parse(src);
     var destName = _AbsoluteName.parse(dest);
     return _api.objects
-        .copy(null, srcName.bucketName, srcName.objectName, destName.bucketName,
-            destName.objectName)
+        .copy(storage_api.Object(), srcName.bucketName, srcName.objectName,
+            destName.bucketName, destName.objectName)
         .then((_) => null);
   }
 
@@ -220,7 +221,7 @@ class _BucketImpl implements Bucket {
       throw ArgumentError('length must have a value if offset is non-zero.');
     }
 
-    var options = storage_api.DownloadOptions.FullMedia;
+    var options = storage_api.DownloadOptions.fullMedia;
 
     if (length != null) {
       if (length <= 0) {
@@ -306,7 +307,8 @@ class _BucketPageImpl implements Page<String> {
   final List<String> items;
 
   _BucketPageImpl(this._storage, this._pageSize, storage_api.Buckets response)
-      : items = List(response.items != null ? response.items.length : 0),
+      : items = List.filled(
+            response.items != null ? response.items.length : 0, null),
         _nextPageToken = response.nextPageToken {
     for (var i = 0; i < items.length; i++) {
       items[i] = response.items[i].name;
@@ -338,8 +340,10 @@ class _ObjectPageImpl implements Page<BucketEntry> {
 
   _ObjectPageImpl(this._bucket, this._prefix, this._delimiter, this._pageSize,
       storage_api.Objects response)
-      : items = List((response.items != null ? response.items.length : 0) +
-            (response.prefixes != null ? response.prefixes.length : 0)),
+      : items = List.filled(
+            (response.items != null ? response.items.length : 0) +
+                (response.prefixes != null ? response.prefixes.length : 0),
+            null),
         _nextPageToken = response.nextPageToken {
     var prefixes = 0;
     if (response.prefixes != null) {
@@ -634,7 +638,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
             name: _objectName,
             predefinedAcl: _predefinedAcl,
             uploadMedia: media,
-            uploadOptions: storage_api.UploadOptions.Default)
+            uploadOptions: storage_api.UploadOptions.defaultOptions)
         .then((response) {
       _doneCompleter.complete(_ObjectInfoImpl(response));
     }, onError: _completeError);
@@ -648,7 +652,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
             name: _objectName,
             predefinedAcl: _predefinedAcl,
             uploadMedia: media,
-            uploadOptions: storage_api.UploadOptions.Resumable)
+            uploadOptions: storage_api.UploadOptions.resumable)
         .then((response) {
       _doneCompleter.complete(_ObjectInfoImpl(response));
     }, onError: _completeError);

@@ -1,6 +1,7 @@
 // Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+// @dart=2.9
 
 part of gcloud.pubsub;
 
@@ -30,7 +31,7 @@ class _PubSubImpl implements PubSub {
   }
 
   Future<pubsub.Topic> _createTopic(String name) {
-    return _api.projects.topics.create(null, name);
+    return _api.projects.topics.create(pubsub.Topic(), name);
   }
 
   Future _deleteTopic(String name) {
@@ -459,7 +460,8 @@ class _TopicPageImpl implements Page<Topic> {
   final List<Topic> items;
 
   _TopicPageImpl(this._api, this._pageSize, pubsub.ListTopicsResponse response)
-      : items = List(response.topics != null ? response.topics.length : 0),
+      : items = List.filled(
+            response.topics != null ? response.topics.length : 0, null),
         _nextPageToken = response.nextPageToken {
     if (response.topics != null) {
       for (var i = 0; i < response.topics.length; i++) {
@@ -492,8 +494,9 @@ class _SubscriptionPageImpl implements Page<Subscription> {
 
   _SubscriptionPageImpl(this._api, this._topic, this._pageSize,
       pubsub.ListSubscriptionsResponse response)
-      : items = List(
-            response.subscriptions != null ? response.subscriptions.length : 0),
+      : items = List.filled(
+            response.subscriptions != null ? response.subscriptions.length : 0,
+            null),
         _nextPageToken = response.nextPageToken {
     if (response.subscriptions != null) {
       for (var i = 0; i < response.subscriptions.length; i++) {
