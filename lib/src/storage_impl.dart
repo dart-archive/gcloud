@@ -1,7 +1,6 @@
 // Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-// @dart=2.9
 
 part of gcloud.storage;
 
@@ -11,10 +10,12 @@ const String _DIRECTORY_DELIMITER = '/';
 /// Representation of an absolute name consisting of bucket name and object
 /// name.
 class _AbsoluteName {
-  String bucketName;
-  String objectName;
+  final String bucketName;
+  final String objectName;
 
-  _AbsoluteName.parse(String absoluteName) {
+  _AbsoluteName._(this.bucketName, this.objectName);
+
+  factory _AbsoluteName.parse(String absoluteName) {
     if (!absoluteName.startsWith(_ABSOLUTE_PREFIX)) {
       throw FormatException("Absolute name '$absoluteName' does not start "
           "with '$_ABSOLUTE_PREFIX'");
@@ -28,8 +29,10 @@ class _AbsoluteName {
       throw FormatException("Absolute name '$absoluteName' does not have "
           'an object name');
     }
-    bucketName = absoluteName.substring(_ABSOLUTE_PREFIX.length, index);
-    objectName = absoluteName.substring(index + 1);
+    final bucketName = absoluteName.substring(_ABSOLUTE_PREFIX.length, index);
+    final objectName = absoluteName.substring(index + 1);
+
+    return _AbsoluteName._(bucketName, objectName);
   }
 }
 
@@ -43,7 +46,7 @@ class _StorageImpl implements Storage {
 
   @override
   Future createBucket(String bucketName,
-      {PredefinedAcl predefinedAcl, Acl acl}) {
+      {PredefinedAcl? predefinedAcl, Acl? acl}) {
     var bucket = storage_api.Bucket()..name = bucketName;
     var predefinedName = predefinedAcl != null ? predefinedAcl._name : null;
     if (acl != null) {
@@ -61,7 +64,7 @@ class _StorageImpl implements Storage {
 
   @override
   Bucket bucket(String bucketName,
-      {PredefinedAcl defaultPredefinedObjectAcl, Acl defaultObjectAcl}) {
+      {PredefinedAcl? defaultPredefinedObjectAcl, Acl? defaultObjectAcl}) {
     return _BucketImpl(
         this, bucketName, defaultPredefinedObjectAcl, defaultObjectAcl);
   }
@@ -112,7 +115,8 @@ class _StorageImpl implements Storage {
         .then((_) => null);
   }
 
-  Future<storage_api.Buckets> _listBuckets(int pageSize, String nextPageToken) {
+  Future<storage_api.Buckets> _listBuckets(
+      int pageSize, String? nextPageToken) {
     return _api.buckets
         .list(project, maxResults: pageSize, pageToken: nextPageToken);
   }
@@ -124,16 +128,16 @@ class _BucketInfoImpl implements BucketInfo {
   _BucketInfoImpl(this._bucket);
 
   @override
-  String get bucketName => _bucket.name;
+  String get bucketName => _bucket.name!;
 
   @override
-  String get etag => _bucket.etag;
+  String get etag => _bucket.etag!;
 
   @override
-  DateTime get created => _bucket.timeCreated;
+  DateTime get created => _bucket.timeCreated!;
 
   @override
-  String get id => _bucket.id;
+  String get id => _bucket.id!;
 
   @override
   Acl get acl => Acl._fromBucketAcl(_bucket);
@@ -142,8 +146,8 @@ class _BucketInfoImpl implements BucketInfo {
 /// Bucket API implementation providing access to objects.
 class _BucketImpl implements Bucket {
   final storage_api.StorageApi _api;
-  final PredefinedAcl _defaultPredefinedObjectAcl;
-  final Acl _defaultObjectAcl;
+  final PredefinedAcl? _defaultPredefinedObjectAcl;
+  final Acl? _defaultObjectAcl;
   @override
   final String bucketName;
 
@@ -158,11 +162,11 @@ class _BucketImpl implements Bucket {
 
   @override
   StreamSink<List<int>> write(String objectName,
-      {int length,
-      ObjectMetadata metadata,
-      Acl acl,
-      PredefinedAcl predefinedAcl,
-      String contentType}) {
+      {int? length,
+      ObjectMetadata? metadata,
+      Acl? acl,
+      PredefinedAcl? predefinedAcl,
+      String? contentType}) {
     storage_api.Object object;
     if (metadata == null) {
       metadata = _ObjectMetadata(acl: acl, contentType: contentType);
@@ -178,15 +182,15 @@ class _BucketImpl implements Bucket {
     object = objectMetadata._object;
 
     // If no predefined ACL is passed use the default (if any).
-    String predefinedName;
+    String? predefinedName;
     if (predefinedAcl != null || _defaultPredefinedObjectAcl != null) {
-      var predefined = predefinedAcl ?? _defaultPredefinedObjectAcl;
+      var predefined = predefinedAcl ?? _defaultPredefinedObjectAcl!;
       predefinedName = predefined._name;
     }
 
     // If no ACL is passed use the default (if any).
     if (object.acl == null && _defaultObjectAcl != null) {
-      object.acl = _defaultObjectAcl._toObjectAccessControlList();
+      object.acl = _defaultObjectAcl!._toObjectAccessControlList();
     }
 
     // Fill properties not passed in metadata.
@@ -199,10 +203,10 @@ class _BucketImpl implements Bucket {
 
   @override
   Future<ObjectInfo> writeBytes(String objectName, List<int> bytes,
-      {ObjectMetadata metadata,
-      Acl acl,
-      PredefinedAcl predefinedAcl,
-      String contentType}) {
+      {ObjectMetadata? metadata,
+      Acl? acl,
+      PredefinedAcl? predefinedAcl,
+      String? contentType}) {
     var sink = write(objectName,
         length: bytes.length,
         metadata: metadata,
@@ -214,7 +218,7 @@ class _BucketImpl implements Bucket {
   }
 
   @override
-  Stream<List<int>> read(String objectName, {int offset, int length}) async* {
+  Stream<List<int>> read(String objectName, {int? offset, int? length}) async* {
     offset ??= 0;
 
     if (offset != 0 && length == null) {
@@ -254,7 +258,7 @@ class _BucketImpl implements Bucket {
   }
 
   @override
-  Stream<BucketEntry> list({String prefix, String delimiter}) {
+  Stream<BucketEntry> list({String? prefix, String? delimiter}) {
     delimiter ??= _DIRECTORY_DELIMITER;
     Future<_ObjectPageImpl> firstPage(int pageSize) async {
       final response =
@@ -267,7 +271,7 @@ class _BucketImpl implements Bucket {
 
   @override
   Future<Page<BucketEntry>> page(
-      {String prefix, String delimiter, int pageSize = 50}) async {
+      {String? prefix, String? delimiter, int pageSize = 50}) async {
     delimiter ??= _DIRECTORY_DELIMITER;
     final response =
         await _listObjects(bucketName, prefix, delimiter, pageSize, null);
@@ -285,12 +289,12 @@ class _BucketImpl implements Bucket {
     if (md.contentType == null) {
       throw ArgumentError('Content-Type is required for update');
     }
-    md._object.acl ??= _defaultObjectAcl._toObjectAccessControlList();
+    md._object.acl ??= _defaultObjectAcl!._toObjectAccessControlList();
     return _api.objects.update(object, bucketName, objectName);
   }
 
-  Future<storage_api.Objects> _listObjects(String bucketName, String prefix,
-      String delimiter, int pageSize, String nextPageToken) {
+  Future<storage_api.Objects> _listObjects(String bucketName, String? prefix,
+      String? delimiter, int pageSize, String? nextPageToken) {
     return _api.objects.list(bucketName,
         prefix: prefix,
         delimiter: delimiter,
@@ -301,29 +305,27 @@ class _BucketImpl implements Bucket {
 
 class _BucketPageImpl implements Page<String> {
   final _StorageImpl _storage;
-  final int _pageSize;
-  final String _nextPageToken;
+  final int? _pageSize;
+  final String? _nextPageToken;
   @override
   final List<String> items;
 
   _BucketPageImpl(this._storage, this._pageSize, storage_api.Buckets response)
-      : items = List.filled(
-            response.items != null ? response.items.length : 0, null),
-        _nextPageToken = response.nextPageToken {
-    for (var i = 0; i < items.length; i++) {
-      items[i] = response.items[i].name;
-    }
-  }
+      : items = [
+          for (final item in response.items ?? const <storage_api.Bucket>[])
+            item.name!
+        ],
+        _nextPageToken = response.nextPageToken;
 
   @override
   bool get isLast => _nextPageToken == null;
 
   @override
-  Future<Page<String>> next({int pageSize}) {
+  Future<Page<String>> next({int? pageSize}) {
     if (isLast) return Future.value(null);
     pageSize ??= _pageSize;
 
-    return _storage._listBuckets(pageSize, _nextPageToken).then((response) {
+    return _storage._listBuckets(pageSize!, _nextPageToken).then((response) {
       return _BucketPageImpl(_storage, pageSize, response);
     });
   }
@@ -331,45 +333,34 @@ class _BucketPageImpl implements Page<String> {
 
 class _ObjectPageImpl implements Page<BucketEntry> {
   final _BucketImpl _bucket;
-  final String _prefix;
-  final String _delimiter;
-  final int _pageSize;
-  final String _nextPageToken;
+  final String? _prefix;
+  final String? _delimiter;
+  final int? _pageSize;
+  final String? _nextPageToken;
   @override
   final List<BucketEntry> items;
 
   _ObjectPageImpl(this._bucket, this._prefix, this._delimiter, this._pageSize,
       storage_api.Objects response)
-      : items = List.filled(
-            (response.items != null ? response.items.length : 0) +
-                (response.prefixes != null ? response.prefixes.length : 0),
-            null),
-        _nextPageToken = response.nextPageToken {
-    var prefixes = 0;
-    if (response.prefixes != null) {
-      for (var i = 0; i < response.prefixes.length; i++) {
-        items[i] = BucketEntry._directory(response.prefixes[i]);
-      }
-      prefixes = response.prefixes.length;
-    }
-    if (response.items != null) {
-      for (var i = 0; i < response.items.length; i++) {
-        items[prefixes + i] = BucketEntry._object(response.items[i].name);
-      }
-    }
-  }
+      : items = [
+          for (final item in response.prefixes ?? const <String>[])
+            BucketEntry._directory(item),
+          for (final item in response.items ?? const <storage_api.Object>[])
+            BucketEntry._object(item.name!)
+        ],
+        _nextPageToken = response.nextPageToken;
 
   @override
   bool get isLast => _nextPageToken == null;
 
   @override
-  Future<Page<BucketEntry>> next({int pageSize}) {
+  Future<Page<BucketEntry>> next({int? pageSize}) {
     if (isLast) return Future.value(null);
     pageSize ??= _pageSize;
 
     return _bucket
         ._listObjects(
-            _bucket.bucketName, _prefix, _delimiter, pageSize, _nextPageToken)
+            _bucket.bucketName, _prefix, _delimiter, pageSize!, _nextPageToken)
         .then((response) {
       return _ObjectPageImpl(_bucket, _prefix, _delimiter, pageSize, response);
     });
@@ -388,45 +379,43 @@ class _ObjectGenerationImpl implements ObjectGeneration {
 class _ObjectInfoImpl implements ObjectInfo {
   final storage_api.Object _object;
   final ObjectMetadata _metadata;
-  Uri _downloadLink;
-  ObjectGeneration _generation;
+  Uri? _downloadLink;
+  ObjectGeneration? _generation;
 
   _ObjectInfoImpl(storage_api.Object object)
       : _object = object,
         _metadata = _ObjectMetadata._(object);
 
   @override
-  String get name => _object.name;
+  String get name => _object.name!;
 
   @override
-  int get length => int.parse(_object.size);
+  int get length => int.parse(_object.size!);
 
   @override
-  DateTime get updated => _object.updated;
+  DateTime get updated => _object.updated!;
 
   @override
-  String get etag => _object.etag;
+  String get etag => _object.etag!;
 
   @override
-  List<int> get md5Hash => base64.decode(_object.md5Hash);
+  List<int> get md5Hash => base64.decode(_object.md5Hash!);
 
   @override
   int get crc32CChecksum {
-    var list = base64.decode(_object.crc32c);
+    var list = base64.decode(_object.crc32c!);
     return (list[3] << 24) | (list[2] << 16) | (list[1] << 8) | list[0];
   }
 
   @override
   Uri get downloadLink {
-    _downloadLink ??= Uri.parse(_object.mediaLink);
-    return _downloadLink;
+    return _downloadLink ??= Uri.parse(_object.mediaLink!);
   }
 
   @override
   ObjectGeneration get generation {
-    _generation ??= _ObjectGenerationImpl(
-        _object.generation, int.parse(_object.metageneration));
-    return _generation;
+    return _generation ??= _ObjectGenerationImpl(
+        _object.generation!, int.parse(_object.metageneration!));
   }
 
   /// Additional metadata.
@@ -436,18 +425,18 @@ class _ObjectInfoImpl implements ObjectInfo {
 
 class _ObjectMetadata implements ObjectMetadata {
   final storage_api.Object _object;
-  Acl _cachedAcl;
-  ObjectGeneration _cachedGeneration;
-  Map<String, String> _cachedCustom;
+  Acl? _cachedAcl;
+  ObjectGeneration? _cachedGeneration;
+  Map<String, String>? _cachedCustom;
 
   _ObjectMetadata(
-      {Acl acl,
-      String contentType,
-      String contentEncoding,
-      String cacheControl,
-      String contentDisposition,
-      String contentLanguage,
-      Map<String, String> custom})
+      {Acl? acl,
+      String? contentType,
+      String? contentEncoding,
+      String? cacheControl,
+      String? contentDisposition,
+      String? contentLanguage,
+      Map<String, String>? custom})
       : _object = storage_api.Object() {
     _object.acl = acl != null ? acl._toObjectAccessControlList() : null;
     _object.contentType = contentType;
@@ -461,48 +450,48 @@ class _ObjectMetadata implements ObjectMetadata {
   _ObjectMetadata._(this._object);
 
   @override
-  Acl get acl {
+  Acl? get acl {
     _cachedAcl ??= Acl._fromObjectAcl(_object);
     return _cachedAcl;
   }
 
   @override
-  String get contentType => _object.contentType;
+  String? get contentType => _object.contentType;
 
   @override
-  String get contentEncoding => _object.contentEncoding;
+  String? get contentEncoding => _object.contentEncoding;
 
   @override
-  String get cacheControl => _object.cacheControl;
+  String? get cacheControl => _object.cacheControl;
 
   @override
-  String get contentDisposition => _object.contentDisposition;
+  String? get contentDisposition => _object.contentDisposition;
 
   @override
-  String get contentLanguage => _object.contentLanguage;
+  String? get contentLanguage => _object.contentLanguage;
 
-  ObjectGeneration get generation {
-    _cachedGeneration ??=
-        ObjectGeneration(_object.generation, int.parse(_object.metageneration));
+  ObjectGeneration? get generation {
+    _cachedGeneration ??= ObjectGeneration(
+        _object.generation!, int.parse(_object.metageneration!));
     return _cachedGeneration;
   }
 
   @override
-  Map<String, String> get custom {
+  Map<String, String>? get custom {
     if (_object.metadata == null) return null;
-    _cachedCustom ??= UnmodifiableMapView<String, String>(_object.metadata);
+    _cachedCustom ??= UnmodifiableMapView<String, String>(_object.metadata!);
     return _cachedCustom;
   }
 
   @override
   ObjectMetadata replace(
-      {Acl acl,
-      String contentType,
-      String contentEncoding,
-      String cacheControl,
-      String contentDisposition,
-      String contentLanguage,
-      Map<String, String> custom}) {
+      {Acl? acl,
+      String? contentType,
+      String? contentEncoding,
+      String? cacheControl,
+      String? contentDisposition,
+      String? contentLanguage,
+      Map<String, String>? custom}) {
     return _ObjectMetadata(
         acl: acl ?? this.acl,
         contentType: contentType ?? this.contentType,
@@ -523,20 +512,20 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
   final String _bucketName;
   final String _objectName;
   final storage_api.Object _object;
-  final String _predefinedAcl;
-  final int _length;
+  final String? _predefinedAcl;
+  final int? _length;
   final int _maxNormalUploadLength;
   int _bufferLength = 0;
   final List<List<int>> buffer = <List<int>>[];
   final _controller = StreamController<List<int>>(sync: true);
-  StreamSubscription _subscription;
-  StreamController<List<int>> _resumableController;
+  late StreamSubscription _subscription;
+  late StreamController<List<int>> _resumableController;
   final _doneCompleter = Completer<ObjectInfo>();
 
   static const int _STATE_LENGTH_KNOWN = 0;
   static const int _STATE_PROBING_LENGTH = 1;
   static const int _STATE_DECIDED_RESUMABLE = 2;
-  int _state;
+  int? _state;
 
   _MediaUploadStreamSink(this._api, this._bucketName, this._objectName,
       this._object, this._predefinedAcl, this._length,
@@ -545,7 +534,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
       // If the length is known in advance decide on the upload strategy
       // immediately
       _state = _STATE_LENGTH_KNOWN;
-      if (_length <= _maxNormalUploadLength) {
+      if (_length! <= _maxNormalUploadLength) {
         _startNormalUpload(_controller.stream, _length);
       } else {
         _startResumableUpload(_controller.stream, _length);
@@ -565,7 +554,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
   }
 
   @override
-  void addError(errorEvent, [StackTrace stackTrace]) {
+  void addError(errorEvent, [StackTrace? stackTrace]) {
     _controller.addError(errorEvent, stackTrace);
   }
 
@@ -612,7 +601,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
     }
   }
 
-  void _onError(e, StackTrace s) {
+  void _onError(Object e, StackTrace s) {
     // If still deciding on the strategy complete with error. Otherwise
     // forward the error for default processing.
     if (_state == _STATE_PROBING_LENGTH) {
@@ -622,7 +611,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
     }
   }
 
-  void _completeError(e, StackTrace s) {
+  void _completeError(Object e, StackTrace s) {
     if (_state != _STATE_LENGTH_KNOWN) {
       // Always cancel subscription on error.
       _subscription.cancel();
@@ -630,7 +619,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
     _doneCompleter.completeError(e, s);
   }
 
-  void _startNormalUpload(Stream<List<int>> stream, int length) {
+  void _startNormalUpload(Stream<List<int>> stream, int? length) {
     var contentType = _object.contentType ?? 'application/octet-stream';
     var media = storage_api.Media(stream, length, contentType: contentType);
     _api.objects
@@ -644,7 +633,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
     }, onError: _completeError);
   }
 
-  void _startResumableUpload(Stream<List<int>> stream, int length) {
+  void _startResumableUpload(Stream<List<int>> stream, int? length) {
     var contentType = _object.contentType ?? 'application/octet-stream';
     var media = storage_api.Media(stream, length, contentType: contentType);
     _api.objects
