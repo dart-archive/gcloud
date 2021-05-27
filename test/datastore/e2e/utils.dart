@@ -22,7 +22,7 @@ final TEST_BLOB_INDEXED_VALUE = BlobValue([0xaa, 0xaa, 0xff, 0xff]);
 Key buildKey(int i,
     {Function idFunction, String kind = TEST_KIND, Partition p}) {
   var path = [KeyElement(kind, idFunction == null ? null : idFunction(i))];
-  return Key(path, partition: p);
+  return Key(path, partition: p ?? Partition.DEFAULT);
 }
 
 Map<String, Object> buildProperties(int i) {

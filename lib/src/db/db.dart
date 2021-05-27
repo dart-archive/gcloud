@@ -405,9 +405,9 @@ Future _commitHelper(DatastoreDB db,
 
   return db.datastore
       .commit(
-          inserts: entityInserts,
-          autoIdInserts: entityAutoIdInserts,
-          deletes: entityDeletes,
+          inserts: entityInserts ?? [],
+          autoIdInserts: entityAutoIdInserts ?? [],
+          deletes: entityDeletes ?? [],
           transaction: datastoreTransaction)
       .then((ds.CommitResult result) {
     if (entityAutoIdInserts != null && entityAutoIdInserts.isNotEmpty) {
