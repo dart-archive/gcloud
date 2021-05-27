@@ -1,4 +1,4 @@
-## 0.8.0-dev
+## 0.8.0-dev.0
 
  * Require Dart 2.12 or later
  * Partial migration to null safety:
