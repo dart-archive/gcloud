@@ -1,7 +1,6 @@
 // Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-// @dart=2.9
 
 part of gcloud.pubsub;
 
@@ -44,13 +43,13 @@ class _PubSubImpl implements PubSub {
   }
 
   Future<pubsub.ListTopicsResponse> _listTopics(
-      int pageSize, String nextPageToken) {
+      int pageSize, String? nextPageToken) {
     return _api.projects.topics.list('projects/$project',
         pageSize: pageSize, pageToken: nextPageToken);
   }
 
   Future<pubsub.Subscription> _createSubscription(
-      String name, String topic, Uri endpoint) {
+      String name, String topic, Uri? endpoint) {
     var subscription = pubsub.Subscription()..topic = topic;
     if (endpoint != null) {
       var pushConfig = pubsub.PushConfig()..pushEndpoint = endpoint.toString();
@@ -71,12 +70,12 @@ class _PubSubImpl implements PubSub {
   }
 
   Future<pubsub.ListSubscriptionsResponse> _listSubscriptions(
-      String topic, int pageSize, String nextPageToken) {
+      String? topic, int pageSize, String? nextPageToken) {
     return _api.projects.subscriptions.list('projects/$project',
         pageSize: pageSize, pageToken: nextPageToken);
   }
 
-  Future _modifyPushConfig(String subscription, Uri endpoint) {
+  Future _modifyPushConfig(String subscription, Uri? endpoint) {
     var pushConfig = pubsub.PushConfig()
       ..pushEndpoint = endpoint != null ? endpoint.toString() : null;
     var request = pubsub.ModifyPushConfigRequest()..pushConfig = pushConfig;
@@ -89,7 +88,7 @@ class _PubSubImpl implements PubSub {
       ..messages = [
         (pubsub.PubsubMessage()
           ..dataAsBytes = message
-          ..attributes = attributes)
+          ..attributes = attributes.isEmpty ? null : attributes)
       ];
     // TODO(sgjesse): Handle PublishResponse containing message ids.
     return _api.projects.topics.publish(request, topic).then((_) => null);
@@ -174,7 +173,7 @@ class _PubSubImpl implements PubSub {
 
   @override
   Future<Subscription> createSubscription(String name, String topic,
-      {Uri endpoint}) {
+      {Uri? endpoint}) {
     _checkSubscriptionName(name);
     _checkTopicName(topic);
     return _createSubscription(
@@ -196,7 +195,7 @@ class _PubSubImpl implements PubSub {
   }
 
   @override
-  Stream<Subscription> listSubscriptions([String query]) {
+  Stream<Subscription> listSubscriptions([String? query]) {
     Future<Page<Subscription>> firstPage(int pageSize) {
       return _listSubscriptions(query, pageSize, null).then(
           (response) => _SubscriptionPageImpl(this, query, pageSize, response));
@@ -207,7 +206,7 @@ class _PubSubImpl implements PubSub {
 
   @override
   Future<Page<Subscription>> pageSubscriptions(
-      {String topic, int pageSize = 50}) {
+      {String? topic, int pageSize = 50}) {
     return _listSubscriptions(topic, pageSize, null).then((response) {
       return _SubscriptionPageImpl(this, topic, pageSize, response);
     });
@@ -219,26 +218,30 @@ class _PubSubImpl implements PubSub {
 class _MessageImpl implements Message {
   // The message body, if it is a `String`. In that case, [bytesMessage] is
   // null.
-  final String _stringMessage;
+  final String? _stringMessage;
 
   // The message body, if it is a byte list. In that case, [stringMessage] is
   // null.
-  final List<int> _bytesMessage;
+  final List<int>? _bytesMessage;
 
   @override
   final Map<String, String> attributes;
 
-  _MessageImpl.withString(this._stringMessage, {this.attributes})
-      : _bytesMessage = null;
+  _MessageImpl.withString(
+    this._stringMessage, {
+    Map<String, String>? attributes,
+  })  : _bytesMessage = null,
+        attributes = attributes ?? <String, String>{};
 
-  _MessageImpl.withBytes(this._bytesMessage, {this.attributes})
-      : _stringMessage = null;
+  _MessageImpl.withBytes(this._bytesMessage, {Map<String, String>? attributes})
+      : _stringMessage = null,
+        attributes = attributes ?? <String, String>{};
 
   @override
-  List<int> get asBytes => _bytesMessage ?? utf8.encode(_stringMessage);
+  List<int> get asBytes => _bytesMessage ?? utf8.encode(_stringMessage!);
 
   @override
-  String get asString => _stringMessage ?? utf8.decode(_bytesMessage);
+  String get asString => _stringMessage ?? utf8.decode(_bytesMessage!);
 }
 
 /// Message received using [Subscription.pull].
@@ -249,25 +252,26 @@ class _MessageImpl implements Message {
 /// The labels map is lazily created when first accessed.
 class _PullMessage implements Message {
   final pubsub.PubsubMessage _message;
-  List<int> _bytes;
-  String _string;
+  List<int>? _bytes;
+  String? _string;
 
   _PullMessage(this._message);
 
   @override
   List<int> get asBytes {
     _bytes ??= _message.dataAsBytes;
-    return _bytes;
+    return _bytes!;
   }
 
   @override
   String get asString {
     _string ??= utf8.decode(_message.dataAsBytes);
-    return _string;
+    return _string!;
   }
 
   @override
-  Map<String, String> get attributes => _message.attributes;
+  Map<String, String> get attributes =>
+      _message.attributes ?? <String, String>{};
 }
 
 /// Message received through Pub/Sub push delivery.
@@ -308,11 +312,11 @@ class _PullEventImpl implements PullEvent {
   _PullEventImpl(
       this._api, this._subscriptionName, pubsub.PullResponse response)
       : _response = response,
-        message = _PullMessage(response.receivedMessages[0].message);
+        message = _PullMessage(response.receivedMessages![0].message!);
 
   @override
   Future acknowledge() {
-    return _api._ack(_response.receivedMessages[0].ackId, _subscriptionName);
+    return _api._ack(_response.receivedMessages![0].ackId!, _subscriptionName);
   }
 }
 
@@ -360,35 +364,37 @@ class _TopicImpl implements Topic {
 
   @override
   String get name {
-    assert(_topic.name.startsWith(_api._topicPrefix));
-    return _topic.name.substring(_api._topicPrefix.length);
+    assert(_topic.name!.startsWith(_api._topicPrefix));
+    return _topic.name!.substring(_api._topicPrefix.length);
   }
 
   @override
   String get project {
-    assert(_topic.name.startsWith(_api._topicPrefix));
+    assert(_topic.name!.startsWith(_api._topicPrefix));
     return _api.project;
   }
 
   @override
-  String get absoluteName => _topic.name;
+  String get absoluteName => _topic.name!;
 
   @override
   Future publish(Message message) {
-    return _api._publish(_topic.name, message.asBytes, message.attributes);
+    return _api._publish(_topic.name!, message.asBytes, message.attributes);
   }
 
   @override
-  Future delete() => _api._deleteTopic(_topic.name);
+  Future delete() => _api._deleteTopic(_topic.name!);
 
   @override
-  Future publishString(String message, {Map<String, String> attributes}) {
-    return _api._publish(_topic.name, utf8.encode(message), attributes);
+  Future publishString(String message, {Map<String, String>? attributes}) {
+    attributes ??= <String, String>{};
+    return _api._publish(_topic.name!, utf8.encode(message), attributes);
   }
 
   @override
-  Future publishBytes(List<int> message, {Map<String, String> attributes}) {
-    return _api._publish(_topic.name, message, attributes);
+  Future publishBytes(List<int> message, {Map<String, String>? attributes}) {
+    attributes ??= <String, String>{};
+    return _api._publish(_topic.name!, message, attributes);
   }
 }
 
@@ -400,18 +406,18 @@ class _SubscriptionImpl implements Subscription {
 
   @override
   String get name {
-    assert(_subscription.name.startsWith(_api._subscriptionPrefix));
-    return _subscription.name.substring(_api._subscriptionPrefix.length);
+    assert(_subscription.name!.startsWith(_api._subscriptionPrefix));
+    return _subscription.name!.substring(_api._subscriptionPrefix.length);
   }
 
   @override
   String get project {
-    assert(_subscription.name.startsWith(_api._subscriptionPrefix));
+    assert(_subscription.name!.startsWith(_api._subscriptionPrefix));
     return _api.project;
   }
 
   @override
-  String get absoluteName => _subscription.name;
+  String get absoluteName => _subscription.name!;
 
   @override
   Topic get topic {
@@ -420,25 +426,25 @@ class _SubscriptionImpl implements Subscription {
   }
 
   @override
-  Future delete() => _api._deleteSubscription(_subscription.name);
+  Future delete() => _api._deleteSubscription(_subscription.name!);
 
   @override
-  Future<PullEvent> pull({bool wait = true}) {
-    return _api._pull(_subscription.name, !wait).then((response) {
+  Future<PullEvent?> pull({bool wait = true}) {
+    return _api._pull(_subscription.name!, !wait).then((response) {
       // The documentation says 'Returns an empty list if there are no
       // messages available in the backlog'. However the receivedMessages
       // property can also be null in that case.
       if (response.receivedMessages == null ||
-          response.receivedMessages.isEmpty) {
+          response.receivedMessages!.isEmpty) {
         return null;
       }
-      return _PullEventImpl(_api, _subscription.name, response);
+      return _PullEventImpl(_api, _subscription.name!, response);
     }).catchError((e) => null,
         test: (e) => e is pubsub.DetailedApiRequestError && e.status == 400);
   }
 
   @override
-  Uri get endpoint => null;
+  Uri? get endpoint => null;
 
   @override
   bool get isPull => endpoint == null;
@@ -448,25 +454,22 @@ class _SubscriptionImpl implements Subscription {
 
   @override
   Future updatePushConfiguration(Uri endpoint) {
-    return _api._modifyPushConfig(_subscription.name, endpoint);
+    return _api._modifyPushConfig(_subscription.name!, endpoint);
   }
 }
 
 class _TopicPageImpl implements Page<Topic> {
   final _PubSubImpl _api;
   final int _pageSize;
-  final String _nextPageToken;
+  final String? _nextPageToken;
   @override
-  final List<Topic> items;
+  final List<Topic> items = [];
 
   _TopicPageImpl(this._api, this._pageSize, pubsub.ListTopicsResponse response)
-      : items = List.filled(
-            response.topics != null ? response.topics.length : 0, null),
-        _nextPageToken = response.nextPageToken {
-    if (response.topics != null) {
-      for (var i = 0; i < response.topics.length; i++) {
-        items[i] = _TopicImpl(_api, response.topics[i]);
-      }
+      : _nextPageToken = response.nextPageToken {
+    final topics = response.topics;
+    if (topics != null) {
+      items.addAll(topics.map((t) => _TopicImpl(_api, t)));
     }
   }
 
@@ -474,34 +477,30 @@ class _TopicPageImpl implements Page<Topic> {
   bool get isLast => _nextPageToken == null;
 
   @override
-  Future<Page<Topic>> next({int pageSize}) {
+  Future<Page<Topic>> next({int? pageSize}) {
     if (isLast) return Future.value(null);
-    pageSize ??= _pageSize;
+    final pageSize_ = pageSize ?? _pageSize;
 
-    return _api._listTopics(pageSize, _nextPageToken).then((response) {
-      return _TopicPageImpl(_api, pageSize, response);
+    return _api._listTopics(pageSize_, _nextPageToken).then((response) {
+      return _TopicPageImpl(_api, pageSize_, response);
     });
   }
 }
 
 class _SubscriptionPageImpl implements Page<Subscription> {
   final _PubSubImpl _api;
-  final String _topic;
+  final String? _topic;
   final int _pageSize;
-  final String _nextPageToken;
+  final String? _nextPageToken;
   @override
-  final List<Subscription> items;
+  final List<Subscription> items = [];
 
   _SubscriptionPageImpl(this._api, this._topic, this._pageSize,
       pubsub.ListSubscriptionsResponse response)
-      : items = List.filled(
-            response.subscriptions != null ? response.subscriptions.length : 0,
-            null),
-        _nextPageToken = response.nextPageToken {
-    if (response.subscriptions != null) {
-      for (var i = 0; i < response.subscriptions.length; i++) {
-        items[i] = _SubscriptionImpl(_api, response.subscriptions[i]);
-      }
+      : _nextPageToken = response.nextPageToken {
+    final subscriptions = response.subscriptions;
+    if (subscriptions != null) {
+      items.addAll(subscriptions.map((s) => _SubscriptionImpl(_api, s)));
     }
   }
 
@@ -509,14 +508,14 @@ class _SubscriptionPageImpl implements Page<Subscription> {
   bool get isLast => _nextPageToken == null;
 
   @override
-  Future<Page<Subscription>> next({int pageSize}) {
+  Future<Page<Subscription>> next({int? pageSize}) {
     if (_nextPageToken == null) return Future.value(null);
-    pageSize ??= _pageSize;
+    final pageSize_ = pageSize ?? _pageSize;
 
     return _api
-        ._listSubscriptions(_topic, pageSize, _nextPageToken)
+        ._listSubscriptions(_topic, pageSize_, _nextPageToken)
         .then((response) {
-      return _SubscriptionPageImpl(_api, _topic, pageSize, response);
+      return _SubscriptionPageImpl(_api, _topic, pageSize_, response);
     });
   }
 }
