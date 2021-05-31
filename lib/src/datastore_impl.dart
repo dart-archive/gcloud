@@ -1,7 +1,6 @@
 // Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-// @dart=2.9
 
 library gcloud.datastore_impl;
 
@@ -61,41 +60,47 @@ class DatastoreImpl implements datastore.Datastore {
   }
 
   static datastore.Key _convertApi2DatastoreKey(api.Key key) {
-    var elements = key.path.map((api.PathElement element) {
+    var elements = key.path!.map((api.PathElement element) {
       if (element.id != null) {
-        return datastore.KeyElement(element.kind, int.parse(element.id));
+        return datastore.KeyElement(element.kind!, int.parse(element.id!));
       } else if (element.name != null) {
-        return datastore.KeyElement(element.kind, element.name);
+        return datastore.KeyElement(element.kind!, element.name);
       } else {
         throw datastore.DatastoreError(
             'Invalid server response: Expected allocated name/id.');
       }
     }).toList();
 
-    datastore.Partition partition;
+    var partition = datastore.Partition.DEFAULT;
     if (key.partitionId != null) {
-      partition = datastore.Partition(key.partitionId.namespaceId);
+      partition = datastore.Partition(key.partitionId!.namespaceId);
       // TODO: assert projectId.
     }
     return datastore.Key(elements, partition: partition);
   }
 
   bool _compareApiKey(api.Key a, api.Key b) {
-    if (a.path.length != b.path.length) return false;
+    if (a.path!.length != b.path!.length) return false;
 
     // FIXME(Issue #2): Is this comparison working correctly?
     if (a.partitionId != null) {
-      if (b.partitionId == null) return false;
-      if (a.partitionId.projectId != b.partitionId.projectId) return false;
-      if (a.partitionId.namespaceId != b.partitionId.namespaceId) return false;
-    } else {
-      if (b.partitionId != null) return false;
+      if (b.partitionId == null) {
+        return false;
+      }
+      if (a.partitionId!.projectId != b.partitionId!.projectId) {
+        return false;
+      }
+      if (a.partitionId!.namespaceId != b.partitionId!.namespaceId) {
+        return false;
+      }
+    } else if (b.partitionId != null) {
+      return false;
     }
 
-    for (var i = 0; i < a.path.length; i++) {
-      if (a.path[i].id != b.path[i].id ||
-          a.path[i].name != b.path[i].name ||
-          a.path[i].kind != b.path[i].kind) return false;
+    for (var i = 0; i < a.path!.length; i++) {
+      if (a.path![i].id != b.path![i].id ||
+          a.path![i].name != b.path![i].name ||
+          a.path![i].kind != b.path![i].kind) return false;
     }
     return true;
   }
@@ -142,19 +147,19 @@ class DatastoreImpl implements datastore.Datastore {
     if (value.booleanValue != null) {
       return value.booleanValue;
     } else if (value.integerValue != null) {
-      return int.parse(value.integerValue);
+      return int.parse(value.integerValue!);
     } else if (value.doubleValue != null) {
       return value.doubleValue;
     } else if (value.stringValue != null) {
       return value.stringValue;
     } else if (value.timestampValue != null) {
-      return DateTime.parse(value.timestampValue);
+      return DateTime.parse(value.timestampValue!);
     } else if (value.blobValue != null) {
       return datastore.BlobValue(value.blobValueAsBytes);
     } else if (value.keyValue != null) {
-      return _convertApi2DatastoreKey(value.keyValue);
-    } else if (value.arrayValue != null && value.arrayValue.values != null) {
-      return value.arrayValue.values
+      return _convertApi2DatastoreKey(value.keyValue!);
+    } else if (value.arrayValue != null && value.arrayValue!.values != null) {
+      return value.arrayValue!.values!
           .map(_convertApi2DatastoreProperty)
           .toList();
     } else if (value.entityValue != null) {
@@ -167,17 +172,17 @@ class DatastoreImpl implements datastore.Datastore {
 
   static datastore.Entity _convertApi2DatastoreEntity(api.Entity entity) {
     var unindexedProperties = <String>{};
-    var properties = <String, Object>{};
+    var properties = <String, Object?>{};
 
     if (entity.properties != null) {
-      entity.properties.forEach((String name, api.Value value) {
+      entity.properties!.forEach((String name, api.Value value) {
         properties[name] = _convertApi2DatastoreProperty(value);
-        if (value.excludeFromIndexes != null && value.excludeFromIndexes) {
+        if (value.excludeFromIndexes != null && value.excludeFromIndexes!) {
           unindexedProperties.add(name);
         }
       });
     }
-    return datastore.Entity(_convertApi2DatastoreKey(entity.key), properties,
+    return datastore.Entity(_convertApi2DatastoreKey(entity.key!), properties,
         unIndexedProperties: unindexedProperties);
   }
 
@@ -186,16 +191,12 @@ class DatastoreImpl implements datastore.Datastore {
     var apiEntity = api.Entity();
 
     apiEntity.key = _convertDatastore2ApiKey(entity.key, enforceId: enforceId);
-    apiEntity.properties = {};
-    if (entity.properties != null) {
+    final properties = apiEntity.properties = {};
+    if (entity.properties.isNotEmpty) {
       for (var key in entity.properties.keys) {
         var value = entity.properties[key];
-        var indexed = false;
-        if (entity.unIndexedProperties != null) {
-          indexed = !entity.unIndexedProperties.contains(key);
-        }
-        var property = _convertDatastore2ApiPropertyValue(value, indexed);
-        apiEntity.properties[key] = property;
+        final indexed = !entity.unIndexedProperties.contains(key);
+        properties[key] = _convertDatastore2ApiPropertyValue(value, indexed);
       }
     }
     return apiEntity;
@@ -231,8 +232,10 @@ class DatastoreImpl implements datastore.Datastore {
     return api.Filter()..propertyFilter = pf;
   }
 
-  api.Filter _convertDatastore2ApiFilters(
-      List<datastore.Filter> filters, datastore.Key ancestorKey) {
+  api.Filter? _convertDatastore2ApiFilters(
+    List<datastore.Filter>? filters,
+    datastore.Key? ancestorKey,
+  ) {
     if ((filters == null || filters.isEmpty) && ancestorKey == null) {
       return null;
     }
@@ -246,7 +249,7 @@ class DatastoreImpl implements datastore.Datastore {
       if (compFilter.filters == null) {
         compFilter.filters = [filter];
       } else {
-        compFilter.filters.add(filter);
+        compFilter.filters!.add(filter);
       }
     }
     compFilter.op = 'AND';
@@ -263,17 +266,22 @@ class DatastoreImpl implements datastore.Datastore {
       ..property = property;
   }
 
-  List<api.PropertyOrder> _convertDatastore2ApiOrders(
-      List<datastore.Order> orders) {
+  List<api.PropertyOrder>? _convertDatastore2ApiOrders(
+      List<datastore.Order>? orders) {
     if (orders == null) return null;
 
     return orders.map(_convertDatastore2ApiOrder).toList();
   }
 
-  static Future<Null> _handleError(error, StackTrace stack) {
+  static Future<Never> _handleError(Object error, StackTrace stack) {
     if (error is api.DetailedApiRequestError) {
       if (error.status == 400) {
-        return Future.error(datastore.ApplicationError(error.message), stack);
+        return Future.error(
+          datastore.ApplicationError(
+            error.message ?? 'An unknown error occured',
+          ),
+          stack,
+        );
       } else if (error.status == 409) {
         // NOTE: This is reported as:
         // "too much contention on these datastore entities"
@@ -293,7 +301,7 @@ class DatastoreImpl implements datastore.Datastore {
       return _convertDatastore2ApiKey(key, enforceId: false);
     }).toList();
     return _api.projects.allocateIds(request, _project).then((response) {
-      return response.keys.map(_convertApi2DatastoreKey).toList();
+      return (response.keys ?? []).map(_convertApi2DatastoreKey).toList();
     }, onError: _handleError);
   }
 
@@ -302,17 +310,18 @@ class DatastoreImpl implements datastore.Datastore {
       {bool crossEntityGroup = false}) {
     var request = api.BeginTransactionRequest();
     return _api.projects.beginTransaction(request, _project).then((result) {
-      return TransactionImpl(result.transaction);
+      return TransactionImpl(result.transaction!);
     }, onError: _handleError);
   }
 
   @override
-  Future<datastore.CommitResult> commit(
-      {List<datastore.Entity> inserts,
-      List<datastore.Entity> autoIdInserts,
-      List<datastore.Key> deletes,
-      datastore.Transaction transaction}) {
-    var request = api.CommitRequest();
+  Future<datastore.CommitResult> commit({
+    List<datastore.Entity> inserts = const [],
+    List<datastore.Entity> autoIdInserts = const [],
+    List<datastore.Key> deletes = const [],
+    datastore.Transaction? transaction,
+  }) {
+    final request = api.CommitRequest();
 
     if (transaction != null) {
       request.mode = 'TRANSACTIONAL';
@@ -322,14 +331,14 @@ class DatastoreImpl implements datastore.Datastore {
     }
 
     var mutations = request.mutations = <api.Mutation>[];
-    if (inserts != null) {
+    if (inserts.isNotEmpty) {
       for (var i = 0; i < inserts.length; i++) {
         mutations.add(api.Mutation()
           ..upsert = _convertDatastore2ApiEntity(inserts[i], enforceId: true));
       }
     }
     var autoIdStartIndex = -1;
-    if (autoIdInserts != null) {
+    if (autoIdInserts.isNotEmpty) {
       autoIdStartIndex = mutations.length;
       for (var i = 0; i < autoIdInserts.length; i++) {
         mutations.add(api.Mutation()
@@ -337,24 +346,24 @@ class DatastoreImpl implements datastore.Datastore {
               _convertDatastore2ApiEntity(autoIdInserts[i], enforceId: false));
       }
     }
-    if (deletes != null) {
+    if (deletes.isNotEmpty) {
       for (var i = 0; i < deletes.length; i++) {
         mutations.add(api.Mutation()
           ..delete = _convertDatastore2ApiKey(deletes[i], enforceId: true));
       }
     }
     return _api.projects.commit(request, _project).then((result) {
-      List<datastore.Key> keys;
-      if (autoIdInserts != null && autoIdInserts.isNotEmpty) {
-        var mutationResults = result.mutationResults;
+      var keys = <datastore.Key>[];
+      if (autoIdInserts.isNotEmpty) {
+        assert(result.mutationResults != null);
+        var mutationResults = result.mutationResults!;
         assert(autoIdStartIndex != -1);
         assert(mutationResults.length >=
             (autoIdStartIndex + autoIdInserts.length));
         keys = mutationResults
             .skip(autoIdStartIndex)
             .take(autoIdInserts.length)
-            .map<datastore.Key>(
-                (api.MutationResult r) => _convertApi2DatastoreKey(r.key))
+            .map<datastore.Key>((r) => _convertApi2DatastoreKey(r.key!))
             .toList();
       }
       return datastore.CommitResult(keys);
@@ -362,8 +371,10 @@ class DatastoreImpl implements datastore.Datastore {
   }
 
   @override
-  Future<List<datastore.Entity>> lookup(List<datastore.Key> keys,
-      {datastore.Transaction transaction}) {
+  Future<List<datastore.Entity?>> lookup(
+    List<datastore.Key> keys, {
+    datastore.Transaction? transaction,
+  }) {
     var apiKeys = keys.map((key) {
       return _convertDatastore2ApiKey(key, enforceId: true);
     }).toList();
@@ -371,11 +382,11 @@ class DatastoreImpl implements datastore.Datastore {
     request.keys = apiKeys;
     if (transaction != null) {
       // TODO: Make readOptions more configurable.
-      request.readOptions = api.ReadOptions();
-      request.readOptions.transaction = (transaction as TransactionImpl).data;
+      request.readOptions = api.ReadOptions()
+        ..transaction = (transaction as TransactionImpl).data;
     }
     return _api.projects.lookup(request, _project).then((response) {
-      if (response.deferred != null && response.deferred.isNotEmpty) {
+      if (response.deferred != null && response.deferred!.isNotEmpty) {
         throw datastore.DatastoreError(
             'Could not successfully look up all keys due to resource '
             'constraints.');
@@ -396,16 +407,16 @@ class DatastoreImpl implements datastore.Datastore {
       //    // A list of keys that were not looked up due to resource constraints.
       //    repeated Key deferred = 3;
       //  }
-      var entities = List<datastore.Entity>.filled(apiKeys.length, null);
+      var entities = List<datastore.Entity?>.filled(apiKeys.length, null);
       for (var i = 0; i < apiKeys.length; i++) {
         var apiKey = apiKeys[i];
 
         var found = false;
 
         if (response.found != null) {
-          for (var result in response.found) {
-            if (_compareApiKey(apiKey, result.entity.key)) {
-              entities[i] = _convertApi2DatastoreEntity(result.entity);
+          for (var result in response.found!) {
+            if (_compareApiKey(apiKey, result.entity!.key!)) {
+              entities[i] = _convertApi2DatastoreEntity(result.entity!);
               found = true;
               break;
             }
@@ -415,8 +426,8 @@ class DatastoreImpl implements datastore.Datastore {
         if (found) continue;
 
         if (response.missing != null) {
-          for (var result in response.missing) {
-            if (_compareApiKey(apiKey, result.entity.key)) {
+          for (var result in response.missing!) {
+            if (_compareApiKey(apiKey, result.entity!.key!)) {
               entities[i] = null;
               found = true;
               break;
@@ -435,8 +446,11 @@ class DatastoreImpl implements datastore.Datastore {
   }
 
   @override
-  Future<Page<datastore.Entity>> query(datastore.Query query,
-      {datastore.Partition partition, datastore.Transaction transaction}) {
+  Future<Page<datastore.Entity>> query(
+    datastore.Query query, {
+    datastore.Partition partition = datastore.Partition.DEFAULT,
+    datastore.Transaction? transaction,
+  }) {
     // NOTE: We explicitly do not set 'limit' here, since this is handled by
     // QueryPageImpl.runQuery.
     var apiQuery = api.Query()
@@ -452,10 +466,10 @@ class DatastoreImpl implements datastore.Datastore {
     request.query = apiQuery;
     if (transaction != null) {
       // TODO: Make readOptions more configurable.
-      request.readOptions = api.ReadOptions();
-      request.readOptions.transaction = (transaction as TransactionImpl).data;
+      request.readOptions = api.ReadOptions()
+        ..transaction = (transaction as TransactionImpl).data;
     }
-    if (partition != null) {
+    if (partition != datastore.Partition.DEFAULT) {
       request.partitionId = api.PartitionId()
         ..namespaceId = partition.namespace;
     }
@@ -483,54 +497,52 @@ class QueryPageImpl implements Page<datastore.Entity> {
   final bool _isLast;
 
   // This might be `null` in which case we request as many as we can get.
-  final int _remainingNumberOfEntities;
+  final int? _remainingNumberOfEntities;
 
   QueryPageImpl(this._api, this._project, this._nextRequest, this._entities,
       this._isLast, this._remainingNumberOfEntities);
 
   static Future<QueryPageImpl> runQuery(api.DatastoreApi api, String project,
-      api.RunQueryRequest request, int limit,
-      {int batchSize}) {
-    var batchLimit = batchSize;
-    batchLimit ??= MAX_ENTITIES_PER_RESPONSE;
-    if (limit != null && limit < batchLimit) {
-      batchLimit = limit;
+      api.RunQueryRequest request, int? limit,
+      {int batchSize = MAX_ENTITIES_PER_RESPONSE}) {
+    if (limit != null && limit < batchSize) {
+      batchSize = limit;
     }
 
-    request.query.limit = batchLimit;
+    request.query!.limit = batchSize;
 
     return api.projects.runQuery(request, project).then((response) {
       var returnedEntities = const <datastore.Entity>[];
 
-      var batch = response.batch;
+      final batch = response.batch!;
       if (batch.entityResults != null) {
-        returnedEntities = batch.entityResults
-            .map((result) => result.entity)
+        returnedEntities = batch.entityResults!
+            .map((result) => result.entity!)
             .map(DatastoreImpl._convertApi2DatastoreEntity)
             .toList();
       }
 
       // This check is only necessary for the first request/response pair
       // (if offset was supplied).
-      if (request.query.offset != null &&
-          request.query.offset > 0 &&
-          request.query.offset != response.batch.skippedResults) {
+      if (request.query!.offset != null &&
+          request.query!.offset! > 0 &&
+          request.query!.offset != batch.skippedResults) {
         throw datastore.DatastoreError(
-            'Server did not skip over the specified ${request.query.offset} '
+            'Server did not skip over the specified ${request.query!.offset} '
             'entities.');
       }
 
       if (limit != null && returnedEntities.length > limit) {
         throw datastore.DatastoreError(
             'Server returned more entities then the limit for the request'
-            '(${request.query.limit}) was.');
+            '(${request.query!.limit}) was.');
       }
 
       // FIXME: TODO: Big hack!
       // It looks like Apiary/Atlas is currently broken.
       /*
       if (limit != null &&
-          returnedEntities.length < batchLimit &&
+          returnedEntities.length < batchSize &&
           response.batch.moreResults == 'MORE_RESULTS_AFTER_LIMIT') {
         throw new datastore.DatastoreError(
             'Server returned response with less entities then the limit was, '
@@ -541,7 +553,7 @@ class QueryPageImpl implements Page<datastore.Entity> {
       // In case a limit was specified, we need to subtraction the number of
       // entities we already got.
       // (the checks above guarantee that this subtraction is >= 0).
-      int remainingEntities;
+      int? remainingEntities;
       if (limit != null) {
         remainingEntities = limit - returnedEntities.length;
       }
@@ -550,10 +562,10 @@ class QueryPageImpl implements Page<datastore.Entity> {
       // limit or our limit has not been reached, we set `moreBatches` to
       // `true`.
       var moreBatches = (remainingEntities == null || remainingEntities > 0) &&
-          response.batch.moreResults == 'MORE_RESULTS_AFTER_LIMIT';
+          batch.moreResults == 'MORE_RESULTS_AFTER_LIMIT';
 
       var gotAll = limit != null && remainingEntities == 0;
-      var noMore = response.batch.moreResults == 'NO_MORE_RESULTS';
+      var noMore = batch.moreResults == 'NO_MORE_RESULTS';
       var isLast = gotAll || noMore;
 
       // As a sanity check, we assert that `moreBatches XOR isLast`.
@@ -568,7 +580,7 @@ class QueryPageImpl implements Page<datastore.Entity> {
         moreBatches = false;
       }
 
-      if (!isLast && response.batch.endCursor == null) {
+      if (!isLast && batch.endCursor == null) {
         throw datastore.DatastoreError(
             'Server did not supply an end cursor, even though the query '
             'is not done.');
@@ -582,11 +594,11 @@ class QueryPageImpl implements Page<datastore.Entity> {
 
         // The offset will be 0 from now on, since the first request will have
         // skipped over the first `offset` results.
-        request.query.offset = 0;
+        request.query!.offset = 0;
 
         // Furthermore we set the startCursor to the endCursor of the previous
         // result batch, so we can continue where we left off.
-        request.query.startCursor = batch.endCursor;
+        request.query!.startCursor = batch.endCursor;
 
         return QueryPageImpl(
             api, project, request, returnedEntities, false, remainingEntities);
@@ -601,7 +613,7 @@ class QueryPageImpl implements Page<datastore.Entity> {
   List<datastore.Entity> get items => _entities;
 
   @override
-  Future<Page<datastore.Entity>> next({int pageSize}) {
+  Future<Page<datastore.Entity>> next({int? pageSize}) {
     // NOTE: We do not respect [pageSize] here, the only mechanism we can
     // really use is `query.limit`, but this is user-specified when making
     // the query.

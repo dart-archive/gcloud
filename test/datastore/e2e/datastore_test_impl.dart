@@ -49,7 +49,7 @@ Future<List<Entity>> consumePages(FirstPageProvider<Entity> provider) {
 }
 
 void runTests(Datastore datastore, String namespace) {
-  var partition = Partition(namespace);
+  final partition = Partition(namespace);
 
   Future<T> withTransaction<T>(FutureOr<T> Function(Transaction t) f,
       {bool xg = false}) {

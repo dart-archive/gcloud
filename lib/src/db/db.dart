@@ -1,7 +1,6 @@
 // Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-// @dart=2.9
 
 part of gcloud.db;
 
@@ -33,9 +32,12 @@ class Transaction {
   Transaction(this.db, this._datastoreTransaction);
 
   /// Looks up [keys] within this transaction.
-  Future<List<T>> lookup<T extends Model>(List<Key> keys) {
-    return _lookupHelper<T>(db, keys,
-        datastoreTransaction: _datastoreTransaction);
+  Future<List<T?>> lookup<T extends Model>(List<Key> keys) {
+    return _lookupHelper<T>(
+      db,
+      keys,
+      datastoreTransaction: _datastoreTransaction,
+    );
   }
 
   /// Looks up a single [key] within this transaction, and returns the
@@ -47,7 +49,8 @@ class Transaction {
   ///
   /// If the [key] is not found within the transaction and [orElse] was not
   /// specified, then a [KeyNotFoundException] will be thrown.
-  Future<T> lookupValue<T extends Model>(Key key, {T Function() orElse}) async {
+  Future<T> lookupValue<T extends Model>(Key key,
+      {T Function()? orElse}) async {
     final values = await lookup<T>(<Key>[key]);
     assert(values.length == 1);
     var value = values.single;
@@ -62,7 +65,7 @@ class Transaction {
   }
 
   /// Enqueues [inserts] and [deletes] which should be committed at commit time.
-  void queueMutations({List<Model> inserts, List<Key> deletes}) {
+  void queueMutations({List<Model>? inserts, List<Key>? deletes}) {
     _checkSealed();
     if (inserts != null) {
       _inserts.addAll(inserts);
@@ -76,7 +79,7 @@ class Transaction {
   ///
   /// Note that [ancestorKey] is required, since a transaction is not allowed to
   /// touch/look at an arbitrary number of rows.
-  Query<T> query<T extends Model>(Key ancestorKey, {Partition partition}) {
+  Query<T> query<T extends Model>(Key ancestorKey, {Partition? partition}) {
     // TODO(#25): The `partition` element is redundant and should be removed.
     if (partition == null) {
       partition = ancestorKey.partition;
@@ -112,7 +115,7 @@ class Transaction {
     }
   }
 
-  void _checkSealed({int changeState, bool allowFailed = false}) {
+  void _checkSealed({int? changeState, bool allowFailed = false}) {
     if (_state == _TRANSACTION_COMMITTED) {
       throw StateError('The transaction has already been committed.');
     } else if (_state == _TRANSACTION_ROLLED_BACK) {
@@ -136,21 +139,21 @@ class Query<T extends Model> {
   };
 
   final DatastoreDB _db;
-  final ds.Transaction _transaction;
+  final ds.Transaction? _transaction;
   final String _kind;
 
-  final Partition _partition;
-  final Key _ancestorKey;
+  final Partition? _partition;
+  final Key? _ancestorKey;
 
   final List<ds.Filter> _filters = [];
   final List<ds.Order> _orders = [];
-  int _offset;
-  int _limit;
+  int? _offset;
+  int? _limit;
 
   Query(DatastoreDB dbImpl,
-      {Partition partition,
-      Key ancestorKey,
-      ds.Transaction datastoreTransaction})
+      {Partition? partition,
+      Key? ancestorKey,
+      ds.Transaction? datastoreTransaction})
       : _db = dbImpl,
         _kind = dbImpl.modelDB.kindName(T),
         _partition = partition,
@@ -169,7 +172,7 @@ class Query<T extends Model> {
   ///   * '=' (equal)
   ///
   /// [comparisonObject] is the object for comparison.
-  void filter(String filterString, Object comparisonObject) {
+  void filter(String filterString, Object? comparisonObject) {
     var parts = filterString.split(' ');
     if (parts.length != 2 || !_relationMapping.containsKey(parts[1])) {
       throw ArgumentError("Invalid filter string '$filterString'.");
@@ -187,7 +190,7 @@ class Query<T extends Model> {
           .toDatastoreValue(_kind, name, comparisonObject, forComparison: true);
     }
     _filters.add(ds.Filter(
-        _relationMapping[comparison], propertyName, comparisonObject));
+        _relationMapping[comparison]!, propertyName, comparisonObject!));
   }
 
   /// Adds an order to this [Query].
@@ -225,9 +228,9 @@ class Query<T extends Model> {
   /// return the newest updates performed on the datastore since updates
   /// will be reflected in the indices in an eventual consistent way.
   Stream<T> run() {
-    ds.Key ancestorKey;
+    ds.Key? ancestorKey;
     if (_ancestorKey != null) {
-      ancestorKey = _db.modelDB.toDatastoreKey(_ancestorKey);
+      ancestorKey = _db.modelDB.toDatastoreKey(_ancestorKey!);
     }
     var query = ds.Query(
         ancestorKey: ancestorKey,
@@ -237,15 +240,24 @@ class Query<T extends Model> {
         offset: _offset,
         limit: _limit);
 
-    ds.Partition partition;
+    ds.Partition? partition;
     if (_partition != null) {
-      partition = ds.Partition(_partition.namespace);
+      partition = ds.Partition(_partition!.namespace);
     }
 
     return StreamFromPages<ds.Entity>((int pageSize) {
-      return _db.datastore
-          .query(query, transaction: _transaction, partition: partition);
-    }).stream.map<T>(_db.modelDB.fromDatastoreEntity);
+      if (_transaction != null) {
+        if (partition != null) {
+          return _db.datastore
+              .query(query, transaction: _transaction!, partition: partition);
+        }
+        return _db.datastore.query(query, transaction: _transaction!);
+      }
+      if (partition != null) {
+        return _db.datastore.query(query, partition: partition);
+      }
+      return _db.datastore.query(query);
+    }).stream.map<T>((e) => _db.modelDB.fromDatastoreEntity(e)!);
   }
 
   // TODO:
@@ -265,12 +277,11 @@ class Query<T extends Model> {
 class DatastoreDB {
   final ds.Datastore datastore;
   final ModelDB _modelDB;
-  Partition _defaultPartition;
+  final Partition _defaultPartition;
 
-  DatastoreDB(this.datastore, {ModelDB modelDB, Partition defaultPartition})
-      : _modelDB = modelDB ?? ModelDBImpl() {
-    _defaultPartition = defaultPartition ?? Partition(null);
-  }
+  DatastoreDB(this.datastore, {ModelDB? modelDB, Partition? defaultPartition})
+      : _modelDB = modelDB ?? ModelDBImpl(),
+        _defaultPartition = defaultPartition ?? Partition(null);
 
   /// The [ModelDB] used to serialize/deserialize objects.
   ModelDB get modelDB => _modelDB;
@@ -304,7 +315,7 @@ class DatastoreDB {
   }
 
   /// Build a query for [kind] models.
-  Query<T> query<T extends Model>({Partition partition, Key ancestorKey}) {
+  Query<T> query<T extends Model>({Partition? partition, Key? ancestorKey}) {
     // TODO(#26): There is only one case where `partition` is not redundant
     // Namely if `ancestorKey == null` and `partition != null`. We could
     // say we get rid of `partition` and enforce `ancestorKey` to
@@ -335,7 +346,7 @@ class DatastoreDB {
   ///
   ///  * [lookupValue], which looks a single value up by its key, requiring a
   ///    successful lookup.
-  Future<List<T>> lookup<T extends Model>(List<Key> keys) {
+  Future<List<T?>> lookup<T extends Model>(List<Key> keys) {
     return _lookupHelper<T>(this, keys);
   }
 
@@ -348,7 +359,8 @@ class DatastoreDB {
   ///
   /// If the [key] is not found in the datastore and [orElse] was not
   /// specified, then a [KeyNotFoundException] will be thrown.
-  Future<T> lookupValue<T extends Model>(Key key, {T Function() orElse}) async {
+  Future<T> lookupValue<T extends Model>(Key key,
+      {T Function()? orElse}) async {
     final values = await lookup<T>(<Key>[key]);
     assert(values.length == 1);
     var value = values.single;
@@ -370,18 +382,18 @@ class DatastoreDB {
   ///
   /// For transactions, please use `beginTransaction` and it's returned
   /// [Transaction] object.
-  Future commit({List<Model> inserts, List<Key> deletes}) {
+  Future commit({List<Model>? inserts, List<Key>? deletes}) {
     return _commitHelper(this, inserts: inserts, deletes: deletes);
   }
 }
 
 Future _commitHelper(DatastoreDB db,
-    {List<Model> inserts,
-    List<Key> deletes,
-    ds.Transaction datastoreTransaction}) {
-  List<ds.Entity> entityInserts, entityAutoIdInserts;
-  List<ds.Key> entityDeletes;
-  var autoIdModelInserts;
+    {List<Model>? inserts,
+    List<Key>? deletes,
+    ds.Transaction? datastoreTransaction}) {
+  List<ds.Entity>? entityInserts, entityAutoIdInserts;
+  List<ds.Key>? entityDeletes;
+  late var autoIdModelInserts;
   if (inserts != null) {
     entityInserts = <ds.Entity>[];
     entityAutoIdInserts = <ds.Entity>[];
@@ -402,14 +414,21 @@ Future _commitHelper(DatastoreDB db,
   if (deletes != null) {
     entityDeletes = deletes.map(db.modelDB.toDatastoreKey).toList();
   }
+  Future<ds.CommitResult> r;
+  if (datastoreTransaction != null) {
+    r = db.datastore.commit(
+        inserts: entityInserts ?? [],
+        autoIdInserts: entityAutoIdInserts ?? [],
+        deletes: entityDeletes ?? [],
+        transaction: datastoreTransaction);
+  } else {
+    r = db.datastore.commit(
+        inserts: entityInserts ?? [],
+        autoIdInserts: entityAutoIdInserts ?? [],
+        deletes: entityDeletes ?? []);
+  }
 
-  return db.datastore
-      .commit(
-          inserts: entityInserts,
-          autoIdInserts: entityAutoIdInserts,
-          deletes: entityDeletes,
-          transaction: datastoreTransaction)
-      .then((ds.CommitResult result) {
+  return r.then((ds.CommitResult result) {
     if (entityAutoIdInserts != null && entityAutoIdInserts.isNotEmpty) {
       for (var i = 0; i < result.autoIdInsertKeys.length; i++) {
         var key = db.modelDB.fromDatastoreKey(result.autoIdInsertKeys[i]);
@@ -420,12 +439,18 @@ Future _commitHelper(DatastoreDB db,
   });
 }
 
-Future<List<T>> _lookupHelper<T extends Model>(DatastoreDB db, List<Key> keys,
-    {ds.Transaction datastoreTransaction}) {
+Future<List<T?>> _lookupHelper<T extends Model>(DatastoreDB db, List<Key> keys,
+    {ds.Transaction? datastoreTransaction}) {
   var entityKeys = keys.map(db.modelDB.toDatastoreKey).toList();
-  return db.datastore
-      .lookup(entityKeys, transaction: datastoreTransaction)
-      .then((List<ds.Entity> entities) {
-    return entities.map<T>(db.modelDB.fromDatastoreEntity).toList();
+
+  if (datastoreTransaction != null) {
+    return db.datastore
+        .lookup(entityKeys, transaction: datastoreTransaction)
+        .then((List<ds.Entity?> entities) {
+      return entities.map<T?>(db.modelDB.fromDatastoreEntity).toList();
+    });
+  }
+  return db.datastore.lookup(entityKeys).then((List<ds.Entity?> entities) {
+    return entities.map<T?>(db.modelDB.fromDatastoreEntity).toList();
   });
 }
