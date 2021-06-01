@@ -1,10 +1,7 @@
-## 0.8.0-dev.0
+## 0.8.0
 
  * Require Dart 2.12 or later
- * Partial migration to null safety:
-   * `package:gcloud/common.dart`
-   * `package:gcloud/http.dart`
-   * `package:gcloud/service_scope.dart`
+ * Migration to null safety.
 
 ## 0.7.3
  * Fixed issue in reflection code affecting `Model<int>` and `Model<String>`,
