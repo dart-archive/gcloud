@@ -1,3 +1,7 @@
+## 0.8.1
+
+ * `lookupOrNull` method in `DatastoreDB` and `Transaction`. 
+
 ## 0.8.0
 
  * Require Dart 2.12 or later

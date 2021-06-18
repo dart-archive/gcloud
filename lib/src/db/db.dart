@@ -64,6 +64,16 @@ class Transaction {
     return value;
   }
 
+  /// Looks up a single [key] in the datastore, and returns the associated
+  /// [Model] object.
+  ///
+  /// If the [key] is not found in the datastore, null will be returned.
+  Future<T?> lookupOrNull<T extends Model>(Key key) async {
+    final values = await lookup<T>(<Key>[key]);
+    assert(values.length == 1);
+    return values.single;
+  }
+
   /// Enqueues [inserts] and [deletes] which should be committed at commit time.
   void queueMutations({List<Model>? inserts, List<Key>? deletes}) {
     _checkSealed();
@@ -372,6 +382,16 @@ class DatastoreDB {
       }
     }
     return value;
+  }
+
+  /// Looks up a single [key] in the datastore, and returns the associated
+  /// [Model] object.
+  ///
+  /// If the [key] is not found in the datastore, null will be returned.
+  Future<T?> lookupOrNull<T extends Model>(Key key) async {
+    final values = await lookup<T>(<Key>[key]);
+    assert(values.length == 1);
+    return values.single;
   }
 
   /// Add [inserts] to the datastore and remove [deletes] from it.
