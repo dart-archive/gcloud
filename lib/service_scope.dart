@@ -174,7 +174,7 @@ class _ServiceScope {
     var isParentCopy = _parentCopies.contains(serviceScopeKey);
     if (!isParentCopy && _key2Values.containsKey(serviceScopeKey)) {
       throw ArgumentError(
-          'Servie scope already contains key $serviceScopeKey.');
+          'Service scope already contains key $serviceScopeKey.');
     }
 
     var entry = _RegisteredEntry(serviceScopeKey, value, onScopeExit);
