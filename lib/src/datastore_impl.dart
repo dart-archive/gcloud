@@ -619,7 +619,9 @@ class QueryPageImpl implements Page<datastore.Entity> {
     // the query.
     if (isLast) {
       return Future.sync(() {
-        throw ArgumentError('Cannot call next() on last page.');
+        throw StateError(
+          'Page.next() cannot be called when Page.isLast == true',
+        );
       });
     }
 
