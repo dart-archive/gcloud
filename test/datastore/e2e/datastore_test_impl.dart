@@ -1,7 +1,6 @@
 // Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-// @dart=2.9
 
 library datastore_test;
 
@@ -48,7 +47,7 @@ Future<List<Entity>> consumePages(FirstPageProvider<Entity> provider) {
   return StreamFromPages<Entity>(provider).stream.toList();
 }
 
-void runTests(Datastore datastore, String namespace) {
+void runTests(Datastore datastore, String? namespace) {
   final partition = Partition(namespace);
 
   Future<T> withTransaction<T>(FutureOr<T> Function(Transaction t) f,
@@ -97,7 +96,7 @@ void runTests(Datastore datastore, String namespace) {
     }
   }
 
-  Future<List<Entity>> lookup(List<Key> keys, {bool transactional = true}) {
+  Future<List<Entity?>> lookup(List<Key> keys, {bool transactional = true}) {
     if (transactional) {
       return withTransaction((Transaction transaction) {
         return datastore.lookup(keys, transaction: transaction);
@@ -168,9 +167,11 @@ void runTests(Datastore datastore, String namespace) {
     group('insert', () {
       Future<List<Key>> testInsert(List<Entity> entities,
           {bool transactional = false, bool xg = false, bool unnamed = true}) {
-        Future<List<Key>> test(Transaction transaction) {
-          return datastore
-              .commit(autoIdInserts: entities, transaction: transaction)
+        Future<List<Key>> test(Transaction? transaction) {
+          return (transaction == null
+                  ? datastore.commit(autoIdInserts: entities)
+                  : datastore.commit(
+                      autoIdInserts: entities, transaction: transaction))
               .then((CommitResult result) {
             expect(result.autoIdInsertKeys.length, equals(entities.length));
 
@@ -196,10 +197,12 @@ void runTests(Datastore datastore, String namespace) {
 
       FutureOr<void> testInsertNegative(List<Entity> entities,
           {bool transactional = false, bool xg = false}) {
-        void test(Transaction transaction) {
+        void test(Transaction? transaction) {
           expect(
-              datastore.commit(
-                  autoIdInserts: entities, transaction: transaction),
+              transaction == null
+                  ? datastore.commit(autoIdInserts: entities)
+                  : datastore.commit(
+                      autoIdInserts: entities, transaction: transaction),
               throwsA(isApplicationError));
         }
 
@@ -218,8 +221,8 @@ void runTests(Datastore datastore, String namespace) {
       test('insert', () {
         return testInsert(unnamedEntities5, transactional: false).then((keys) {
           return delete(keys).then((_) {
-            return lookup(keys).then((List<Entity> entities) {
-              entities.forEach((Entity e) => expect(e, isNull));
+            return lookup(keys).then((List<Entity?> entities) {
+              entities.forEach((Entity? e) => expect(e, isNull));
             });
           });
         });
@@ -228,8 +231,8 @@ void runTests(Datastore datastore, String namespace) {
       test('insert_transactional', () {
         return testInsert(unnamedEntities1, transactional: true).then((keys) {
           return delete(keys).then((_) {
-            return lookup(keys).then((List<Entity> entities) {
-              entities.forEach((Entity e) => expect(e, isNull));
+            return lookup(keys).then((List<Entity?> entities) {
+              entities.forEach((Entity? e) => expect(e, isNull));
             });
           });
         });
@@ -239,8 +242,8 @@ void runTests(Datastore datastore, String namespace) {
         return testInsert(unnamedEntities5, transactional: true, xg: true)
             .then((keys) {
           return delete(keys).then((_) {
-            return lookup(keys).then((List<Entity> entities) {
-              entities.forEach((Entity e) => expect(e, isNull));
+            return lookup(keys).then((List<Entity?> entities) {
+              entities.forEach((Entity? e) => expect(e, isNull));
             });
           });
         });
@@ -315,8 +318,8 @@ void runTests(Datastore datastore, String namespace) {
               isTrue);
         }
 
-        Future test(Transaction transaction) {
-          return datastore.lookup(keysToLookup).then((List<Entity> entities) {
+        Future test(Transaction? transaction) {
+          return datastore.lookup(keysToLookup).then((List<Entity?> entities) {
             expect(entities.length, equals(keysToLookup.length));
             if (negative) {
               for (var i = 0; i < entities.length; i++) {
@@ -324,9 +327,9 @@ void runTests(Datastore datastore, String namespace) {
               }
             } else {
               for (var i = 0; i < entities.length; i++) {
-                expect(compareKey(entities[i].key, keysToLookup[i]), isTrue);
+                expect(compareKey(entities[i]!.key, keysToLookup[i]), isTrue);
                 expect(
-                    compareEntity(entities[i], entitiesToLookup[i],
+                    compareEntity(entities[i]!, entitiesToLookup[i],
                         ignoreIds: !named),
                     isTrue);
               }
@@ -396,7 +399,7 @@ void runTests(Datastore datastore, String namespace) {
     group('delete', () {
       Future testDelete(List<Key> keys,
           {bool transactional = false, bool xg = false}) {
-        Future test(Transaction transaction) {
+        Future test(Transaction? transaction) {
           return datastore.commit(deletes: keys).then((_) {
             if (transaction != null) {
               return datastore.commit(transaction: transaction);
@@ -467,7 +470,7 @@ void runTests(Datastore datastore, String namespace) {
         return withTransaction((Transaction transaction) {
           return datastore
               .lookup(keys, transaction: transaction)
-              .then((List<Entity> entities) {
+              .then((List<Entity?> entities) {
             return datastore.rollback(transaction);
           });
         }, xg: xg);
@@ -493,10 +496,12 @@ void runTests(Datastore datastore, String namespace) {
     group('empty_commit', () {
       Future testEmptyCommit(List<Key> keys,
           {bool transactional = false, bool xg = false}) {
-        Future test(Transaction transaction) {
-          return datastore
-              .lookup(keys, transaction: transaction)
-              .then((List<Entity> entities) {
+        Future test(Transaction? transaction) {
+          return (transaction == null
+                  ? datastore.lookup(keys)
+                  : datastore.lookup(keys, transaction: transaction))
+              .then((List<Entity?> entities) {
+            if (transaction == null) return datastore.commit();
             return datastore.commit(transaction: transaction);
           });
         }
@@ -544,11 +549,11 @@ void runTests(Datastore datastore, String namespace) {
     group('conflicting_transaction', () {
       Future testConflictingTransaction(List<Entity> entities,
           {bool xg = false}) {
-        Future test(List<Entity> entities, Transaction transaction, value) {
+        Future test(List<Entity?> entities, Transaction transaction, value) {
           // Change entities:
-          var changedEntities = List<Entity>.filled(entities.length, null);
+          var changedEntities = List<Entity?>.filled(entities.length, null);
           for (var i = 0; i < entities.length; i++) {
-            var entity = entities[i];
+            var entity = entities[i]!;
             var newProperties = Map<String, Object>.from(entity.properties);
             for (var prop in newProperties.keys) {
               newProperties[prop] = '${newProperties[prop]}conflict$value';
@@ -556,7 +561,8 @@ void runTests(Datastore datastore, String namespace) {
             changedEntities[i] = Entity(entity.key, newProperties);
           }
           return datastore.commit(
-              inserts: changedEntities, transaction: transaction);
+              inserts: changedEntities as List<Entity>,
+              transaction: transaction);
         }
 
         // Insert first
@@ -573,11 +579,11 @@ void runTests(Datastore datastore, String namespace) {
           return Future.wait(transactions)
               .then((List<Transaction> transactions) {
             // Do a lookup for the entities in every transaction
-            var lookups = <Future<List<Entity>>>[];
+            List<Future<List<Entity?>>> lookups = <Future<List<Entity>>>[];
             for (var transaction in transactions) {
               lookups.add(datastore.lookup(keys, transaction: transaction));
             }
-            return Future.wait(lookups).then((List<List<Entity>> results) {
+            return Future.wait(lookups).then((List<List<Entity?>> results) {
               // Do a conflicting commit in every transaction.
               var commits = <Future>[];
               for (var i = 0; i < transactions.length; i++) {
@@ -608,13 +614,13 @@ void runTests(Datastore datastore, String namespace) {
 
     group('query', () {
       Future<List<Entity>> testQuery(String kind,
-          {List<Filter> filters,
-          List<Order> orders,
+          {List<Filter>? filters,
+          List<Order>? orders,
           bool transactional = false,
           bool xg = false,
-          int offset,
-          int limit}) {
-        Future<List<Entity>> test(Transaction transaction) {
+          int? offset,
+          int? limit}) {
+        Future<List<Entity>> test(Transaction? transaction) {
           var query = Query(
               kind: kind,
               filters: filters,
@@ -640,13 +646,13 @@ void runTests(Datastore datastore, String namespace) {
       }
 
       Future testQueryAndCompare(String kind, List<Entity> expectedEntities,
-          {List<Filter> filters,
-          List<Order> orders,
+          {List<Filter>? filters,
+          List<Order>? orders,
           bool transactional = false,
           bool xg = false,
           bool correctOrder = true,
-          int offset,
-          int limit}) {
+          int? offset,
+          int? limit}) {
         return testQuery(kind,
                 filters: filters,
                 orders: orders,
@@ -676,7 +682,7 @@ void runTests(Datastore datastore, String namespace) {
       }
 
       Future testOffsetLimitQuery(String kind, List<Entity> expectedEntities,
-          {List<Order> orders, bool transactional = false, bool xg = false}) {
+          {List<Order>? orders, bool transactional = false, bool xg = false}) {
         // We query for all subsets of expectedEntities
         // NOTE: This is O(0.5 * n^2) queries, but n is currently only 6.
         var queryTests = <Function>[];
@@ -705,7 +711,7 @@ void runTests(Datastore datastore, String namespace) {
               limit: expectedEntities.length * 10);
         });
 
-        return Future.forEach(queryTests, (f) => f());
+        return Future.forEach(queryTests, (dynamic f) => f());
       }
 
       const TEST_QUERY_KIND = 'TestQueryKind';
@@ -862,7 +868,7 @@ void runTests(Datastore datastore, String namespace) {
               () => testQueryAndCompare(TEST_QUERY_KIND, [],
                   transactional: false, filters: filters, orders: orders),
             ];
-            return Future.forEach(tests, (f) => f());
+            return Future.forEach(tests, (dynamic f) => f());
           });
         });
 
@@ -900,14 +906,14 @@ void runTests(Datastore datastore, String namespace) {
             () {
               return datastore
                   .lookup([rootKey, subKey, subSubKey, subSubKey2]).then(
-                      (List<Entity> entities) {
+                      (List<Entity?> entities) {
                 expect(entities.length, 4);
                 expect(entities[0], isNull);
                 expect(entities[1], isNull);
                 expect(entities[2], isNotNull);
                 expect(entities[3], isNotNull);
-                expect(compareEntity(entity, entities[2]), isTrue);
-                expect(compareEntity(entity2, entities[3]), isTrue);
+                expect(compareEntity(entity, entities[2]!), isTrue);
+                expect(compareEntity(entity2, entities[3]!), isTrue);
               });
             },
 
@@ -1020,28 +1026,29 @@ void runTests(Datastore datastore, String namespace) {
               return datastore.commit(deletes: [subSubKey, subSubKey2]);
             }
           ];
-          return Future.forEach(futures, (f) => f()).then(expectAsync1((_) {}));
+          return Future.forEach(futures, (dynamic f) => f())
+              .then(expectAsync1((_) {}));
         });
       });
     });
   });
 }
 
-Future cleanupDB(Datastore db, String namespace) {
-  Future<List<String>> getKinds(String namespace) {
+Future cleanupDB(Datastore db, String? namespace) {
+  Future<List<String?>> getKinds(String? namespace) {
     var partition = Partition(namespace);
     var q = Query(kind: '__kind__');
     return consumePages((_) => db.query(q, partition: partition))
         .then((List<Entity> entities) {
       return entities
-          .map((Entity e) => e.key.elements.last.id as String)
-          .where((String kind) => !kind.contains('__'))
+          .map((Entity e) => e.key.elements.last.id as String?)
+          .where((String? kind) => !kind!.contains('__'))
           .toList();
     });
   }
 
   // cleanup() will call itself again as long as the DB is not clean.
-  Future<void> cleanup(String namespace, String kind) {
+  Future<void> cleanup(String? namespace, String? kind) {
     var partition = Partition(namespace);
     var q = Query(kind: kind, limit: 500);
     return consumePages((_) => db.query(q, partition: partition))
@@ -1054,8 +1061,8 @@ Future cleanupDB(Datastore db, String namespace) {
     });
   }
 
-  return getKinds(namespace).then((List<String> kinds) {
-    return Future.forEach(kinds, (String kind) {
+  return getKinds(namespace).then((List<String?> kinds) {
+    return Future.forEach(kinds, (String? kind) {
       return cleanup(namespace, kind);
     });
   });
@@ -1076,10 +1083,10 @@ Future waitUntilEntitiesHelper(
     keysByKind.putIfAbsent(key.elements.last.kind, () => <Key>[]).add(key);
   }
 
-  Future waitForKeys(String kind, List<Key> keys) {
+  Future waitForKeys(String kind, List<Key>? keys) {
     var q = Query(kind: kind);
     return consumePages((_) => db.query(q, partition: p)).then((entities) {
-      for (var key in keys) {
+      for (var key in keys!) {
         var found = false;
         for (var entity in entities) {
           if (key == entity.key) found = true;
@@ -1100,8 +1107,8 @@ Future waitUntilEntitiesHelper(
 }
 
 Future main() async {
-  Datastore datastore;
-  Client client;
+  late Datastore datastore;
+  late Client client;
 
   var scopes = datastore_impl.DatastoreImpl.SCOPES;
   await withAuthClient(scopes, (String project, Client httpClient) {
