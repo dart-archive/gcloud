@@ -11,8 +11,10 @@ library gcloud.datastore;
 
 import 'dart:async';
 
+import 'package:http/http.dart' as http;
 import 'common.dart' show Page;
 import 'service_scope.dart' as ss;
+import 'src/datastore_impl.dart' show DatastoreImpl;
 
 const Symbol _datastoreKey = #gcloud.datastore;
 
@@ -362,6 +364,23 @@ abstract class Transaction {}
 /// It can be used to insert/update/delete [Entity]s, lookup/query [Entity]s
 /// and allocate IDs from the auto ID allocation policy.
 abstract class Datastore {
+  /// List of required OAuth2 scopes for Datastore operation.
+  static const Scopes = DatastoreImpl.SCOPES;
+
+  /// Access Datastore using an authenticated client.
+  ///
+  /// The [client] is an authenticated HTTP client. This client must
+  /// provide access to at least the scopes in `Datastore.Scopes`.
+  ///
+  /// The [project] is the name of the Google Cloud project.
+  ///
+  /// Returs an object providing access to Datastore. The passed-in [client]
+  /// will not be closed automatically. The caller is responsible for closing
+  /// it.
+  factory Datastore(http.Client client, String project) {
+    return DatastoreImpl(client, project);
+  }
+
   /// Allocate integer IDs for the partially populated [keys] given as argument.
   ///
   /// The returned [Key]s will be fully populated with the allocated IDs.
