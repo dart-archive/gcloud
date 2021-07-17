@@ -478,9 +478,7 @@ class _TopicPageImpl implements Page<Topic> {
 
   @override
   Future<Page<Topic>> next({int? pageSize}) async {
-    if (isLast) {
-      throw StateError('Page.next() cannot be called when Page.isLast == true');
-    }
+    throwIfIsLast();
     final pageSize_ = pageSize ?? _pageSize;
 
     return _api._listTopics(pageSize_, _nextPageToken).then((response) {
@@ -511,9 +509,7 @@ class _SubscriptionPageImpl implements Page<Subscription> {
 
   @override
   Future<Page<Subscription>> next({int? pageSize}) {
-    if (isLast) {
-      throw StateError('Page.next() cannot be called when Page.isLast == true');
-    }
+    throwIfIsLast();
     final pageSize_ = pageSize ?? _pageSize;
 
     return _api
