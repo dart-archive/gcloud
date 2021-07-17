@@ -112,7 +112,7 @@ class User extends Person {
   String? nickname;
 
   @db.StringListProperty(propertyName: 'language')
-  List<String> languages = const [];
+  List<String>? languages = const [];
 
   @override
   bool sameAs(Object other) {
@@ -125,12 +125,12 @@ class User extends Person {
       if (user.languages == null) return true;
       return false;
     }
-    if (languages.length != user.languages.length) {
+    if (languages!.length != user.languages?.length) {
       return false;
     }
 
-    for (var i = 0; i < languages.length; i++) {
-      if (languages[i] != user.languages[i]) {
+    for (var i = 0; i < languages!.length; i++) {
+      if (languages![i] != user.languages![i]) {
         return false;
       }
     }
@@ -484,9 +484,9 @@ void runTests(db.DatastoreDB store, String? namespace) {
       }).toList();
 
       var fooUsers =
-          users.where((User u) => u.languages.contains('foo')).toList();
+          users.where((User u) => u.languages!.contains('foo')).toList();
       var barUsers =
-          users.where((User u) => u.languages.contains('bar')).toList();
+          users.where((User u) => u.languages!.contains('bar')).toList();
       var usersWithWife = users
           .where((User u) => u.wife == root.append(User, id: 42 + 3))
           .toList();

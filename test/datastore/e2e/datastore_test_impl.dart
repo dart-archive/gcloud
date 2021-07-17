@@ -65,7 +65,7 @@ void runTests(Datastore datastore, String? namespace) {
                 autoIdInserts: autoIdEntities,
                 transaction: transaction)
             .then((result) {
-          if (autoIdEntities != null && autoIdEntities.isNotEmpty) {
+          if (autoIdEntities.isNotEmpty) {
             expect(
                 result.autoIdInsertKeys.length, equals(autoIdEntities.length));
           }
@@ -76,7 +76,7 @@ void runTests(Datastore datastore, String? namespace) {
       return datastore
           .commit(inserts: entities, autoIdInserts: autoIdEntities)
           .then((result) {
-        if (autoIdEntities != null && autoIdEntities.isNotEmpty) {
+        if (autoIdEntities.isNotEmpty) {
           expect(result.autoIdInsertKeys.length, equals(autoIdEntities.length));
         }
         return result.autoIdInsertKeys;
@@ -110,7 +110,7 @@ void runTests(Datastore datastore, String? namespace) {
     if (key.elements.isEmpty) return false;
 
     for (var element in key.elements) {
-      if (element.kind == null || element.kind is! String) return false;
+      if (element.kind is! String) return false;
       if (!ignoreIds) {
         if (element.id == null ||
             (element.id is! String && element.id is! int)) {

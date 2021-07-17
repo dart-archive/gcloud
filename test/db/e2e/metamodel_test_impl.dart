@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-
 library metamodel_test;
 
 import 'dart:async';
@@ -62,15 +61,14 @@ void runTests(datastore, db.DatastoreDB store) {
           return namespaceQuery.run().toList().then((namespaces) {
             expect(namespaces.length, greaterThanOrEqualTo(3));
             expect(namespaces, contains(cond((dynamic ns) => ns.name == null)));
-            expect(
-                namespaces, contains(cond((dynamic ns) => ns.name == 'FooNamespace')));
-            expect(
-                namespaces, contains(cond((dynamic ns) => ns.name == 'BarNamespace')));
+            expect(namespaces,
+                contains(cond((dynamic ns) => ns.name == 'FooNamespace')));
+            expect(namespaces,
+                contains(cond((dynamic ns) => ns.name == 'BarNamespace')));
 
             var futures = <Future>[];
             for (var namespace in namespaces) {
-              if (!(namespace == null ||
-                  namespace.name == 'FooNamespace' ||
+              if (!(namespace.name == 'FooNamespace' ||
                   namespace.name == 'BarNamespace')) {
                 continue;
               }
@@ -79,14 +77,20 @@ void runTests(datastore, db.DatastoreDB store) {
               futures.add(kindQuery.run().toList().then((List<db.Model> kinds) {
                 expect(kinds.length, greaterThanOrEqualTo(2));
                 if (namespace.name == null) {
-                  expect(kinds, contains(cond((dynamic k) => k.name == 'NullKind')));
-                  expect(kinds, contains(cond((dynamic k) => k.name == 'NullKind2')));
+                  expect(kinds,
+                      contains(cond((dynamic k) => k.name == 'NullKind')));
+                  expect(kinds,
+                      contains(cond((dynamic k) => k.name == 'NullKind2')));
                 } else if (namespace.name == 'FooNamespace') {
-                  expect(kinds, contains(cond((dynamic k) => k.name == 'FooKind')));
-                  expect(kinds, contains(cond((dynamic k) => k.name == 'FooKind2')));
+                  expect(kinds,
+                      contains(cond((dynamic k) => k.name == 'FooKind')));
+                  expect(kinds,
+                      contains(cond((dynamic k) => k.name == 'FooKind2')));
                 } else if (namespace.name == 'BarNamespace') {
-                  expect(kinds, contains(cond((dynamic k) => k.name == 'BarKind')));
-                  expect(kinds, contains(cond((dynamic k) => k.name == 'BarKind2')));
+                  expect(kinds,
+                      contains(cond((dynamic k) => k.name == 'BarKind')));
+                  expect(kinds,
+                      contains(cond((dynamic k) => k.name == 'BarKind2')));
                 }
               }));
             }
