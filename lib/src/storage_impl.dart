@@ -321,8 +321,10 @@ class _BucketPageImpl implements Page<String> {
   bool get isLast => _nextPageToken == null;
 
   @override
-  Future<Page<String>> next({int? pageSize}) {
-    if (isLast) return Future.value(null);
+  Future<Page<String>> next({int? pageSize}) async {
+    if (isLast) {
+      throw StateError('Page.next() cannot be called when Page.isLast == true');
+    }
     pageSize ??= _pageSize;
 
     return _storage._listBuckets(pageSize!, _nextPageToken).then((response) {
@@ -354,8 +356,10 @@ class _ObjectPageImpl implements Page<BucketEntry> {
   bool get isLast => _nextPageToken == null;
 
   @override
-  Future<Page<BucketEntry>> next({int? pageSize}) {
-    if (isLast) return Future.value(null);
+  Future<Page<BucketEntry>> next({int? pageSize}) async {
+    if (isLast) {
+      throw StateError('Page.next() cannot be called when Page.isLast == true');
+    }
     pageSize ??= _pageSize;
 
     return _bucket

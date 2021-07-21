@@ -535,7 +535,9 @@ class _ExpandoModelDescription extends _ModelDescription<ExpandoModel> {
 
     realFieldNames = Set<String>.from(_field2PropertyName.keys);
     realPropertyNames = Set<String>.from(_property2FieldName.keys);
-    usedNames = <String>{}..addAll(realFieldNames)..addAll(realPropertyNames);
+    usedNames = <String>{}
+      ..addAll(realFieldNames)
+      ..addAll(realPropertyNames);
   }
 
   @override

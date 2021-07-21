@@ -1,7 +1,6 @@
 // Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-// @dart=2.9
 
 library raw_datastore_test_utils;
 
@@ -19,8 +18,12 @@ const TEST_UNINDEXED_PROPERTY = 'unindexedProp';
 const TEST_BLOB_INDEXED_PROPERTY = 'blobPropertyIndexed';
 final TEST_BLOB_INDEXED_VALUE = BlobValue([0xaa, 0xaa, 0xff, 0xff]);
 
-Key buildKey(int i,
-    {Function idFunction, String kind = TEST_KIND, Partition p}) {
+Key buildKey(
+  int i, {
+  Object Function(int)? idFunction,
+  String kind = TEST_KIND,
+  Partition? p,
+}) {
   var path = [KeyElement(kind, idFunction == null ? null : idFunction(i))];
   return Key(path, partition: p ?? Partition.DEFAULT);
 }
@@ -40,8 +43,13 @@ Map<String, Object> buildProperties(int i) {
   };
 }
 
-List<Key> buildKeys(int from, int to,
-    {Function idFunction, String kind = TEST_KIND, Partition partition}) {
+List<Key> buildKeys(
+  int from,
+  int to, {
+  Object Function(int)? idFunction,
+  String kind = TEST_KIND,
+  Partition? partition,
+}) {
   var keys = <Key>[];
   for (var i = from; i < to; i++) {
     keys.add(buildKey(i, idFunction: idFunction, kind: kind, p: partition));
@@ -49,8 +57,13 @@ List<Key> buildKeys(int from, int to,
   return keys;
 }
 
-List<Entity> buildEntities(int from, int to,
-    {Function idFunction, String kind = TEST_KIND, Partition partition}) {
+List<Entity> buildEntities(
+  int from,
+  int to, {
+  Object Function(int)? idFunction,
+  String kind = TEST_KIND,
+  Partition? partition,
+}) {
   var entities = <Entity>[];
   var unIndexedProperties = <String>{};
   for (var i = from; i < to; i++) {
@@ -64,7 +77,7 @@ List<Entity> buildEntities(int from, int to,
 }
 
 List<Entity> buildEntityWithAllProperties(int from, int to,
-    {String kind = TEST_KIND, Partition partition}) {
+    {String kind = TEST_KIND, Partition? partition}) {
   var us42 = const Duration(microseconds: 42);
   var unIndexed = <String>{'blobProperty'};
 

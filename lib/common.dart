@@ -21,8 +21,7 @@ abstract class Page<T> {
   ///
   /// The future returned completes with the next page or results.
   ///
-  /// If [next] is called on the last page the returned future completes
-  /// with `null`.
+  /// Throws if [next] is called on the last page.
   Future<Page<T>> next({int pageSize});
 }
 

@@ -1,3 +1,11 @@
+## 0.8.2
+
+ * **BREAKING CHANGE:** `Page.next()` throws if `Page.isLast`, this change only
+   affects code not migrated to null-safety, when paging through results in
+   pub-sub and storage without checking `Page.isLast`.
+   Code fully migrated to null-safety will have experienced a runtime null check
+   error, and paging code for datastore already throw an `Error`.
+
 ## 0.8.1
 
  * `lookupOrNull` method in `DatastoreDB` and `Transaction`. 

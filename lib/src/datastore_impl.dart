@@ -6,6 +6,7 @@ library gcloud.datastore_impl;
 
 import 'dart:async';
 
+import 'package:gcloud/src/common_utils.dart';
 import 'package:googleapis/datastore/v1.dart' as api;
 import 'package:http/http.dart' as http;
 
@@ -613,15 +614,11 @@ class QueryPageImpl implements Page<datastore.Entity> {
   List<datastore.Entity> get items => _entities;
 
   @override
-  Future<Page<datastore.Entity>> next({int? pageSize}) {
+  Future<Page<datastore.Entity>> next({int? pageSize}) async {
     // NOTE: We do not respect [pageSize] here, the only mechanism we can
     // really use is `query.limit`, but this is user-specified when making
     // the query.
-    if (isLast) {
-      return Future.sync(() {
-        throw ArgumentError('Cannot call next() on last page.');
-      });
-    }
+    throwIfIsLast();
 
     return QueryPageImpl.runQuery(
             _api, _project, _nextRequest, _remainingNumberOfEntities)

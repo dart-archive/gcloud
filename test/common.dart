@@ -95,7 +95,7 @@ class MockClient extends http.BaseClient {
   }
 
   Future<http.Response> respondEmpty() {
-    return Future.value(http.Response('', 200, headers: RESPONSE_HEADERS));
+    return Future.value(http.Response('{}', 200, headers: RESPONSE_HEADERS));
   }
 
   Future<http.Response> respondInitiateResumableUpload(project) {

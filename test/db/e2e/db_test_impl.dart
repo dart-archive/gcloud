@@ -1,7 +1,6 @@
 // Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-// @dart=2.9
 
 library db_test;
 
@@ -58,13 +57,13 @@ import '../../datastore/e2e/datastore_test_impl.dart' as datastore_test;
 @db.Kind()
 class Person extends db.Model {
   @db.StringProperty()
-  String name;
+  String? name;
 
   @db.IntProperty()
-  int age;
+  int? age;
 
   @db.ModelKeyProperty(propertyName: 'mangledWife')
-  db.Key wife;
+  db.Key? wife;
 
   @override
   bool operator ==(Object other) => sameAs(other);
@@ -84,13 +83,13 @@ class Person extends db.Model {
 
 @db.Kind(idType: db.IdType.String)
 class PersonStringId extends db.Model<String> {
-  String get name => id;
+  String? get name => id;
 
   @db.IntProperty()
-  int age;
+  int? age;
 
   @db.ModelKeyProperty(propertyName: 'mangledWife')
-  db.Key wife;
+  db.Key? wife;
 
   @override
   bool operator ==(Object other) => sameAs(other);
@@ -110,10 +109,10 @@ class PersonStringId extends db.Model<String> {
 @db.Kind()
 class User extends Person {
   @db.StringProperty()
-  String nickname;
+  String? nickname;
 
   @db.StringListProperty(propertyName: 'language')
-  List<String> languages = const [];
+  List<String>? languages = const [];
 
   @override
   bool sameAs(Object other) {
@@ -121,17 +120,17 @@ class User extends Person {
       return false;
     }
 
-    var user = other as User;
+    var user = other;
     if (languages == null) {
       if (user.languages == null) return true;
       return false;
     }
-    if (languages.length != user.languages.length) {
+    if (languages!.length != user.languages?.length) {
       return false;
     }
 
-    for (var i = 0; i < languages.length; i++) {
-      if (languages[i] != user.languages[i]) {
+    for (var i = 0; i < languages!.length; i++) {
+      if (languages![i] != user.languages![i]) {
         return false;
       }
     }
@@ -146,10 +145,10 @@ class User extends Person {
 @db.Kind()
 class ExpandoPerson extends db.ExpandoModel {
   @db.StringProperty()
-  String name;
+  String? name;
 
   @db.StringProperty(propertyName: 'NN')
-  String nickname;
+  String? nickname;
 
   @override
   bool operator ==(Object other) {
@@ -170,10 +169,12 @@ class ExpandoPerson extends db.ExpandoModel {
 
 Future sleep(Duration duration) => Future.delayed(duration);
 
-void runTests(db.DatastoreDB store, String namespace) {
-  var partition = store.newPartition(namespace);
+void runTests(db.DatastoreDB store, String? namespace) {
+  var partition = namespace != null
+      ? store.newPartition(namespace)
+      : store.defaultPartition;
 
-  void compareModels(List<db.Model> expectedModels, List<db.Model> models,
+  void compareModels(List<db.Model> expectedModels, List<db.Model?> models,
       {bool anyOrder = false}) {
     expect(models.length, equals(expectedModels.length));
     if (anyOrder) {
@@ -205,7 +206,7 @@ void runTests(db.DatastoreDB store, String namespace) {
         return commitTransaction.commit();
       }).then((_) {
         return store.withTransaction((db.Transaction deleteTransaction) {
-          return deleteTransaction.lookup(keys).then((List<db.Model> models) {
+          return deleteTransaction.lookup(keys).then((List<db.Model?> models) {
             compareModels(objects, models);
             deleteTransaction.queueMutations(deletes: keys);
             return deleteTransaction.commit();
@@ -214,12 +215,12 @@ void runTests(db.DatastoreDB store, String namespace) {
       });
     } else {
       return store.commit(inserts: objects).then(expectAsync1((_) {
-        return store.lookup(keys).then(expectAsync1((List<db.Model> models) {
+        return store.lookup(keys).then(expectAsync1((List<db.Model?> models) {
           compareModels(objects, models);
           return store.commit(deletes: keys).then(expectAsync1((_) {
             return store
                 .lookup(keys)
-                .then(expectAsync1((List<db.Model> models) {
+                .then(expectAsync1((List<db.Model?> models) {
               for (var i = 0; i < models.length; i++) {
                 expect(models[i], isNull);
               }
@@ -233,9 +234,7 @@ void runTests(db.DatastoreDB store, String namespace) {
   group('key', () {
     test('equal_and_hashcode', () {
       var k1 = store.emptyKey.append(User, id: 10).append(Person, id: 12);
-      var k2 = store
-          .newPartition(null)
-          .emptyKey
+      var k2 = store.defaultPartition.emptyKey
           .append(User, id: 10)
           .append(Person, id: 12);
       expect(k1, equals(k2));
@@ -407,7 +406,7 @@ void runTests(db.DatastoreDB store, String namespace) {
           // because an id doesn't need to be globally unique, only under
           // entities with the same parent.
 
-          return store.lookup(keys).then(expectAsync1((List<db.Model> models) {
+          return store.lookup(keys).then(expectAsync1((List<db.Model?> models) {
             // Since the id/parentKey fields are set after commit and a lookup
             // returns new model instances, we can do full model comparison
             // here.
@@ -462,32 +461,32 @@ void runTests(db.DatastoreDB store, String namespace) {
 
       var usersSortedNameDescNicknameAsc = List<User>.from(users);
       usersSortedNameDescNicknameAsc.sort((User a, User b) {
-        var result = b.name.compareTo(a.name);
-        if (result == 0) return a.nickname.compareTo(b.nickname);
+        var result = b.name!.compareTo(a.name!);
+        if (result == 0) return a.nickname!.compareTo(b.nickname!);
         return result;
       });
 
       var usersSortedNameDescNicknameDesc = List<User>.from(users);
       usersSortedNameDescNicknameDesc.sort((User a, User b) {
-        var result = b.name.compareTo(a.name);
-        if (result == 0) return b.nickname.compareTo(a.nickname);
+        var result = b.name!.compareTo(a.name!);
+        if (result == 0) return b.nickname!.compareTo(a.nickname!);
         return result;
       });
 
       var usersSortedAndFilteredNameDescNicknameAsc =
           usersSortedNameDescNicknameAsc.where((User u) {
-        return LOWER_BOUND.compareTo(u.name) <= 0;
+        return LOWER_BOUND.compareTo(u.name!) <= 0;
       }).toList();
 
       var usersSortedAndFilteredNameDescNicknameDesc =
           usersSortedNameDescNicknameDesc.where((User u) {
-        return LOWER_BOUND.compareTo(u.name) <= 0;
+        return LOWER_BOUND.compareTo(u.name!) <= 0;
       }).toList();
 
       var fooUsers =
-          users.where((User u) => u.languages.contains('foo')).toList();
+          users.where((User u) => u.languages!.contains('foo')).toList();
       var barUsers =
-          users.where((User u) => u.languages.contains('bar')).toList();
+          users.where((User u) => u.languages!.contains('bar')).toList();
       var usersWithWife = users
           .where((User u) => u.wife == root.append(User, id: 42 + 3))
           .toList();
@@ -587,7 +586,7 @@ void runTests(db.DatastoreDB store, String namespace) {
 
             // Filter equals
             () async {
-              var wifeKey = root.append(User, id: usersWithWife.first.wife.id);
+              var wifeKey = root.append(User, id: usersWithWife.first.wife!.id);
               var query = store.query<User>(partition: partition)
                 ..filter('wife =', wifeKey)
                 ..run();
@@ -656,14 +655,14 @@ void runTests(db.DatastoreDB store, String namespace) {
                 ]),
 
             // Make sure queries don't return results
-            () => store.lookup(allKeys).then((List<db.Model> models) {
+            () => store.lookup(allKeys).then((List<db.Model?> models) {
                   expect(models.length, equals(allKeys.length));
                   for (var model in models) {
                     expect(model, isNull);
                   }
                 }),
           ];
-          return Future.forEach(tests, (f) => f());
+          return Future.forEach(tests, (dynamic f) => f());
         });
       });
     });
@@ -732,8 +731,8 @@ Future<void> waitUntilEntitiesHelper<T extends db.Model>(
 }
 
 Future main() async {
-  db.DatastoreDB store;
-  BaseClient client;
+  late db.DatastoreDB store;
+  BaseClient? client;
 
   var scopes = datastore_impl.DatastoreImpl.SCOPES;
   await withAuthClient(scopes, (String project, httpClient) {

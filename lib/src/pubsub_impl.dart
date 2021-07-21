@@ -477,8 +477,8 @@ class _TopicPageImpl implements Page<Topic> {
   bool get isLast => _nextPageToken == null;
 
   @override
-  Future<Page<Topic>> next({int? pageSize}) {
-    if (isLast) return Future.value(null);
+  Future<Page<Topic>> next({int? pageSize}) async {
+    throwIfIsLast();
     final pageSize_ = pageSize ?? _pageSize;
 
     return _api._listTopics(pageSize_, _nextPageToken).then((response) {
@@ -509,7 +509,7 @@ class _SubscriptionPageImpl implements Page<Subscription> {
 
   @override
   Future<Page<Subscription>> next({int? pageSize}) {
-    if (_nextPageToken == null) return Future.value(null);
+    throwIfIsLast();
     final pageSize_ = pageSize ?? _pageSize;
 
     return _api
