@@ -18,16 +18,16 @@ abstract class ModelDB {
   ds.Entity toDatastoreEntity(Model model);
 
   /// Converts a [ds.Entity] to a [Model] instance.
-  T fromDatastoreEntity<T extends Model>(ds.Entity entity);
+  T? fromDatastoreEntity<T extends Model>(ds.Entity? entity);
 
   /// Returns the kind name for instances of [type].
   String kindName(Type type);
 
   /// Returns the property name used for [fieldName]
   // TODO: Get rid of this eventually.
-  String fieldNameToPropertyName(String kind, String fieldName);
+  String? fieldNameToPropertyName(String kind, String fieldName);
 
   /// Converts [value] according to the [Property] named [fieldName] in [kind].
-  Object toDatastoreValue(String kind, String fieldName, Object value,
+  Object? toDatastoreValue(String kind, String fieldName, Object? value,
       {bool forComparison = false});
 }

@@ -1,3 +1,57 @@
+## 0.8.2
+
+ * **BREAKING CHANGE:** `Page.next()` throws if `Page.isLast`, this change only
+   affects code not migrated to null-safety, when paging through results in
+   pub-sub and storage without checking `Page.isLast`.
+   Code fully migrated to null-safety will have experienced a runtime null check
+   error, and paging code for datastore already throw an `Error`.
+
+## 0.8.1
+
+ * `lookupOrNull` method in `DatastoreDB` and `Transaction`. 
+
+## 0.8.0
+
+ * Require Dart 2.12 or later
+ * Migration to null safety.
+
+## 0.7.3
+ * Fixed issue in reflection code affecting `Model<int>` and `Model<String>`,
+   but not `Model<dynamic>`.
+
+## 0.7.2
+
+ * Added `delimiter` to `Bucket.list` and `Bucket.page`
+   (`0.7.1` only added them the implementation).
+
+## 0.7.1
+
+ * Added `delimiter` to `Bucket.list` and `Bucket.page`.
+ * Fix typing of `ExpandoModel` to `ExpandoModel<T>` as we should have done in
+   version `0.7.0`.
+
+## 0.7.0+2
+ 
+ * Upgrade dependency on `_discoveryapis_commons`, changing `ApiRequestError`
+   from an `Error` to an `Exception`. Version constraints on
+   `_discoveryapis_commons` allows both new and old versions.
+
+## 0.7.0+1
+
+ * Fix path separator in Bucket.list().
+ 
+## 0.7.0
+
+ * **BREAKING CHANGE:** Add generics support for `Model.id`.  
+   It is now possible to define the type of the id a model has (either `String`
+   or `int`). A model can now be defined as
+   `class MyModel extends Model<String> {}` and `myModel.id` will then
+   be of type `String` and `myModel.key` of type `Key<String>`.
+
+## 0.6.4
+
+ * Require minimum Dart SDK `2.3.0`.
+
 ## 0.6.3
 
  * Added `DatastoreDB.lookupValue()`

@@ -8,12 +8,12 @@ part of gcloud.db;
 ///
 /// The [Key] can be incomplete if it's id is `null`. In this case the id will
 /// be automatically allocated and set at commit time.
-class Key {
+class Key<T> {
   // Either KeyImpl or PartitionImpl
   final Object _parent;
 
-  final Type type;
-  final Object id;
+  final Type? type;
+  final T? id;
 
   Key(Key parent, this.type, this.id) : _parent = parent {
     if (type == null) {
@@ -30,7 +30,7 @@ class Key {
         id = null;
 
   /// Parent of this [Key].
-  Key get parent {
+  Key? get parent {
     if (_parent is Key) {
       return _parent as Key;
     }
@@ -43,23 +43,28 @@ class Key {
     while (obj is! Partition) {
       obj = (obj as Key)._parent;
     }
-    return obj as Partition;
+    return obj;
   }
 
-  Key append(Type modelType, {Object id}) {
-    return Key(this, modelType, id);
+  Key<U> append<U>(Type modelType, {U? id}) {
+    return Key<U>(this, modelType, id);
   }
 
   bool get isEmpty => _parent is Partition;
 
-  operator ==(Object other) {
+  @override
+  bool operator ==(Object other) {
     return other is Key &&
         _parent == other._parent &&
         type == other.type &&
         id == other.id;
   }
 
+  @override
   int get hashCode => _parent.hashCode ^ type.hashCode ^ id.hashCode;
+
+  /// Converts `Key<dynamic>` to `Key<U>`.
+  Key<U> cast<U>() => Key<U>(parent!, type, id as U?);
 }
 
 /// Represents a datastore partition.
@@ -67,7 +72,7 @@ class Key {
 /// A datastore is partitioned into namespaces. The default namespace is
 /// `null`.
 class Partition {
-  final String namespace;
+  final String? namespace;
 
   Partition(this.namespace) {
     if (namespace == '') {
@@ -81,22 +86,24 @@ class Partition {
   /// group.
   Key get emptyKey => Key.emptyKey(this);
 
-  operator ==(Object other) {
+  @override
+  bool operator ==(Object other) {
     return other is Partition && namespace == other.namespace;
   }
 
+  @override
   int get hashCode => namespace.hashCode;
 }
 
 /// Superclass for all model classes.
 ///
-/// Every model class has a [id] -- which must be an integer or a string, and
+/// Every model class has a [id] of type [T] which must be `int` or `String`, and
 /// a [parentKey]. The [key] getter is returning the key for the model object.
-abstract class Model {
-  Object id;
-  Key parentKey;
+abstract class Model<T> {
+  T? id;
+  Key? parentKey;
 
-  Key get key => parentKey.append(this.runtimeType, id: id);
+  Key<T> get key => parentKey!.append(runtimeType, id: id);
 }
 
 /// Superclass for all expanded model classes.
@@ -104,10 +111,11 @@ abstract class Model {
 /// The [ExpandoModel] class adds support for having dynamic properties. You can
 /// set arbitrary fields on these models. The expanded values must be values
 /// accepted by the [RawDatastore] implementation.
-abstract class ExpandoModel extends Model {
-  final Map<String, Object> additionalProperties = {};
+abstract class ExpandoModel<T> extends Model<T> {
+  final Map<String, Object?> additionalProperties = {};
 
-  Object noSuchMethod(Invocation invocation) {
+  @override
+  Object? noSuchMethod(Invocation invocation) {
     var name = mirrors.MirrorSystem.getName(invocation.memberName);
     if (name.endsWith('=')) name = name.substring(0, name.length - 1);
     if (invocation.isGetter) {

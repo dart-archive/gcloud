@@ -10,7 +10,7 @@ import '../db.dart' as db;
 class Namespace extends db.ExpandoModel {
   static const int EmptyNamespaceId = 1;
 
-  String get name {
+  String? get name {
     // The default namespace will be reported with id 1.
     if (id == Namespace.EmptyNamespaceId) return null;
     return id as String;

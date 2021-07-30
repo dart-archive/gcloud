@@ -21,8 +21,7 @@ abstract class Page<T> {
   ///
   /// The future returned completes with the next page or results.
   ///
-  /// If [next] is called on the last page the returned future completes
-  /// with `null`.
+  /// Throws if [next] is called on the last page.
   Future<Page<T>> next({int pageSize});
 }
 
@@ -35,8 +34,8 @@ class StreamFromPages<T> {
   bool _pendingRequest = false;
   bool _paused = false;
   bool _cancelled = false;
-  Page<T> _currentPage;
-  StreamController<T> _controller;
+  late Page<T> _currentPage;
+  late final StreamController<T> _controller;
 
   StreamFromPages(this._firstPageProvider) {
     _controller = StreamController<T>(
@@ -49,7 +48,7 @@ class StreamFromPages<T> {
 
   Stream<T> get stream => _controller.stream;
 
-  void _handleError(e, StackTrace s) {
+  void _handleError(Object e, StackTrace s) {
     _controller.addError(e, s);
     _controller.close();
   }
@@ -66,24 +65,24 @@ class StreamFromPages<T> {
     }
   }
 
-  _onListen() {
-    int pageSize = _PAGE_SIZE;
+  void _onListen() {
+    var pageSize = _PAGE_SIZE;
     _pendingRequest = true;
     _firstPageProvider(pageSize).then(_handlePage, onError: _handleError);
   }
 
-  _onPause() {
+  void _onPause() {
     _paused = true;
   }
 
-  _onResume() {
+  void _onResume() {
     _paused = false;
     if (_pendingRequest) return;
     _pendingRequest = true;
     _currentPage.next().then(_handlePage, onError: _handleError);
   }
 
-  _onCancel() {
+  void _onCancel() {
     _cancelled = true;
   }
 }

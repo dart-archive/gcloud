@@ -56,34 +56,45 @@ class ModelDBImpl implements ModelDB {
     _initialize([mirrors.currentMirrorSystem().findLibrary(librarySymbol)]);
   }
 
-  /// Converts a [ds.Key] to a [Key].
+  /// Converts a [ds.Key] to a [Key]. The key returned will have the correct
+  /// id type which is either `Key<String>` or `Key<int>`.
+  @override
   Key fromDatastoreKey(ds.Key datastoreKey) {
     var namespace = Partition(datastoreKey.partition.namespace);
-    Key key = namespace.emptyKey;
+    var key = namespace.emptyKey;
     for (var element in datastoreKey.elements) {
-      var type = _type2ModelDesc[_kind2ModelDesc[element.kind]];
+      var type = _type2ModelDesc[_kind2ModelDesc[element.kind]!];
       if (type == null) {
         throw StateError(
             'Could not find a model associated with kind "${element.kind}". '
             'Please ensure a model class was annotated with '
             '`@Kind(name: "${element.kind}")`.');
       }
-      key = key.append(type, id: element.id);
+      final elementId = element.id;
+      if (elementId is String) {
+        key = key.append<String>(type, id: elementId);
+      } else if (elementId is int) {
+        key = key.append<int>(type, id: elementId);
+      } else {
+        throw StateError('Key must be either String or int, but '
+            'was ${elementId.runtimeType} for key ${element.kind}');
+      }
     }
     return key;
   }
 
   /// Converts a [Key] to a [ds.Key].
+  @override
   ds.Key toDatastoreKey(Key dbKey) {
-    List<ds.KeyElement> elements = [];
+    var elements = <ds.KeyElement>[];
     var currentKey = dbKey;
     while (!currentKey.isEmpty) {
       var id = currentKey.id;
 
-      var modelDescription = _modelDescriptionForType(currentKey.type);
+      var modelDescription = _modelDescriptionForType(currentKey.type)!;
       var kind = modelDescription.kindName(this);
 
-      bool useIntegerId = modelDescription.useIntegerId;
+      var useIntegerId = modelDescription.useIntegerId;
 
       if (useIntegerId && id != null && id is! int) {
         throw ArgumentError('Expected an integer id property but '
@@ -95,17 +106,18 @@ class ModelDBImpl implements ModelDB {
       }
 
       elements.add(ds.KeyElement(kind, id));
-      currentKey = currentKey.parent;
+      currentKey = currentKey.parent!;
     }
-    Partition partition = currentKey._parent as Partition;
+    var partition = currentKey._parent as Partition;
     return ds.Key(elements.reversed.toList(),
         partition: ds.Partition(partition.namespace));
   }
 
   /// Converts a [Model] instance to a [ds.Entity].
+  @override
   ds.Entity toDatastoreEntity(Model model) {
     try {
-      var modelDescription = _modelDescriptionForType(model.runtimeType);
+      var modelDescription = _modelDescriptionForType(model.runtimeType)!;
       return modelDescription.encodeModel(this, model);
     } catch (error, stack) {
       throw ArgumentError('Error while encoding entity ($error, $stack).');
@@ -113,10 +125,12 @@ class ModelDBImpl implements ModelDB {
   }
 
   /// Converts a [ds.Entity] to a [Model] instance.
-  T fromDatastoreEntity<T extends Model>(ds.Entity entity) {
-    if (entity == null) return null;
-
-    Key key = fromDatastoreKey(entity.key);
+  @override
+  T? fromDatastoreEntity<T extends Model>(ds.Entity? entity) {
+    if (entity == null) {
+      return null;
+    }
+    var key = fromDatastoreKey(entity.key);
     var kind = entity.key.elements.last.kind;
     var modelDescription = _kind2ModelDesc[kind];
     if (modelDescription == null) {
@@ -134,6 +148,7 @@ class ModelDBImpl implements ModelDB {
   /// Returns the string representation of the kind of model class [type].
   ///
   /// If the model class `type` is not found it will throw an `ArgumentError`.
+  @override
   String kindName(Type type) {
     var kind = _modelDesc2Type[type]?.kind;
     if (kind == null) {
@@ -144,7 +159,8 @@ class ModelDBImpl implements ModelDB {
 
   /// Returns the name of the property corresponding to the kind [kind] and
   /// [fieldName].
-  String fieldNameToPropertyName(String kind, String fieldName) {
+  @override
+  String? fieldNameToPropertyName(String kind, String fieldName) {
     var modelDescription = _kind2ModelDesc[kind];
     if (modelDescription == null) {
       throw ArgumentError('The kind "$kind" is unknown.');
@@ -153,7 +169,8 @@ class ModelDBImpl implements ModelDB {
   }
 
   /// Converts [value] according to the [Property] named [name] in [type].
-  Object toDatastoreValue(String kind, String fieldName, Object value,
+  @override
+  Object? toDatastoreValue(String kind, String fieldName, Object? value,
       {bool forComparison = false}) {
     var modelDescription = _kind2ModelDesc[kind];
     if (modelDescription == null) {
@@ -169,14 +186,14 @@ class ModelDBImpl implements ModelDB {
 
   Map<String, Property> _propertiesForModel(
       _ModelDescription modelDescription) {
-    return _modelDesc2Properties[modelDescription];
+    return _modelDesc2Properties[modelDescription]!;
   }
 
-  _ModelDescription _modelDescriptionForType(Type type) {
-    return _modelDesc2Type[type];
+  _ModelDescription? _modelDescriptionForType(Type? type) {
+    return _modelDesc2Type[type!];
   }
 
-  mirrors.ClassMirror _modelClass(_ModelDescription md) {
+  mirrors.ClassMirror? _modelClass(_ModelDescription md) {
     return _modelDesc2ClassMirror[md];
   }
 
@@ -209,15 +226,15 @@ class ModelDBImpl implements ModelDB {
   }
 
   void _tryLoadNewModelClass(mirrors.ClassMirror classMirror) {
-    Kind kindAnnotation;
-    for (mirrors.InstanceMirror instance in classMirror.metadata) {
+    Kind? kindAnnotation;
+    for (var instance in classMirror.metadata) {
       if (instance.reflectee.runtimeType == Kind) {
         if (kindAnnotation != null) {
           throw StateError(
               'Cannot have more than one ModelMetadata() annotation '
               'on a Model class');
         }
-        kindAnnotation = instance.reflectee as Kind;
+        kindAnnotation = instance.reflectee as Kind?;
       }
     }
 
@@ -227,9 +244,7 @@ class ModelDBImpl implements ModelDB {
       var stringId = kindAnnotation.idType == IdType.String;
 
       // Fall back to the class name.
-      if (name == null) {
-        name = mirrors.MirrorSystem.getName(classMirror.simpleName);
-      }
+      name ??= mirrors.MirrorSystem.getName(classMirror.simpleName);
 
       // This constraint should be guaranteed by the Kind() const constructor.
       assert((integerId && !stringId) || (!integerId && stringId));
@@ -298,8 +313,8 @@ class ModelDBImpl implements ModelDB {
 
   Map<String, Property> _propertiesFromModelDescription(
       mirrors.ClassMirror modelClassMirror) {
-    var properties = Map<String, Property>();
-    var propertyNames = Set<String>();
+    var properties = <String, Property>{};
+    var propertyNames = <String>{};
 
     // Loop over all classes in the inheritance path up to the Object class.
     while (modelClassMirror.superclass != null) {
@@ -309,8 +324,7 @@ class ModelDBImpl implements ModelDB {
           .forEach((Symbol fieldSymbol, mirrors.DeclarationMirror decl) {
         // Look if the symbol is a getter and we have metadata attached to it.
         if (memberMap.containsKey(fieldSymbol) &&
-            memberMap[fieldSymbol].isGetter &&
-            decl.metadata != null) {
+            memberMap[fieldSymbol]!.isGetter) {
           final propertyAnnotations = decl.metadata
               .map((mirrors.InstanceMirror mirror) => mirror.reflectee)
               .whereType<Property>()
@@ -328,7 +342,7 @@ class ModelDBImpl implements ModelDB {
 
             // Determine the name to use for the property in datastore.
             var propertyName = property.propertyName;
-            if (propertyName == null) propertyName = fieldName;
+            propertyName ??= fieldName;
 
             if (properties.containsKey(fieldName)) {
               throw StateError(
@@ -346,19 +360,23 @@ class ModelDBImpl implements ModelDB {
           }
         }
       });
-      modelClassMirror = modelClassMirror.superclass;
+      modelClassMirror = modelClassMirror.superclass!;
     }
 
     return properties;
   }
 
-  bool _isExpandoClass(mirrors.ClassMirror modelClass) {
-    while (modelClass.superclass != modelClass) {
-      if (modelClass.reflectedType == ExpandoModel) {
+  final _originalExpandoModelClass = mirrors.reflectClass(ExpandoModel);
+  final _originalModelClass = mirrors.reflectClass(Model);
+
+  bool _isExpandoClass(mirrors.ClassMirror? modelClass) {
+    while (modelClass != null && modelClass.superclass != modelClass) {
+      if (modelClass.originalDeclaration == _originalExpandoModelClass) {
         return true;
-      } else if (modelClass.reflectedType == Model) {
+      } else if (modelClass.originalDeclaration == _originalModelClass) {
         return false;
       }
+
       modelClass = modelClass.superclass;
     }
     throw StateError('This should be unreachable.');
@@ -368,8 +386,8 @@ class ModelDBImpl implements ModelDB {
 class _ModelDescription<T extends Model> {
   final HashMap<String, String> _property2FieldName = HashMap<String, String>();
   final HashMap<String, String> _field2PropertyName = HashMap<String, String>();
-  final Set<String> _indexedProperties = Set<String>();
-  final Set<String> _unIndexedProperties = Set<String>();
+  final Set<String> _indexedProperties = <String>{};
+  final Set<String> _unIndexedProperties = <String>{};
 
   final String kind;
   final bool useIntegerId;
@@ -381,8 +399,8 @@ class _ModelDescription<T extends Model> {
     db._propertiesForModel(this).forEach((String fieldName, Property prop) {
       // The default of a datastore property name is the fieldName.
       // It can be overridden with [Property.propertyName].
-      String propertyName = prop.propertyName;
-      if (propertyName == null) propertyName = fieldName;
+      var propertyName = prop.propertyName;
+      propertyName ??= fieldName;
 
       _property2FieldName[propertyName] = fieldName;
       _field2PropertyName[fieldName] = propertyName;
@@ -390,8 +408,8 @@ class _ModelDescription<T extends Model> {
 
     // Compute properties & unindexed properties
     db._propertiesForModel(this).forEach((String fieldName, Property prop) {
-      String propertyName = prop.propertyName;
-      if (propertyName == null) propertyName = fieldName;
+      var propertyName = prop.propertyName;
+      propertyName ??= fieldName;
 
       if (prop.indexed) {
         _indexedProperties.add(propertyName);
@@ -406,7 +424,7 @@ class _ModelDescription<T extends Model> {
   ds.Entity encodeModel(ModelDBImpl db, T model) {
     var key = db.toDatastoreKey(model.key);
 
-    var properties = <String, Object>{};
+    var properties = <String, Object?>{};
     var mirror = mirrors.reflect(model);
 
     db._propertiesForModel(this).forEach((String fieldName, Property prop) {
@@ -417,10 +435,15 @@ class _ModelDescription<T extends Model> {
         unIndexedProperties: _unIndexedProperties);
   }
 
-  _encodeProperty(ModelDBImpl db, Model model, mirrors.InstanceMirror mirror,
-      Map properties, String fieldName, Property prop) {
-    String propertyName = prop.propertyName;
-    if (propertyName == null) propertyName = fieldName;
+  void _encodeProperty(
+      ModelDBImpl db,
+      Model model,
+      mirrors.InstanceMirror mirror,
+      Map properties,
+      String fieldName,
+      Property prop) {
+    var propertyName = prop.propertyName;
+    propertyName ??= fieldName;
 
     var value =
         mirror.getField(mirrors.MirrorSystem.getSymbol(fieldName)).reflectee;
@@ -433,10 +456,8 @@ class _ModelDescription<T extends Model> {
   }
 
   H decodeEntity<H extends Model>(ModelDBImpl db, Key key, ds.Entity entity) {
-    if (entity == null) return null;
-
     // NOTE: this assumes a default constructor for the model classes!
-    var classMirror = db._modelClass(this);
+    var classMirror = db._modelClass(this)!;
     var mirror = classMirror.newInstance(const Symbol(''), []);
 
     // Set the id and the parent key
@@ -449,11 +470,11 @@ class _ModelDescription<T extends Model> {
     return mirror.reflectee as H;
   }
 
-  _decodeProperty(ModelDBImpl db, ds.Entity entity,
+  void _decodeProperty(ModelDBImpl db, ds.Entity entity,
       mirrors.InstanceMirror mirror, String fieldName, Property prop) {
-    String propertyName = fieldNameToPropertyName(fieldName);
+    var propertyName = fieldNameToPropertyName(fieldName);
 
-    var rawValue = entity.properties[propertyName];
+    var rawValue = entity.properties[propertyName!];
     var value = prop.decodePrimitiveValue(db, rawValue);
 
     if (!prop.validate(db, value)) {
@@ -470,17 +491,17 @@ class _ModelDescription<T extends Model> {
     }
   }
 
-  String fieldNameToPropertyName(String fieldName) {
+  String? fieldNameToPropertyName(String fieldName) {
     return _field2PropertyName[fieldName];
   }
 
-  String propertyNameToFieldName(ModelDBImpl db, String propertySearchName) {
+  String? propertyNameToFieldName(ModelDBImpl db, String propertySearchName) {
     return _property2FieldName[propertySearchName];
   }
 
-  Object encodeField(ModelDBImpl db, String fieldName, Object value,
+  Object? encodeField(ModelDBImpl db, String fieldName, Object? value,
       {bool enforceFieldExists = true, bool forComparison = false}) {
-    Property property = db._propertiesForModel(this)[fieldName];
+    var property = db._propertiesForModel(this)[fieldName];
     if (property != null) {
       return property.encodeValue(db, value, forComparison: forComparison);
     }
@@ -501,25 +522,29 @@ class _ModelDescription<T extends Model> {
 //   - we may end up dropping added properties in a write
 // ([usedNames] := [realFieldNames] + [realPropertyNames])
 class _ExpandoModelDescription extends _ModelDescription<ExpandoModel> {
-  Set<String> realFieldNames;
-  Set<String> realPropertyNames;
-  Set<String> usedNames;
+  late Set<String> realFieldNames;
+  late Set<String> realPropertyNames;
+  late Set<String> usedNames;
 
   _ExpandoModelDescription(String kind, bool useIntegerId)
       : super(kind, useIntegerId);
 
+  @override
   void initialize(ModelDBImpl db) {
     super.initialize(db);
 
     realFieldNames = Set<String>.from(_field2PropertyName.keys);
     realPropertyNames = Set<String>.from(_property2FieldName.keys);
-    usedNames = Set()..addAll(realFieldNames)..addAll(realPropertyNames);
+    usedNames = <String>{}
+      ..addAll(realFieldNames)
+      ..addAll(realPropertyNames);
   }
 
+  @override
   ds.Entity encodeModel(ModelDBImpl db, ExpandoModel model) {
     var entity = super.encodeModel(db, model);
     var properties = entity.properties;
-    model.additionalProperties.forEach((String key, Object value) {
+    model.additionalProperties.forEach((String key, Object? value) {
       // NOTE: All expanded properties will be indexed.
       if (!usedNames.contains(key)) {
         properties[key] = value;
@@ -528,12 +553,11 @@ class _ExpandoModelDescription extends _ModelDescription<ExpandoModel> {
     return entity;
   }
 
+  @override
   T decodeEntity<T extends Model>(ModelDBImpl db, Key key, ds.Entity entity) {
-    if (entity == null) return null;
-
-    ExpandoModel model = super.decodeEntity(db, key, entity);
+    var model = super.decodeEntity(db, key, entity) as ExpandoModel;
     var properties = entity.properties;
-    properties.forEach((String key, Object value) {
+    properties.forEach((String key, Object? value) {
       if (!usedNames.contains(key)) {
         model.additionalProperties[key] = value;
       }
@@ -542,34 +566,37 @@ class _ExpandoModelDescription extends _ModelDescription<ExpandoModel> {
     return model as T;
   }
 
+  @override
   String fieldNameToPropertyName(String fieldName) {
-    String propertyName = super.fieldNameToPropertyName(fieldName);
+    var propertyName = super.fieldNameToPropertyName(fieldName);
     // If the ModelDescription doesn't know about [fieldName], it's an
     // expanded property, where propertyName == fieldName.
-    if (propertyName == null) propertyName = fieldName;
+    propertyName ??= fieldName;
     return propertyName;
   }
 
+  @override
   String propertyNameToFieldName(ModelDBImpl db, String propertyName) {
-    String fieldName = super.propertyNameToFieldName(db, propertyName);
+    var fieldName = super.propertyNameToFieldName(db, propertyName);
     // If the ModelDescription doesn't know about [propertyName], it's an
     // expanded property, where propertyName == fieldName.
-    if (fieldName == null) fieldName = propertyName;
+    fieldName ??= propertyName;
     return fieldName;
   }
 
-  Object encodeField(ModelDBImpl db, String fieldName, Object value,
+  @override
+  Object encodeField(ModelDBImpl db, String fieldName, Object? value,
       {bool enforceFieldExists = true, bool forComparison = false}) {
     // The [enforceFieldExists] argument is intentionally ignored.
 
-    Object primitiveValue = super.encodeField(db, fieldName, value,
+    var primitiveValue = super.encodeField(db, fieldName, value,
         enforceFieldExists: false, forComparison: forComparison);
     // If superclass can't encode field, we return value here (and assume
     // it's primitive)
     // NOTE: Implicit assumption:
     // If value != null then superclass will return != null.
     // TODO: Ensure [value] is primitive in this case.
-    if (primitiveValue == null) primitiveValue = value;
-    return primitiveValue;
+    primitiveValue ??= value;
+    return primitiveValue!;
   }
 }

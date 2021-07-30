@@ -1,15 +1,14 @@
 // Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-
-@Tags(["e2e"])
+@Tags(['e2e'])
 
 library gcloud.storage;
 
 import 'dart:async';
 
-import 'package:googleapis/storage/v1.dart' as storage_api;
 import 'package:gcloud/storage.dart';
+import 'package:googleapis/storage/v1.dart' as storage_api;
 import 'package:test/test.dart';
 
 import '../common_e2e.dart';
@@ -29,9 +28,10 @@ final bytesResumableUpload =
     List<int>.generate(minResumableUpload, (e) => e & 255);
 
 void main() {
-  Storage storage;
-  String testBucketName;
-  Bucket testBucket;
+  var didSetUp = false;
+  late Storage storage;
+  late String testBucketName;
+  late Bucket testBucket;
 
   setUpAll(() {
     return withAuthClient(Storage.SCOPES, (String project, httpClient) {
@@ -43,16 +43,20 @@ void main() {
       // Create a shared bucket for all object tests.
       return storage.createBucket(testBucketName).then((_) {
         testBucket = storage.bucket(testBucketName);
+        didSetUp = true;
       });
     });
   });
 
-  tearDownAll(() {
+  tearDownAll(() async {
+    // Don't cleanup if setup failed
+    if (!didSetUp) {
+      return;
+    }
     // Deleting a bucket relies on eventually consistent behaviour, hence
     // the delay in attempt to prevent test flakiness.
-    return Future.delayed(STORAGE_LIST_DELAY, () {
-      return storage.deleteBucket(testBucketName);
-    });
+    await Future.delayed(STORAGE_LIST_DELAY);
+    await storage.deleteBucket(testBucketName);
   });
 
   group('bucket', () {
@@ -98,7 +102,7 @@ void main() {
         var r2 = await storage.deleteBucket(bucketName);
         expect(r2, isNull);
       }
-    });
+    }, skip: 'unable to test with uniform buckets enforced for account');
 
     test('create-error', () {
       storage.createBucket('goog-reserved').catchError(expectAsync1((e) {
@@ -110,7 +114,7 @@ void main() {
   group('object', () {
     // Run all object tests in the same bucket to try to avoid the rate-limit
     // for creating and deleting buckets while testing.
-    Future withTestBucket(Future function(Bucket bucket)) {
+    Future withTestBucket(Future Function(Bucket bucket) function) {
       return function(testBucket).whenComplete(() {
         // TODO: Clean the bucket.
       });
@@ -121,9 +125,8 @@ void main() {
         return withTestBucket((Bucket bucket) {
           return bucket.writeBytes('test', bytes).then(expectAsync1((info) {
             expect(info, isNotNull);
-            return bucket
-                .read('test')
-                .fold([], (p, e) => p..addAll(e)).then(expectAsync1((result) {
+            return bucket.read('test').fold<List<int>>(
+                [], (p, e) => p..addAll(e)).then(expectAsync1((result) {
               expect(result, bytes);
               return bucket.delete('test').then(expectAsync1((result) {
                 expect(result, isNull);
@@ -136,7 +139,7 @@ void main() {
       return Future.forEach([
         () => test('test-1', [1, 2, 3]),
         () => test('test-2', bytesResumableUpload)
-      ], (f) => f().then(expectAsync1((_) {})));
+      ], (Function f) => f().then(expectAsync1((_) {})));
     });
 
     test('create-with-predefined-acl-delete', () {
@@ -151,7 +154,7 @@ void main() {
               var acl = info.metadata.acl;
               expect(info.name, objectName);
               expect(info.etag, isNotNull);
-              expect(acl.entries.length, expectedLength);
+              expect(acl!.entries.length, expectedLength);
               return bucket.delete(objectName).then(expectAsync1((result) {
                 expect(result, isNull);
               }));
@@ -166,9 +169,9 @@ void main() {
           () => test('test-4', PredefinedAcl.publicRead, 2),
           () => test('test-5', PredefinedAcl.bucketOwnerFullControl, 2),
           () => test('test-6', PredefinedAcl.bucketOwnerRead, 2)
-        ], (f) => f().then(expectAsync1((_) {})));
+        ], (Function f) => f().then(expectAsync1((_) {})));
       });
-    });
+    }, skip: 'unable to test with uniform buckets enforced for account');
 
     test('create-with-acl-delete', () {
       return withTestBucket((Bucket bucket) {
@@ -181,7 +184,7 @@ void main() {
               var acl = info.metadata.acl;
               expect(info.name, objectName);
               expect(info.etag, isNotNull);
-              expect(acl.entries.length, expectedLength);
+              expect(acl!.entries.length, expectedLength);
               return bucket.delete(objectName).then(expectAsync1((result) {
                 expect(result, isNull);
               }));
@@ -189,18 +192,18 @@ void main() {
           }));
         }
 
-        Acl acl1 =
+        var acl1 =
             Acl([AclEntry(AclScope.allAuthenticated, AclPermission.WRITE)]);
-        Acl acl2 = Acl([
+        var acl2 = Acl([
           AclEntry(AclScope.allUsers, AclPermission.WRITE),
           AclEntry(AccountScope('sgjesse@google.com'), AclPermission.WRITE)
         ]);
-        Acl acl3 = Acl([
+        var acl3 = Acl([
           AclEntry(AclScope.allUsers, AclPermission.WRITE),
           AclEntry(AccountScope('sgjesse@google.com'), AclPermission.WRITE),
           AclEntry(GroupScope('misc@dartlang.org'), AclPermission.READ)
         ]);
-        Acl acl4 = Acl([
+        var acl4 = Acl([
           AclEntry(AclScope.allUsers, AclPermission.WRITE),
           AclEntry(AccountScope('sgjesse@google.com'), AclPermission.WRITE),
           AclEntry(GroupScope('misc@dartlang.org'), AclPermission.READ),
@@ -215,9 +218,9 @@ void main() {
           () => test('test-2', acl2, acl2.entries.length + 1),
           () => test('test-3', acl3, acl3.entries.length + 1),
           () => test('test-4', acl4, acl4.entries.length + 1)
-        ], (f) => f().then(expectAsync1((_) {})));
+        ], (Function f) => f().then(expectAsync1((_) {})));
       });
-    });
+    }, skip: 'unable to test with uniform buckets enforced for account');
 
     test('create-with-metadata-delete', () {
       return withTestBucket((Bucket bucket) {
@@ -264,7 +267,7 @@ void main() {
           () => test('test-2', metadata2, [65, 66, 67]),
           () => test('test-3', metadata1, bytesResumableUpload),
           () => test('test-4', metadata2, bytesResumableUpload)
-        ], (f) => f().then(expectAsync1((_) {})));
+        ], (Function f) => f().then(expectAsync1((_) {})));
       });
     });
   });

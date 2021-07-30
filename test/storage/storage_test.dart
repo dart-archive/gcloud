@@ -7,33 +7,31 @@ library gcloud.storage;
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:gcloud/storage.dart';
+import 'package:googleapis/storage/v1.dart' as storage;
 import 'package:http/http.dart' as http;
 import 'package:test/test.dart';
-
-import 'package:gcloud/storage.dart';
-
-import 'package:googleapis/storage/v1.dart' as storage;
 
 import '../common.dart';
 import '../common_e2e.dart';
 
-const String HOSTNAME = 'www.googleapis.com';
+const String HOSTNAME = 'storage.googleapis.com';
 const String ROOT_PATH = '/storage/v1/';
 
 MockClient mockClient() => MockClient(HOSTNAME, ROOT_PATH);
 
-withMockClient(function(MockClient client, Storage storage)) {
+void withMockClient(Function(MockClient client, Storage storage) function) {
   var mock = mockClient();
   function(mock, Storage(mock, PROJECT));
 }
 
 Future withMockClientAsync(
-    Future function(MockClient client, Storage storage)) async {
+    Future Function(MockClient client, Storage storage) function) async {
   var mock = mockClient();
   await function(mock, Storage(mock, PROJECT));
 }
 
-main() {
+void main() {
   group('bucket', () {
     var bucketName = 'test-bucket';
 
@@ -60,7 +58,7 @@ main() {
       ];
 
       withMockClient((mock, api) {
-        int count = 0;
+        var count = 0;
 
         mock.register(
             'POST',
@@ -76,7 +74,7 @@ main() {
             }, count: predefined.length));
 
         var futures = <Future>[];
-        for (int i = 0; i < predefined.length; i++) {
+        for (var i = 0; i < predefined.length; i++) {
           futures.add(api.createBucket(bucketName,
               predefinedAcl: predefined[i][0] as PredefinedAcl));
         }
@@ -101,7 +99,7 @@ main() {
       var acls = [acl1, acl2, acl3];
 
       withMockClient((mock, api) {
-        int count = 0;
+        var count = 0;
 
         mock.register(
             'POST',
@@ -112,23 +110,23 @@ main() {
               expect(requestBucket.name, bucketName);
               expect(request.url.queryParameters['predefinedAcl'], isNull);
               expect(requestBucket.acl, isNotNull);
-              expect(requestBucket.acl.length, count + 1);
-              expect(requestBucket.acl[0].entity, 'user-user@example.com');
-              expect(requestBucket.acl[0].role, 'OWNER');
+              expect(requestBucket.acl!.length, count + 1);
+              expect(requestBucket.acl![0].entity, 'user-user@example.com');
+              expect(requestBucket.acl![0].role, 'OWNER');
               if (count > 0) {
-                expect(requestBucket.acl[1].entity, 'group-group@example.com');
-                expect(requestBucket.acl[1].role, 'WRITER');
+                expect(requestBucket.acl![1].entity, 'group-group@example.com');
+                expect(requestBucket.acl![1].role, 'WRITER');
               }
               if (count > 2) {
-                expect(requestBucket.acl[2].entity, 'domain-example.com');
-                expect(requestBucket.acl[2].role, 'READER');
+                expect(requestBucket.acl![2].entity, 'domain-example.com');
+                expect(requestBucket.acl![2].role, 'READER');
               }
               count++;
               return mock.respond(storage.Bucket()..name = bucketName);
             }, count: acls.length));
 
         var futures = <Future>[];
-        for (int i = 0; i < acls.length; i++) {
+        for (var i = 0; i < acls.length; i++) {
           futures.add(api.createBucket(bucketName, acl: acls[i]));
         }
         return Future.wait(futures);
@@ -160,7 +158,7 @@ main() {
       var acls = [acl1, acl2, acl3];
 
       withMockClient((mock, api) {
-        int count = 0;
+        var count = 0;
 
         mock.register(
             'POST',
@@ -168,30 +166,30 @@ main() {
             expectAsync1((http.Request request) {
               var requestBucket =
                   storage.Bucket.fromJson(jsonDecode(request.body) as Map);
-              int predefinedIndex = count ~/ acls.length;
-              int aclIndex = count % acls.length;
+              var predefinedIndex = count ~/ acls.length;
+              var aclIndex = count % acls.length;
               expect(requestBucket.name, bucketName);
               expect(request.url.queryParameters['predefinedAcl'],
                   predefined[predefinedIndex][1]);
               expect(requestBucket.acl, isNotNull);
-              expect(requestBucket.acl.length, aclIndex + 1);
-              expect(requestBucket.acl[0].entity, 'user-user@example.com');
-              expect(requestBucket.acl[0].role, 'OWNER');
+              expect(requestBucket.acl!.length, aclIndex + 1);
+              expect(requestBucket.acl![0].entity, 'user-user@example.com');
+              expect(requestBucket.acl![0].role, 'OWNER');
               if (aclIndex > 0) {
-                expect(requestBucket.acl[1].entity, 'group-group@example.com');
-                expect(requestBucket.acl[1].role, 'WRITER');
+                expect(requestBucket.acl![1].entity, 'group-group@example.com');
+                expect(requestBucket.acl![1].role, 'WRITER');
               }
               if (aclIndex > 2) {
-                expect(requestBucket.acl[2].entity, 'domain-example.com');
-                expect(requestBucket.acl[2].role, 'READER');
+                expect(requestBucket.acl![2].entity, 'domain-example.com');
+                expect(requestBucket.acl![2].role, 'READER');
               }
               count++;
               return mock.respond(storage.Bucket()..name = bucketName);
             }, count: predefined.length * acls.length));
 
         var futures = <Future>[];
-        for (int i = 0; i < predefined.length; i++) {
-          for (int j = 0; j < acls.length; j++) {
+        for (var i = 0; i < predefined.length; i++) {
+          for (var j = 0; j < acls.length; j++) {
             futures.add(api.createBucket(bucketName,
                 predefinedAcl: predefined[i][0] as PredefinedAcl,
                 acl: acls[j]));
@@ -270,9 +268,11 @@ main() {
 
       test('immediate-cancel', () {
         withMockClient((mock, api) {
-          api.listBucketNames().listen((_) => throw 'Unexpected',
-              onDone: () => throw 'Unexpected')
-            ..cancel();
+          api
+              .listBucketNames()
+              .listen((_) => throw 'Unexpected',
+                  onDone: () => throw 'Unexpected')
+              .cancel();
         });
       });
 
@@ -318,20 +318,15 @@ main() {
     var bytesNormalUpload = [1, 2, 3];
 
     // Generate a list just above the limit when changing to resumable upload.
-    const int MB = 1024 * 1024;
-    const int maxNormalUpload = 1 * MB;
-    const int minResumableUpload = maxNormalUpload + 1;
+    const MB = 1024 * 1024;
+    const maxNormalUpload = 1 * MB;
+    const minResumableUpload = maxNormalUpload + 1;
     var bytesResumableUpload =
         List.generate(minResumableUpload, (e) => e & 255);
 
-    bool testArgumentError(e) => e is ArgumentError;
-    bool testDetailedApiError(e) => e is storage.DetailedApiRequestError;
-    final expectNotNull = (o) async {
-      expect(o, isNotNull);
-      return null;
-    };
+    final isDetailedApiError = isA<storage.DetailedApiRequestError>();
 
-    expectNormalUpload(MockClient mock, data, String objectName) {
+    void expectNormalUpload(MockClient mock, data, String objectName) {
       var bytes = data.fold([], (p, e) => p..addAll(e));
       mock.registerUpload('POST', 'b/$bucketName/o', expectAsync1((request) {
         return mock
@@ -347,10 +342,10 @@ main() {
       }));
     }
 
-    expectResumableUpload(MockClient mock, data, String objectName) {
+    void expectResumableUpload(MockClient mock, data, String objectName) {
       var bytes = data.fold([], (p, e) => p..addAll(e));
       expect(bytes.length, bytesResumableUpload.length);
-      int count = 0;
+      var count = 0;
       mock.registerResumableUpload('POST', 'b/$bucketName/o',
           expectAsync1((request) {
         var requestObject =
@@ -373,7 +368,7 @@ main() {
           }, count: 2));
     }
 
-    checkResult(result) {
+    void checkResult(result) {
       expect(result.name, objectName);
     }
 
@@ -410,7 +405,8 @@ main() {
         MockClient mock, Storage api, List<List<int>> data, int length) {
       var bucket = api.bucket(bucketName);
 
-      Future upload(Future fn(StreamSink<List<int>> sink, List<List<int>> data),
+      Future upload(
+          Future Function(StreamSink<List<int>> sink, List<List<int>> data) fn,
           bool sendLength) {
         mock.clear();
         if (length <= maxNormalUpload) {
@@ -456,7 +452,7 @@ main() {
 
     test('write-short-error', () {
       withMockClient((MockClient mock, api) {
-        Future test(int length) {
+        Future test(int? length) {
           mock.clear();
           mock.registerUpload('POST', 'b/$bucketName/o',
               expectAsync1((request) {
@@ -465,16 +461,10 @@ main() {
 
           var bucket = api.bucket(bucketName);
           var sink = bucket.write(bucketName, length: length);
-          sink.done.then((_) => throw 'Unexpected').catchError(
-              expectAsync1(expectNotNull),
-              test: testDetailedApiError);
-          sink.done.catchError(expectAsync1(expectNotNull),
-              test: testDetailedApiError);
-          return Stream.fromIterable([bytesNormalUpload])
-              .pipe(sink)
-              .then((_) => throw 'Unexpected')
-              .catchError(expectAsync1(expectNotNull),
-                  test: testDetailedApiError);
+          expect(sink.done, throwsA(isDetailedApiError));
+          return expectLater(
+              Stream.fromIterable([bytesNormalUpload]).pipe(sink),
+              throwsA(isDetailedApiError));
         }
 
         test(null) // Unknown length.
@@ -502,14 +492,10 @@ main() {
 
           var bucket = api.bucket(bucketName);
           var sink = bucket.write(bucketName);
-          sink.done.then((_) => throw 'Unexpected').catchError(
-              expectAsync1(expectNotNull),
-              test: testDetailedApiError);
-          return Stream.fromIterable([bytesResumableUpload])
-              .pipe(sink)
-              .then((_) => throw 'Unexpected')
-              .catchError(expectAsync1(expectNotNull),
-                  test: testDetailedApiError);
+          expect(sink.done, throwsA(isDetailedApiError));
+          return expectLater(
+              Stream.fromIterable([bytesResumableUpload]).pipe(sink),
+              throwsA(isDetailedApiError));
         }
 
         test(null) // Unknown length.
@@ -532,14 +518,10 @@ main() {
 
           var bucket = api.bucket(bucketName);
           var sink = bucket.write(bucketName, length: length);
-          sink.done.then((_) => throw 'Unexpected').catchError(
-              expectAsync1(expectNotNull),
-              test: (e) => e is String || e is storage.ApiRequestError);
-          return Stream<List<int>>.fromIterable(data)
-              .pipe(sink)
-              .then((_) => throw 'Unexpected')
-              .catchError(expectAsync1(expectNotNull),
-                  test: (e) => e is String || e is storage.ApiRequestError);
+          expect(sink.done,
+              throwsA(anyOf(isA<String>(), isA<storage.ApiRequestError>())));
+          return expectLater(Stream<List<int>>.fromIterable(data).pipe(sink),
+              throwsA(anyOf(isA<String>(), isA<storage.ApiRequestError>())));
         }
 
         test([bytesResumableUpload], bytesResumableUpload.length + 1)
@@ -554,17 +536,13 @@ main() {
       withMockClient((mock, api) {
         var bucket = api.bucket(bucketName);
         var sink = bucket.write(bucketName);
-        sink.done
-            .then((_) => throw 'Unexpected')
-            .catchError(expectAsync1(expectNotNull), test: testArgumentError);
+        expect(sink.done, throwsArgumentError);
         var stream = Stream.fromIterable([
           [1, 2, 3]
         ]);
         sink.addStream(stream).then((_) {
           sink.addError(ArgumentError());
-          sink
-              .close()
-              .catchError(expectAsync1(expectNotNull), test: testArgumentError);
+          expect(sink.close(), throwsArgumentError);
         });
       });
     });
@@ -586,15 +564,11 @@ main() {
 
         var bucket = api.bucket(bucketName);
         var sink = bucket.write(bucketName);
-        sink.done
-            .then((_) => throw 'Unexpected')
-            .catchError(expectAsync1(expectNotNull), test: testArgumentError);
+        expect(sink.done, throwsArgumentError);
         var stream = Stream.fromIterable([bytesResumableUpload]);
         sink.addStream(stream).then((_) {
           sink.addError(ArgumentError());
-          sink
-              .close()
-              .catchError(expectAsync1(expectNotNull), test: testArgumentError);
+          expect(sink.close(), throwsArgumentError);
         });
       });
     });
@@ -615,7 +589,7 @@ main() {
       ];
 
       withMockClient((mock, api) {
-        int count = 0;
+        var count = 0;
         var bytes = [1, 2, 3];
 
         mock.registerUpload(
@@ -627,12 +601,10 @@ main() {
                   .then(expectAsync1((mediaUpload) {
                 var object = storage.Object.fromJson(
                     jsonDecode(mediaUpload.json) as Map);
-                ObjectMetadata m = metadata[count];
+                var m = metadata[count];
                 expect(object.name, objectName);
                 expect(mediaUpload.bytes, bytes);
-                var contentType = m.contentType != null
-                    ? m.contentType
-                    : 'application/octet-stream';
+                var contentType = m.contentType ?? 'application/octet-stream';
                 expect(mediaUpload.contentType, contentType);
                 expect(object.cacheControl, m.cacheControl);
                 expect(object.contentDisposition, m.contentDisposition);
@@ -646,7 +618,7 @@ main() {
 
         var bucket = api.bucket(bucketName);
         var futures = <Future>[];
-        for (int i = 0; i < metadata.length; i++) {
+        for (var i = 0; i < metadata.length; i++) {
           futures
               .add(bucket.writeBytes(objectName, bytes, metadata: metadata[i]));
         }
@@ -670,8 +642,8 @@ main() {
       ];
 
       withMockClient((mock, api) {
-        int countInitial = 0;
-        int countData = 0;
+        var countInitial = 0;
+        var countData = 0;
 
         mock.registerResumableUpload(
             'POST',
@@ -679,7 +651,7 @@ main() {
             expectAsync1((request) {
               var object =
                   storage.Object.fromJson(jsonDecode(request.body) as Map);
-              ObjectMetadata m = metadata[countInitial];
+              var m = metadata[countInitial];
               expect(object.name, objectName);
               expect(object.cacheControl, m.cacheControl);
               expect(object.contentDisposition, m.contentDisposition);
@@ -693,12 +665,10 @@ main() {
             'PUT',
             'b/$PROJECT/o',
             expectAsync1((request) {
-              ObjectMetadata m = metadata[countData % metadata.length];
-              var contentType = m.contentType != null
-                  ? m.contentType
-                  : 'application/octet-stream';
+              var m = metadata[countData % metadata.length];
+              var contentType = m.contentType ?? 'application/octet-stream';
               expect(request.headers['content-type'], contentType);
-              bool firstPart = countData < metadata.length;
+              var firstPart = countData < metadata.length;
               countData++;
               if (firstPart) {
                 expect(request.bodyBytes.length, MB);
@@ -711,7 +681,7 @@ main() {
 
         var bucket = api.bucket(bucketName);
         var futures = <Future>[];
-        for (int i = 0; i < metadata.length; i++) {
+        for (var i = 0; i < metadata.length; i++) {
           futures.add(bucket.writeBytes(objectName, bytesResumableUpload,
               metadata: metadata[i]));
         }
@@ -730,7 +700,7 @@ main() {
       ];
 
       withMockClient((mock, api) {
-        int count = 0;
+        var count = 0;
         var bytes = [1, 2, 3];
 
         mock.registerUpload(
@@ -754,7 +724,7 @@ main() {
 
         var bucket = api.bucket(bucketName);
         var futures = <Future>[];
-        for (int i = 0; i < predefined.length; i++) {
+        for (var i = 0; i < predefined.length; i++) {
           futures.add(bucket.writeBytes(objectName, bytes,
               predefinedAcl: predefined[i][0] as PredefinedAcl));
         }
@@ -779,7 +749,7 @@ main() {
       var acls = [acl1, acl2, acl3];
 
       withMockClient((mock, api) {
-        int count = 0;
+        var count = 0;
         var bytes = [1, 2, 3];
 
         mock.registerUpload(
@@ -796,16 +766,16 @@ main() {
                 expect(mediaUpload.contentType, 'application/octet-stream');
                 expect(request.url.queryParameters['predefinedAcl'], isNull);
                 expect(object.acl, isNotNull);
-                expect(object.acl.length, count + 1);
-                expect(object.acl[0].entity, 'user-user@example.com');
-                expect(object.acl[0].role, 'OWNER');
+                expect(object.acl!.length, count + 1);
+                expect(object.acl![0].entity, 'user-user@example.com');
+                expect(object.acl![0].role, 'OWNER');
                 if (count > 0) {
-                  expect(object.acl[1].entity, 'group-group@example.com');
-                  expect(object.acl[1].role, 'OWNER');
+                  expect(object.acl![1].entity, 'group-group@example.com');
+                  expect(object.acl![1].role, 'OWNER');
                 }
                 if (count > 2) {
-                  expect(object.acl[2].entity, 'domain-example.com');
-                  expect(object.acl[2].role, 'READER');
+                  expect(object.acl![2].entity, 'domain-example.com');
+                  expect(object.acl![2].role, 'READER');
                 }
                 count++;
                 return mock.respond(storage.Object()..name = objectName);
@@ -814,7 +784,7 @@ main() {
 
         var bucket = api.bucket(bucketName);
         var futures = <Future>[];
-        for (int i = 0; i < acls.length; i++) {
+        for (var i = 0; i < acls.length; i++) {
           futures.add(bucket.writeBytes(objectName, bytes, acl: acls[i]));
         }
         return Future.wait(futures);
@@ -847,7 +817,7 @@ main() {
       var acls = [acl1, acl2, acl3];
 
       withMockClient((mock, api) {
-        int count = 0;
+        var count = 0;
         var bytes = [1, 2, 3];
 
         mock.registerUpload(
@@ -857,8 +827,8 @@ main() {
               return mock
                   .processNormalMediaUpload(request)
                   .then(expectAsync1((mediaUpload) {
-                int predefinedIndex = count ~/ acls.length;
-                int aclIndex = count % acls.length;
+                var predefinedIndex = count ~/ acls.length;
+                var aclIndex = count % acls.length;
                 var object = storage.Object.fromJson(
                     jsonDecode(mediaUpload.json) as Map);
                 expect(object.name, objectName);
@@ -867,16 +837,16 @@ main() {
                 expect(request.url.queryParameters['predefinedAcl'],
                     predefined[predefinedIndex][1]);
                 expect(object.acl, isNotNull);
-                expect(object.acl.length, aclIndex + 1);
-                expect(object.acl[0].entity, 'user-user@example.com');
-                expect(object.acl[0].role, 'OWNER');
+                expect(object.acl!.length, aclIndex + 1);
+                expect(object.acl![0].entity, 'user-user@example.com');
+                expect(object.acl![0].role, 'OWNER');
                 if (aclIndex > 0) {
-                  expect(object.acl[1].entity, 'group-group@example.com');
-                  expect(object.acl[1].role, 'OWNER');
+                  expect(object.acl![1].entity, 'group-group@example.com');
+                  expect(object.acl![1].role, 'OWNER');
                 }
                 if (aclIndex > 2) {
-                  expect(object.acl[2].entity, 'domain-example.com');
-                  expect(object.acl[2].role, 'READER');
+                  expect(object.acl![2].entity, 'domain-example.com');
+                  expect(object.acl![2].role, 'READER');
                 }
                 count++;
                 return mock.respond(storage.Object()..name = objectName);
@@ -885,8 +855,8 @@ main() {
 
         var bucket = api.bucket(bucketName);
         var futures = <Future>[];
-        for (int i = 0; i < predefined.length; i++) {
-          for (int j = 0; j < acls.length; j++) {
+        for (var i = 0; i < predefined.length; i++) {
+          for (var j = 0; j < acls.length; j++) {
             futures.add(bucket.writeBytes(objectName, bytes,
                 acl: acls[j],
                 predefinedAcl: predefined[i][0] as PredefinedAcl));
@@ -919,7 +889,7 @@ main() {
             fail('An exception should be thrown');
           } on ArgumentError catch (e) {
             expect(
-                e.message, "length must have a value if offset is non-zero.");
+                e.message, 'length must have a value if offset is non-zero.');
           }
         });
       });
@@ -932,7 +902,7 @@ main() {
             await bucket.read(objectName, offset: 1, length: 0).toList();
             fail('An exception should be thrown');
           } on ArgumentError catch (e) {
-            expect(e.message, "If provided, length must greater than zero.");
+            expect(e.message, 'If provided, length must greater than zero.');
           }
         });
       });
@@ -945,7 +915,7 @@ main() {
             await bucket.read(objectName, length: -1).toList();
             fail('An exception should be thrown');
           } on ArgumentError catch (e) {
-            expect(e.message, "If provided, length must greater than zero.");
+            expect(e.message, 'If provided, length must greater than zero.');
           }
         });
       });
@@ -1042,13 +1012,13 @@ main() {
         var bucket = api.bucket(bucketName);
         bucket.info(objectName).then(expectAsync1((ObjectInfo info) {
           expect(info.name, objectName);
-          expect(info.metadata.acl.entries.length, 3);
-          expect(info.metadata.acl.entries[0] is AclEntry, isTrue);
-          expect(info.metadata.acl.entries[0].scope is StorageIdScope, isTrue);
-          expect(info.metadata.acl.entries[1] is AclEntry, isTrue);
-          expect(info.metadata.acl.entries[1].scope is AccountScope, isTrue);
-          expect(info.metadata.acl.entries[2] is AclEntry, isTrue);
-          expect(info.metadata.acl.entries[2].scope is OpaqueScope, isTrue);
+          expect(info.metadata.acl!.entries.length, 3);
+          expect(info.metadata.acl!.entries[0] is AclEntry, isTrue);
+          expect(info.metadata.acl!.entries[0].scope is StorageIdScope, isTrue);
+          expect(info.metadata.acl!.entries[1] is AclEntry, isTrue);
+          expect(info.metadata.acl!.entries[1].scope is AccountScope, isTrue);
+          expect(info.metadata.acl!.entries[2] is AclEntry, isTrue);
+          expect(info.metadata.acl!.entries[2].scope is OpaqueScope, isTrue);
         }));
       });
     });
@@ -1070,9 +1040,11 @@ main() {
       test('immediate-cancel', () {
         withMockClient((mock, api) {
           var bucket = api.bucket(bucketName);
-          bucket.list().listen((_) => throw 'Unexpected',
-              onDone: () => throw 'Unexpected')
-            ..cancel();
+          bucket
+              .list()
+              .listen((_) => throw 'Unexpected',
+                  onDone: () => throw 'Unexpected')
+              .cancel();
         });
       });
 

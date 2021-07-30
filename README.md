@@ -29,7 +29,7 @@ import 'package:gcloud/db.dart';
 import 'package:gcloud/storage.dart';
 import 'package:gcloud/pubsub.dart';
 import 'package:gcloud/service_scope.dart' as ss;
-import 'package:gcloud/src/datastore_impl.dart' as datastore_impl;
+import 'package:gcloud/datastore.dart' as datastore;
 ```
 
 ### Getting access to the APIs
@@ -47,7 +47,7 @@ var credentials = new auth.ServiceAccountCredentials.fromJson(jsonCredentials);
 
 // Get an HTTP authenticated client using the service account credentials.
 var scopes = []
-    ..addAll(datastore_impl.DatastoreImpl.SCOPES)
+    ..addAll(datastore.Datastore.Scopes)
     ..addAll(Storage.SCOPES)
     ..addAll(PubSub.SCOPES);
 var client = await auth.clientViaServiceAccount(credentials, scopes);
@@ -55,7 +55,7 @@ var client = await auth.clientViaServiceAccount(credentials, scopes);
 // Instantiate objects to access Cloud Datastore, Cloud Storage
 // and Cloud Pub/Sub APIs.
 var db = new DatastoreDB(
-    new datastore_impl.DatastoreImpl(client, 's~my-project'));
+    new datastore.Datastore(client, 's~my-project'));
 var storage = new Storage(client, 'my-project');
 var pubsub = new PubSub(client, 'my-project');
 ```
@@ -253,12 +253,12 @@ If you want to run the end-to-end tests, a Google Cloud project is required.
 When running these tests the following environment variables need to be set:
 
     GCLOUD_E2E_TEST_PROJECT
-    GCLOUD_E2E_TEST_KEY
 
 The value of the environment variable `GCLOUD_E2E_TEST_PROJECT` is the name
-of the Google Cloud project to use. The value of the environment variable
-`GCLOUD_E2E_TEST_KEY` is a Google Cloud Storage path (starting with `gs://`)
-to a JSON key file for a service account providing access to the Cloud Project.
+of the Google Cloud project to use. Authentication for testing uses
+[Application Default Credentials][ADC] locally you can provide
+`GOOGLE_APPLICATION_CREDENTIALS` or use
+[`gcloud auth application-default login`][gcloud-adc].
 
 You will also need to create indexes as follows:
 
@@ -273,3 +273,5 @@ gcloud --project "$GCLOUD_E2E_TEST_PROJECT" datastore indexes create test/index.
 [googleapisbeta]: https://pub.dartlang.org/packages/googleapis_beta
 [googleapisauth]: https://pub.dartlang.org/packages/googleapis_beta
 [appengine]: https://pub.dartlang.org/packages/appengine
+[ADC]: https://cloud.google.com/docs/authentication/production
+[gcloud-adc]: https://cloud.google.com/sdk/gcloud/reference/auth/application-default/login

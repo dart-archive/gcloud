@@ -8,9 +8,10 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
-import 'package:http/http.dart' as http;
 
+import 'package:gcloud/src/common_utils.dart';
 import 'package:googleapis/pubsub/v1.dart' as pubsub;
+import 'package:http/http.dart' as http;
 
 import 'common.dart';
 import 'service_scope.dart' as ss;
@@ -112,7 +113,7 @@ void registerPubSubService(PubSub pubsub) {
 ///
 abstract class PubSub {
   /// List of required OAuth2 scopes for Pub/Sub operation.
-  static const SCOPES = [pubsub.PubsubApi.PubsubScope];
+  static const SCOPES = [pubsub.PubsubApi.pubsubScope];
 
   /// Access Pub/Sub using an authenticated client.
   ///
@@ -127,7 +128,7 @@ abstract class PubSub {
     var emulator = Platform.environment['PUBSUB_EMULATOR_HOST'];
     return emulator == null
         ? _PubSubImpl(client, project)
-        : _PubSubImpl.rootUrl(client, project, "http://$emulator/");
+        : _PubSubImpl.rootUrl(client, project, 'http://$emulator/');
   }
 
   /// The name of the project.
@@ -310,7 +311,7 @@ abstract class Subscription {
   /// The URI for the push endpoint.
   ///
   /// If this is a pull subscription this is `null`.
-  Uri get endpoint;
+  Uri? get endpoint;
 
   /// Update the push configuration with a new endpoint.
   ///
@@ -337,7 +338,7 @@ abstract class Subscription {
   ///
   /// If [wait] is `false`, the method will complete the returned `Future`
   /// with `null` if it finds that there are no messages available.
-  Future<PullEvent> pull({bool wait = true});
+  Future<PullEvent?> pull({bool wait = true});
 }
 
 /// The content of a Pub/Sub message.

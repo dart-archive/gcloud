@@ -5,12 +5,10 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:gcloud/pubsub.dart';
+import 'package:googleapis/pubsub/v1.dart' as pubsub;
 import 'package:http/http.dart' as http;
 import 'package:test/test.dart';
-
-import 'package:gcloud/pubsub.dart';
-
-import 'package:googleapis/pubsub/v1.dart' as pubsub;
 
 import '../common.dart';
 import '../common_e2e.dart';
@@ -20,7 +18,7 @@ const String ROOT_PATH = '/v1/';
 
 MockClient mockClient() => MockClient(HOSTNAME, ROOT_PATH);
 
-main() {
+void main() {
   group('api', () {
     var badTopicNames = [
       'projects/',
@@ -50,7 +48,7 @@ main() {
             'PUT',
             'projects/$PROJECT/topics/test-topic',
             expectAsync1((http.Request request) {
-              expect(request.body, isEmpty);
+              expect(request.body, '{}');
               return mock.respond(pubsub.Topic()..name = absoluteName);
             }, count: 2));
 
@@ -141,25 +139,28 @@ main() {
       });
 
       group('query', () {
-        addTopics(pubsub.ListTopicsResponse response, int first, int count) {
+        void addTopics(
+            pubsub.ListTopicsResponse response, int first, int count) {
           response.topics = [];
-          for (int i = 0; i < count; i++) {
-            response.topics.add(pubsub.Topic()..name = 'topic-${first + i}');
+          for (var i = 0; i < count; i++) {
+            response.topics!.add(pubsub.Topic()..name = 'topic-${first + i}');
           }
         }
 
         // Mock that expect/generates [n] topics in pages of page size
         // [pageSize].
-        registerQueryMock(MockClient mock, int n, int pageSize,
-            [int totalCalls]) {
-          int totalPages = (n + pageSize - 1) ~/ pageSize;
+        void registerQueryMock(
+          MockClient mock,
+          int n,
+          int pageSize, [
+          int? totalCalls,
+        ]) {
+          var totalPages = (n + pageSize - 1) ~/ pageSize;
           // No items still generate one request.
           if (totalPages == 0) totalPages = 1;
           // Can pass in total calls if this mock is overwritten before all
           // expected pages are done, e.g. when testing errors.
-          if (totalCalls == null) {
-            totalCalls = totalPages;
-          }
+          totalCalls ??= totalPages;
           var pageCount = 0;
           mock.register(
               'GET',
@@ -252,9 +253,11 @@ main() {
             registerQueryMock(mock, 70, 50, 1);
 
             var api = PubSub(mock, PROJECT);
-            api.listTopics().listen((_) => throw 'Unexpected',
-                onDone: () => throw 'Unexpected')
-              ..cancel();
+            api
+                .listTopics()
+                .listen((_) => throw 'Unexpected',
+                    onDone: () => throw 'Unexpected')
+                .cancel();
           });
 
           test('cancel', () {
@@ -269,7 +272,7 @@ main() {
           });
 
           test('error', () {
-            runTest(bool withPause) {
+            void runTest(bool withPause) {
               // Test error on first GET request.
               var mock = mockClient();
               mock.register('GET', 'projects/$PROJECT/topics',
@@ -300,7 +303,7 @@ main() {
 
               var api = PubSub(mock, PROJECT);
 
-              int count = 0;
+              var count = 0;
               var subscription;
               subscription = api.listTopics().listen(
                   expectAsync1(((_) {
@@ -337,14 +340,14 @@ main() {
             return api.pageTopics().then(expectAsync1((page) {
               expect(page.items.length, 0);
               expect(page.isLast, isTrue);
-              expect(page.next(), completion(isNull));
+              expect(() => page.next(), throwsStateError);
 
               mock.clear();
               registerQueryMock(mock, 0, 20);
               return api.pageTopics(pageSize: 20).then(expectAsync1((page) {
                 expect(page.items.length, 0);
                 expect(page.isLast, isTrue);
-                expect(page.next(), completion(isNull));
+                expect(() => page.next(), throwsStateError);
               }));
             }));
           });
@@ -357,20 +360,20 @@ main() {
             return api.pageTopics().then(expectAsync1((page) {
               expect(page.items.length, 10);
               expect(page.isLast, isTrue);
-              expect(page.next(), completion(isNull));
+              expect(() => page.next(), throwsStateError);
 
               mock.clear();
               registerQueryMock(mock, 20, 20);
               return api.pageTopics(pageSize: 20).then(expectAsync1((page) {
                 expect(page.items.length, 20);
                 expect(page.isLast, isTrue);
-                expect(page.next(), completion(isNull));
+                expect(() => page.next(), throwsStateError);
               }));
             }));
           });
 
           test('multiple', () {
-            runTest(int n, int pageSize) {
+            Future<void> runTest(int n, int pageSize) {
               var totalPages = (n + pageSize - 1) ~/ pageSize;
               var pageCount = 0;
 
@@ -378,19 +381,20 @@ main() {
               var mock = mockClient();
               registerQueryMock(mock, n, pageSize);
 
-              handlePage(Page page) {
+              void handlePage(Page page) {
                 pageCount++;
                 expect(page.isLast, pageCount == totalPages);
                 expect(page.items.length,
                     page.isLast ? n - (totalPages - 1) * pageSize : pageSize);
-                page.next().then(expectAsync1((page) {
-                  if (page != null) {
+                if (!page.isLast) {
+                  page.next().then(expectAsync1((page) {
                     handlePage(page);
-                  } else {
-                    expect(pageCount, totalPages);
-                    completer.complete();
-                  }
-                }));
+                  }));
+                } else {
+                  expect(() => page.next(), throwsStateError);
+                  expect(pageCount, totalPages);
+                  completer.complete();
+                }
               }
 
               var api = PubSub(mock, PROJECT);
@@ -528,27 +532,25 @@ main() {
       });
 
       group('query', () {
-        addSubscriptions(
+        void addSubscriptions(
             pubsub.ListSubscriptionsResponse response, int first, int count) {
           response.subscriptions = [];
-          for (int i = 0; i < count; i++) {
-            response.subscriptions
+          for (var i = 0; i < count; i++) {
+            response.subscriptions!
                 .add(pubsub.Subscription()..name = 'subscription-${first + i}');
           }
         }
 
         // Mock that expect/generates [n] subscriptions in pages of page size
         // [pageSize].
-        registerQueryMock(MockClient mock, int n, int pageSize,
-            {String topic, int totalCalls}) {
+        void registerQueryMock(MockClient mock, int n, int pageSize,
+            {String? topic, int? totalCalls}) {
           var totalPages = (n + pageSize - 1) ~/ pageSize;
           // No items still generate one request.
           if (totalPages == 0) totalPages = 1;
           // Can pass in total calls if this mock is overwritten before all
           // expected pages are done, e.g. when testing errors.
-          if (totalCalls == null) {
-            totalCalls = totalPages;
-          }
+          totalCalls ??= totalPages;
           var pageCount = 0;
           mock.register(
               'GET',
@@ -575,13 +577,14 @@ main() {
         }
 
         group('list', () {
-          Future q(String topic, int count) {
+          Future q(String? topic, int count) {
             var mock = mockClient();
             registerQueryMock(mock, count, 50, topic: topic);
 
             var api = PubSub(mock, PROJECT);
-            return api
-                .listSubscriptions(topic)
+            return (topic == null
+                    ? api.listSubscriptions()
+                    : api.listSubscriptions(topic))
                 .listen(expectAsync1((_) => null, count: count))
                 .asFuture();
           }
@@ -653,9 +656,11 @@ main() {
             registerQueryMock(mock, 70, 50, totalCalls: 1);
 
             var api = PubSub(mock, PROJECT);
-            api.listSubscriptions().listen((_) => throw 'Unexpected',
-                onDone: () => throw 'Unexpected')
-              ..cancel();
+            api
+                .listSubscriptions()
+                .listen((_) => throw 'Unexpected',
+                    onDone: () => throw 'Unexpected')
+                .cancel();
           });
 
           test('cancel', () {
@@ -670,7 +675,7 @@ main() {
           });
 
           test('error', () {
-            runTest(bool withPause) {
+            void runTest(bool withPause) {
               // Test error on first GET request.
               var mock = mockClient();
               mock.register('GET', 'projects/$PROJECT/subscriptions',
@@ -695,14 +700,14 @@ main() {
           });
 
           test('error-2', () {
-            runTest(bool withPause) {
+            void runTest(bool withPause) {
               // Test error on second GET request.
               var mock = mockClient();
               registerQueryMock(mock, 51, 50, totalCalls: 1);
 
               var api = PubSub(mock, PROJECT);
 
-              int count = 0;
+              var count = 0;
               var subscription;
               subscription = api.listSubscriptions().listen(
                   expectAsync1(((_) {
@@ -731,26 +736,28 @@ main() {
         });
 
         group('page', () {
-          emptyTest(String topic) {
+          Future<void> emptyTest(String? topic) {
             var mock = mockClient();
             registerQueryMock(mock, 0, 50, topic: topic);
 
             var api = PubSub(mock, PROJECT);
-            return api
-                .pageSubscriptions(topic: topic)
+            return (topic == null
+                    ? api.pageSubscriptions()
+                    : api.pageSubscriptions(topic: topic))
                 .then(expectAsync1((page) {
               expect(page.items.length, 0);
               expect(page.isLast, isTrue);
-              expect(page.next(), completion(isNull));
+              expect(() => page.next(), throwsStateError);
 
               mock.clear();
               registerQueryMock(mock, 0, 20, topic: topic);
-              return api
-                  .pageSubscriptions(topic: topic, pageSize: 20)
+              return (topic == null
+                      ? api.pageSubscriptions(pageSize: 20)
+                      : api.pageSubscriptions(topic: topic, pageSize: 20))
                   .then(expectAsync1((page) {
                 expect(page.items.length, 0);
                 expect(page.isLast, isTrue);
-                expect(page.next(), completion(isNull));
+                expect(() => page.next(), throwsStateError);
               }));
             }));
           }
@@ -760,26 +767,28 @@ main() {
             emptyTest('topic');
           });
 
-          singleTest(String topic) {
+          Future<void> singleTest(String? topic) {
             var mock = mockClient();
             registerQueryMock(mock, 10, 50, topic: topic);
 
             var api = PubSub(mock, PROJECT);
-            return api
-                .pageSubscriptions(topic: topic)
+            return (topic == null
+                    ? api.pageSubscriptions()
+                    : api.pageSubscriptions(topic: topic))
                 .then(expectAsync1((page) {
               expect(page.items.length, 10);
               expect(page.isLast, isTrue);
-              expect(page.next(), completion(isNull));
+              expect(() => page.next(), throwsStateError);
 
               mock.clear();
               registerQueryMock(mock, 20, 20, topic: topic);
-              return api
-                  .pageSubscriptions(topic: topic, pageSize: 20)
+              return (topic == null
+                      ? api.pageSubscriptions(pageSize: 20)
+                      : api.pageSubscriptions(topic: topic, pageSize: 20))
                   .then(expectAsync1((page) {
                 expect(page.items.length, 20);
                 expect(page.isLast, isTrue);
-                expect(page.next(), completion(isNull));
+                expect(() => page.next(), throwsStateError);
               }));
             }));
           }
@@ -789,7 +798,7 @@ main() {
             singleTest('topic');
           });
 
-          multipleTest(int n, int pageSize, String topic) {
+          Future<void> multipleTest(int n, int pageSize, String? topic) {
             var totalPages = (n + pageSize - 1) ~/ pageSize;
             var pageCount = 0;
 
@@ -797,24 +806,26 @@ main() {
             var mock = mockClient();
             registerQueryMock(mock, n, pageSize, topic: topic);
 
-            handlingPage(Page page) {
+            void handlingPage(Page page) {
               pageCount++;
               expect(page.isLast, pageCount == totalPages);
               expect(page.items.length,
                   page.isLast ? n - (totalPages - 1) * pageSize : pageSize);
-              page.next().then((page) {
-                if (page != null) {
+              if (!page.isLast) {
+                page.next().then((page) {
                   handlingPage(page);
-                } else {
-                  expect(pageCount, totalPages);
-                  completer.complete();
-                }
-              });
+                });
+              } else {
+                expect(() => page.next(), throwsStateError);
+                expect(pageCount, totalPages);
+                completer.complete();
+              }
             }
 
             var api = PubSub(mock, PROJECT);
-            api
-                .pageSubscriptions(topic: topic, pageSize: pageSize)
+            (topic == null
+                    ? api.pageSubscriptions(pageSize: pageSize)
+                    : api.pageSubscriptions(topic: topic, pageSize: pageSize))
                 .then(handlingPage);
 
             return completer.future;
@@ -855,15 +866,18 @@ main() {
     var messageBase64 = base64.encode(messageBytes);
     var attributes = {'a': '1', 'b': 'text'};
 
-    registerLookup(MockClient mock) {
+    void registerLookup(MockClient mock) {
       mock.register('GET', absoluteName, expectAsync1((request) {
         expect(request.body.length, 0);
         return mock.respond(pubsub.Topic()..name = absoluteName);
       }));
     }
 
-    registerPublish(
-        MockClient mock, int count, Future<http.Response> fn(request)) {
+    void registerPublish(
+      MockClient mock,
+      int count,
+      Future<http.Response> Function(pubsub.PublishRequest) fn,
+    ) {
       mock.register(
           'POST',
           'projects/test-project/topics/test-topic:publish',
@@ -882,9 +896,9 @@ main() {
       return api.lookupTopic(name).then(expectAsync1((topic) {
         mock.clear();
         registerPublish(mock, 4, ((request) {
-          expect(request.messages.length, 1);
-          expect(request.messages[0].data, messageBase64);
-          expect(request.messages[0].attributes, isNull);
+          expect(request.messages!.length, 1);
+          expect(request.messages![0].data, messageBase64);
+          expect(request.messages![0].attributes, isNull);
           return mock.respond(pubsub.PublishResponse()..messageIds = ['0']);
         }));
 
@@ -915,11 +929,11 @@ main() {
       return api.lookupTopic(name).then(expectAsync1((topic) {
         mock.clear();
         registerPublish(mock, 4, ((request) {
-          expect(request.messages.length, 1);
-          expect(request.messages[0].data, messageBase64);
-          expect(request.messages[0].attributes, isNotNull);
-          expect(request.messages[0].attributes.length, attributes.length);
-          expect(request.messages[0].attributes, attributes);
+          expect(request.messages!.length, 1);
+          expect(request.messages![0].data, messageBase64);
+          expect(request.messages![0].attributes, isNotNull);
+          expect(request.messages![0].attributes!.length, attributes.length);
+          expect(request.messages![0].attributes, attributes);
           return mock.respond(pubsub.PublishResponse()..messageIds = ['0']);
         }));
 
@@ -1023,7 +1037,7 @@ main() {
 }
 ''';
       var event = PushEvent.fromJson(requestBody);
-      expect(event.message.asString, "Hello, world 30 of 50!");
+      expect(event.message.asString, 'Hello, world 30 of 50!');
       expect(event.message.attributes['messageNo'], '30');
       expect(event.message.attributes['test'], 'hello');
       expect(event.subscriptionName, absoluteSubscriptionName);
@@ -1049,7 +1063,7 @@ main() {
 }
 ''';
       var event = PushEvent.fromJson(requestBody);
-      expect(event.message.asString, "Hello, world 30 of 50!");
+      expect(event.message.asString, 'Hello, world 30 of 50!');
       expect(event.message.attributes['messageNo'], '30');
       expect(event.message.attributes['test'], 'hello');
       expect(event.subscriptionName, absoluteSubscriptionName);

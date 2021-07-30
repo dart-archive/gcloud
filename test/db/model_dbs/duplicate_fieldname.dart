@@ -9,11 +9,12 @@ import 'package:gcloud/db.dart' as db;
 @db.Kind()
 class A extends db.Model {
   @db.IntProperty()
-  int foo;
+  int? foo;
 }
 
 @db.Kind()
 class B extends A {
+  @override
   @db.IntProperty(propertyName: 'bar')
-  int foo;
+  int? foo;
 }

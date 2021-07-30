@@ -9,8 +9,8 @@ import 'package:gcloud/db.dart' as db;
 @db.Kind()
 class A extends db.Model {
   @db.IntProperty()
-  int foo;
+  int? foo;
 
   @db.IntProperty(propertyName: 'foo')
-  int bar;
+  int? bar;
 }
