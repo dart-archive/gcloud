@@ -34,7 +34,7 @@ class DatastoreImpl implements datastore.Datastore {
   /// alternate datastore host location and path; this is particularly useful
   /// for the datastore emulator.
   DatastoreImpl(http.Client client, String project,
-      {String rootUrl, String servicePath = ''})
+      {String? rootUrl, String servicePath = ''})
       : _api = rootUrl != null
             ? api.DatastoreApi(client,
                 rootUrl: rootUrl, servicePath: servicePath)
