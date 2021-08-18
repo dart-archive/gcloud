@@ -1,3 +1,7 @@
+## 0.8.3
+
+- Support the latest version of the `googleapis` package.
+
 ## 0.8.2
 
  * **BREAKING CHANGE:** `Page.next()` throws if `Page.isLast`, this change only
