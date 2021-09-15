@@ -8,7 +8,7 @@ environment:
 
 dependencies:
   _discoveryapis_commons: ^1.0.0
-  googleapis: ^4.0.0
+  googleapis: ^5.0.0
   http: ^0.13.0
   meta: ^1.3.0
 
