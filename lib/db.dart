@@ -4,7 +4,6 @@
 
 library gcloud.db;
 
-import 'dart:async';
 import 'dart:collection';
 // dart:core is imported explicitly so it is available at top-level without
 //   the `core` prefix defined below.
@@ -23,9 +22,9 @@ import 'service_scope.dart' as ss;
 part 'src/db/annotations.dart';
 part 'src/db/db.dart';
 part 'src/db/exceptions.dart';
-part 'src/db/models.dart';
 part 'src/db/model_db.dart';
 part 'src/db/model_db_impl.dart';
+part 'src/db/models.dart';
 
 const Symbol _dbKey = #gcloud.db;
 

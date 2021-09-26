@@ -1013,11 +1013,8 @@ void main() {
         bucket.info(objectName).then(expectAsync1((ObjectInfo info) {
           expect(info.name, objectName);
           expect(info.metadata.acl!.entries.length, 3);
-          expect(info.metadata.acl!.entries[0] is AclEntry, isTrue);
           expect(info.metadata.acl!.entries[0].scope is StorageIdScope, isTrue);
-          expect(info.metadata.acl!.entries[1] is AclEntry, isTrue);
           expect(info.metadata.acl!.entries[1].scope is AccountScope, isTrue);
-          expect(info.metadata.acl!.entries[2] is AclEntry, isTrue);
           expect(info.metadata.acl!.entries[2].scope is OpaqueScope, isTrue);
         }));
       });

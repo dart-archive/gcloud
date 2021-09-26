@@ -67,7 +67,6 @@ void main() {
         return storage.bucketInfo(bucketName).then(expectAsync1((info) {
           expect(info.bucketName, bucketName);
           expect(info.etag, isNotNull);
-          expect(info.created is DateTime, isTrue);
           expect(info.id, isNotNull);
           return storage.deleteBucket(bucketName).then(expectAsync1((result) {
             expect(result, isNull);
@@ -233,10 +232,8 @@ void main() {
             return bucket.info(objectName).then(expectAsync1((info) {
               expect(info.name, objectName);
               expect(info.length, bytes.length);
-              expect(info.updated is DateTime, isTrue);
               expect(info.md5Hash, isNotNull);
               expect(info.crc32CChecksum, isNotNull);
-              expect(info.downloadLink is Uri, isTrue);
               expect(info.generation.objectGeneration, isNotNull);
               expect(info.generation.metaGeneration, 1);
               expect(info.metadata.contentType, metadata.contentType);

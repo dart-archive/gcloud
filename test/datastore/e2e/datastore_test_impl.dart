@@ -110,7 +110,6 @@ void runTests(Datastore datastore, String? namespace) {
     if (key.elements.isEmpty) return false;
 
     for (var element in key.elements) {
-      if (element.kind is! String) return false;
       if (!ignoreIds) {
         if (element.id == null ||
             (element.id is! String && element.id is! int)) {
