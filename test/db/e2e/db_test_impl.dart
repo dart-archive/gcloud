@@ -43,7 +43,6 @@ library db_test;
 /// $ gcloud datastore create-indexes index.yaml
 ///
 /// Now, wait for indexing done
-
 import 'dart:async';
 
 import 'package:gcloud/db.dart' as db;
@@ -66,6 +65,7 @@ class Person extends db.Model {
   db.Key? wife;
 
   @override
+  // ignore: hash_and_equals
   bool operator ==(Object other) => sameAs(other);
 
   bool sameAs(Object other) {
@@ -92,6 +92,7 @@ class PersonStringId extends db.Model<String> {
   db.Key? wife;
 
   @override
+  // ignore: hash_and_equals
   bool operator ==(Object other) => sameAs(other);
 
   bool sameAs(Object other) {
@@ -151,6 +152,7 @@ class ExpandoPerson extends db.ExpandoModel {
   String? nickname;
 
   @override
+  // ignore: hash_and_equals
   bool operator ==(Object other) {
     if (other is ExpandoPerson && id == other.id && name == other.name) {
       if (additionalProperties.length != other.additionalProperties.length) {
@@ -457,7 +459,7 @@ void runTests(db.DatastoreDB store, String? namespace) {
         expandoPersons.add(expandoPerson as ExpandoPerson);
       }
 
-      var LOWER_BOUND = 'user2';
+      var lowerBound = 'user2';
 
       var usersSortedNameDescNicknameAsc = List<User>.from(users);
       usersSortedNameDescNicknameAsc.sort((User a, User b) {
@@ -475,12 +477,12 @@ void runTests(db.DatastoreDB store, String? namespace) {
 
       var usersSortedAndFilteredNameDescNicknameAsc =
           usersSortedNameDescNicknameAsc.where((User u) {
-        return LOWER_BOUND.compareTo(u.name!) <= 0;
+        return lowerBound.compareTo(u.name!) <= 0;
       }).toList();
 
       var usersSortedAndFilteredNameDescNicknameDesc =
           usersSortedNameDescNicknameDesc.where((User u) {
-        return LOWER_BOUND.compareTo(u.name!) <= 0;
+        return lowerBound.compareTo(u.name!) <= 0;
       }).toList();
 
       var fooUsers =
@@ -546,7 +548,7 @@ void runTests(db.DatastoreDB store, String? namespace) {
             // Sorted query with filter
             () async {
               var query = store.query<User>(partition: partition)
-                ..filter('name >=', LOWER_BOUND)
+                ..filter('name >=', lowerBound)
                 ..order('-name')
                 ..order('nickname');
               var models = await runQueryWithExponentialBackoff(
@@ -555,7 +557,7 @@ void runTests(db.DatastoreDB store, String? namespace) {
             },
             () async {
               var query = store.query<User>(partition: partition)
-                ..filter('name >=', LOWER_BOUND)
+                ..filter('name >=', lowerBound)
                 ..order('-name')
                 ..order('-nickname')
                 ..run();
@@ -726,7 +728,6 @@ Future<void> waitUntilEntitiesHelper<T extends db.Model>(
         }
       }
     }
-    return null;
   }
 }
 
@@ -734,7 +735,7 @@ Future main() async {
   late db.DatastoreDB store;
   BaseClient? client;
 
-  var scopes = datastore_impl.DatastoreImpl.SCOPES;
+  var scopes = datastore_impl.DatastoreImpl.scopes;
   await withAuthClient(scopes, (String project, httpClient) {
     var datastore = datastore_impl.DatastoreImpl(httpClient, project);
     return datastore_test.cleanupDB(datastore, null).then((_) {

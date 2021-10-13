@@ -6,12 +6,12 @@ library gcloud.datastore_impl;
 
 import 'dart:async';
 
-import 'package:gcloud/src/common_utils.dart';
 import 'package:googleapis/datastore/v1.dart' as api;
 import 'package:http/http.dart' as http;
 
 import '../common.dart' show Page;
 import '../datastore.dart' as datastore;
+import 'common_utils.dart';
 
 class TransactionImpl implements datastore.Transaction {
   final String data;
@@ -20,7 +20,7 @@ class TransactionImpl implements datastore.Transaction {
 }
 
 class DatastoreImpl implements datastore.Datastore {
-  static const List<String> SCOPES = <String>[
+  static const List<String> scopes = <String>[
     api.DatastoreApi.datastoreScope,
     api.DatastoreApi.cloudPlatformScope,
   ];
@@ -489,7 +489,7 @@ class DatastoreImpl implements datastore.Datastore {
 }
 
 class QueryPageImpl implements Page<datastore.Entity> {
-  static const int MAX_ENTITIES_PER_RESPONSE = 2000;
+  static const int _maxEntitiesPerResponse = 2000;
 
   final api.DatastoreApi _api;
   final String _project;
@@ -505,7 +505,7 @@ class QueryPageImpl implements Page<datastore.Entity> {
 
   static Future<QueryPageImpl> runQuery(api.DatastoreApi api, String project,
       api.RunQueryRequest request, int? limit,
-      {int batchSize = MAX_ENTITIES_PER_RESPONSE}) {
+      {int batchSize = _maxEntitiesPerResponse}) {
     if (limit != null && limit < batchSize) {
       batchSize = limit;
     }

@@ -12,6 +12,7 @@ library gcloud.datastore;
 import 'dart:async';
 
 import 'package:http/http.dart' as http;
+
 import 'common.dart' show Page;
 import 'service_scope.dart' as ss;
 import 'src/datastore_impl.dart' show DatastoreImpl;
@@ -54,7 +55,7 @@ class DatastoreError implements Exception {
       : message = (message ?? 'DatastoreError: An unknown error occured');
 
   @override
-  String toString() => '$message';
+  String toString() => message;
 }
 
 class UnknownDatastoreError extends DatastoreError {
@@ -187,6 +188,7 @@ class Key {
 ///
 // TODO(Issue #6): Add dataset-id here.
 class Partition {
+  // ignore: constant_identifier_names
   static const Partition DEFAULT = Partition._default();
 
   /// The namespace of this partition.
@@ -243,10 +245,15 @@ class KeyElement {
 
 /// A relation used in query filters.
 class FilterRelation {
+  // ignore: constant_identifier_names
   static const FilterRelation LessThan = FilterRelation._('<');
+  // ignore: constant_identifier_names
   static const FilterRelation LessThanOrEqual = FilterRelation._('<=');
+  // ignore: constant_identifier_names
   static const FilterRelation GreatherThan = FilterRelation._('>');
+  // ignore: constant_identifier_names
   static const FilterRelation GreatherThanOrEqual = FilterRelation._('>=');
+  // ignore: constant_identifier_names
   static const FilterRelation Equal = FilterRelation._('==');
 
   final String name;
@@ -277,7 +284,9 @@ class Filter {
 /// 'Order' class.
 /// [i.e. so one can write Order.Ascending, Order.Descending].
 class OrderDirection {
+  // ignore: constant_identifier_names
   static const OrderDirection Ascending = OrderDirection._('Ascending');
+  // ignore: constant_identifier_names
   static const OrderDirection Decending = OrderDirection._('Decending');
 
   final String name;
@@ -365,7 +374,8 @@ abstract class Transaction {}
 /// and allocate IDs from the auto ID allocation policy.
 abstract class Datastore {
   /// List of required OAuth2 scopes for Datastore operation.
-  static const Scopes = DatastoreImpl.SCOPES;
+  // ignore: constant_identifier_names
+  static const Scopes = DatastoreImpl.scopes;
 
   /// Access Datastore using an authenticated client.
   ///

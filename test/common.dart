@@ -11,9 +11,9 @@ import 'package:http_parser/http_parser.dart' as http_parser;
 import 'package:mime/mime.dart' as mime;
 import 'package:test/test.dart';
 
-const CONTENT_TYPE_JSON_UTF8 = 'application/json; charset=utf-8';
+const _contentTypeJsonUtf8 = 'application/json; charset=utf-8';
 
-const RESPONSE_HEADERS = {'content-type': CONTENT_TYPE_JSON_UTF8};
+const _responseHeaders = {'content-type': _contentTypeJsonUtf8};
 
 class MockClient extends http.BaseClient {
   static const bytes = [1, 2, 3, 4, 5];
@@ -27,10 +27,8 @@ class MockClient extends http.BaseClient {
   Map<String, Map<Pattern, http_testing.MockClientHandler>> mocks = {};
   late http_testing.MockClient client;
 
-  MockClient(String hostname, String rootPath)
-      : hostname = hostname,
-        rootPath = rootPath,
-        rootUri = Uri.parse('https://$hostname$rootPath') {
+  MockClient(this.hostname, this.rootPath)
+      : rootUri = Uri.parse('https://$hostname$rootPath') {
     client = http_testing.MockClient(handler);
   }
 
@@ -91,15 +89,15 @@ class MockClient extends http.BaseClient {
 
   Future<http.Response> respond(response) {
     return Future.value(http.Response(jsonEncode(response.toJson()), 200,
-        headers: RESPONSE_HEADERS));
+        headers: _responseHeaders));
   }
 
   Future<http.Response> respondEmpty() {
-    return Future.value(http.Response('{}', 200, headers: RESPONSE_HEADERS));
+    return Future.value(http.Response('{}', 200, headers: _responseHeaders));
   }
 
   Future<http.Response> respondInitiateResumableUpload(project) {
-    final headers = Map<String, String>.from(RESPONSE_HEADERS);
+    final headers = Map<String, String>.from(_responseHeaders);
     headers['location'] = 'https://$hostname/resumable/upload$rootPath'
         'b/$project/o?uploadType=resumable&alt=json&'
         'upload_id=AEnB2UqucpaWy7d5cr5iVQzmbQcQlLDIKiClrm0SAX3rJ7UN'
@@ -108,14 +106,14 @@ class MockClient extends http.BaseClient {
   }
 
   Future<http.Response> respondContinueResumableUpload() {
-    return Future.value(http.Response('', 308, headers: RESPONSE_HEADERS));
+    return Future.value(http.Response('', 308, headers: _responseHeaders));
   }
 
   Future<http.Response> respondBytes(http.Request request) async {
     expect(request.url.queryParameters['alt'], 'media');
 
     var myBytes = bytes;
-    var headers = Map<String, String>.from(RESPONSE_HEADERS);
+    var headers = Map<String, String>.from(_responseHeaders);
 
     var range = request.headers['range'];
     if (range != null) {
@@ -137,7 +135,7 @@ class MockClient extends http.BaseClient {
       'error': {'code': statusCode, 'message': 'error'}
     };
     return Future.value(http.Response(jsonEncode(error), statusCode,
-        headers: RESPONSE_HEADERS));
+        headers: _responseHeaders));
   }
 
   Future<NormalMediaUpload> processNormalMediaUpload(http.Request request) {

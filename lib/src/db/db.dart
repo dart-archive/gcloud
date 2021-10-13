@@ -16,10 +16,10 @@ typedef TransactionHandler<T> = Future<T> Function(Transaction transaction);
 /// (inserts/updates/deletes). Finally the transaction can be either committed
 /// or rolled back.
 class Transaction {
-  static const int _TRANSACTION_STARTED = 0;
-  static const int _TRANSACTION_ROLLED_BACK = 1;
-  static const int _TRANSACTION_COMMITTED = 2;
-  static const int _TRANSACTION_COMMIT_FAILED = 3;
+  static const int _transactionStarted = 0;
+  static const int _transactionRolledBack = 1;
+  static const int _transactionCommitted = 2;
+  static const int _transactionCommitFailed = 3;
 
   final DatastoreDB db;
   final ds.Transaction _datastoreTransaction;
@@ -27,7 +27,7 @@ class Transaction {
   final List<Model> _inserts = [];
   final List<Key> _deletes = [];
 
-  int _state = _TRANSACTION_STARTED;
+  int _state = _transactionStarted;
 
   Transaction(this.db, this._datastoreTransaction);
 
@@ -107,30 +107,30 @@ class Transaction {
 
   /// Rolls this transaction back.
   Future rollback() {
-    _checkSealed(changeState: _TRANSACTION_ROLLED_BACK, allowFailed: true);
+    _checkSealed(changeState: _transactionRolledBack, allowFailed: true);
     return db.datastore.rollback(_datastoreTransaction);
   }
 
   /// Commits this transaction including all of the queued mutations.
   Future commit() {
-    _checkSealed(changeState: _TRANSACTION_COMMITTED);
+    _checkSealed(changeState: _transactionCommitted);
     try {
       return _commitHelper(db,
           inserts: _inserts,
           deletes: _deletes,
           datastoreTransaction: _datastoreTransaction);
     } catch (error) {
-      _state = _TRANSACTION_COMMIT_FAILED;
+      _state = _transactionCommitFailed;
       rethrow;
     }
   }
 
   void _checkSealed({int? changeState, bool allowFailed = false}) {
-    if (_state == _TRANSACTION_COMMITTED) {
+    if (_state == _transactionCommitted) {
       throw StateError('The transaction has already been committed.');
-    } else if (_state == _TRANSACTION_ROLLED_BACK) {
+    } else if (_state == _transactionRolledBack) {
       throw StateError('The transaction has already been rolled back.');
-    } else if (_state == _TRANSACTION_COMMIT_FAILED && !allowFailed) {
+    } else if (_state == _transactionCommitFailed && !allowFailed) {
       throw StateError('The transaction has attempted commit and failed.');
     }
     if (changeState != null) {
@@ -413,7 +413,7 @@ Future _commitHelper(DatastoreDB db,
     ds.Transaction? datastoreTransaction}) {
   List<ds.Entity>? entityInserts, entityAutoIdInserts;
   List<ds.Key>? entityDeletes;
-  late var autoIdModelInserts;
+  late List<Model> autoIdModelInserts;
   if (inserts != null) {
     entityInserts = <ds.Entity>[];
     entityAutoIdInserts = <ds.Entity>[];

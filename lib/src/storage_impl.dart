@@ -4,8 +4,8 @@
 
 part of gcloud.storage;
 
-const String _ABSOLUTE_PREFIX = 'gs://';
-const String _DIRECTORY_DELIMITER = '/';
+const String _absolutePrefix = 'gs://';
+const String _directoryDelimiter = '/';
 
 /// Representation of an absolute name consisting of bucket name and object
 /// name.
@@ -16,12 +16,12 @@ class _AbsoluteName {
   _AbsoluteName._(this.bucketName, this.objectName);
 
   factory _AbsoluteName.parse(String absoluteName) {
-    if (!absoluteName.startsWith(_ABSOLUTE_PREFIX)) {
+    if (!absoluteName.startsWith(_absolutePrefix)) {
       throw FormatException("Absolute name '$absoluteName' does not start "
-          "with '$_ABSOLUTE_PREFIX'");
+          "with '$_absolutePrefix'");
     }
-    var index = absoluteName.indexOf('/', _ABSOLUTE_PREFIX.length);
-    if (index == -1 || index == _ABSOLUTE_PREFIX.length) {
+    var index = absoluteName.indexOf('/', _absolutePrefix.length);
+    if (index == -1 || index == _absolutePrefix.length) {
       throw FormatException("Absolute name '$absoluteName' does not have "
           'a bucket name');
     }
@@ -29,7 +29,7 @@ class _AbsoluteName {
       throw FormatException("Absolute name '$absoluteName' does not have "
           'an object name');
     }
-    final bucketName = absoluteName.substring(_ABSOLUTE_PREFIX.length, index);
+    final bucketName = absoluteName.substring(_absolutePrefix.length, index);
     final objectName = absoluteName.substring(index + 1);
 
     return _AbsoluteName._(bucketName, objectName);
@@ -48,7 +48,7 @@ class _StorageImpl implements Storage {
   Future createBucket(String bucketName,
       {PredefinedAcl? predefinedAcl, Acl? acl}) {
     var bucket = storage_api.Bucket()..name = bucketName;
-    var predefinedName = predefinedAcl != null ? predefinedAcl._name : null;
+    var predefinedName = predefinedAcl?._name;
     if (acl != null) {
       bucket.acl = acl._toBucketAccessControlList();
     }
@@ -157,7 +157,7 @@ class _BucketImpl implements Bucket {
 
   @override
   String absoluteObjectName(String objectName) {
-    return '$_ABSOLUTE_PREFIX$bucketName/$objectName';
+    return '$_absolutePrefix$bucketName/$objectName';
   }
 
   @override
@@ -259,7 +259,7 @@ class _BucketImpl implements Bucket {
 
   @override
   Stream<BucketEntry> list({String? prefix, String? delimiter}) {
-    delimiter ??= _DIRECTORY_DELIMITER;
+    delimiter ??= _directoryDelimiter;
     Future<_ObjectPageImpl> firstPage(int pageSize) async {
       final response =
           await _listObjects(bucketName, prefix, delimiter, 50, null);
@@ -272,7 +272,7 @@ class _BucketImpl implements Bucket {
   @override
   Future<Page<BucketEntry>> page(
       {String? prefix, String? delimiter, int pageSize = 50}) async {
-    delimiter ??= _DIRECTORY_DELIMITER;
+    delimiter ??= _directoryDelimiter;
     final response =
         await _listObjects(bucketName, prefix, delimiter, pageSize, null);
     return _ObjectPageImpl(this, prefix, delimiter, pageSize, response);
@@ -442,7 +442,7 @@ class _ObjectMetadata implements ObjectMetadata {
       String? contentLanguage,
       Map<String, String>? custom})
       : _object = storage_api.Object() {
-    _object.acl = acl != null ? acl._toObjectAccessControlList() : null;
+    _object.acl = acl?._toObjectAccessControlList();
     _object.contentType = contentType;
     _object.contentEncoding = contentEncoding;
     _object.cacheControl = cacheControl;
@@ -511,7 +511,7 @@ class _ObjectMetadata implements ObjectMetadata {
 /// It provides a StreamSink and logic which selects whether to use normal
 /// media upload (multipart mime) or resumable media upload.
 class _MediaUploadStreamSink implements StreamSink<List<int>> {
-  static const int _DEFAULT_MAX_NORMAL_UPLOAD_LENGTH = 1024 * 1024;
+  static const int _defaultMaxNormalUploadLength = 1024 * 1024;
   final storage_api.StorageApi _api;
   final String _bucketName;
   final String _objectName;
@@ -526,25 +526,25 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
   late StreamController<List<int>> _resumableController;
   final _doneCompleter = Completer<ObjectInfo>();
 
-  static const int _STATE_LENGTH_KNOWN = 0;
-  static const int _STATE_PROBING_LENGTH = 1;
-  static const int _STATE_DECIDED_RESUMABLE = 2;
+  static const int _stateLengthKnown = 0;
+  static const int _stateProbingLength = 1;
+  static const int _stateDecidedResumable = 2;
   int? _state;
 
   _MediaUploadStreamSink(this._api, this._bucketName, this._objectName,
       this._object, this._predefinedAcl, this._length,
-      [this._maxNormalUploadLength = _DEFAULT_MAX_NORMAL_UPLOAD_LENGTH]) {
+      [this._maxNormalUploadLength = _defaultMaxNormalUploadLength]) {
     if (_length != null) {
       // If the length is known in advance decide on the upload strategy
       // immediately
-      _state = _STATE_LENGTH_KNOWN;
+      _state = _stateLengthKnown;
       if (_length! <= _maxNormalUploadLength) {
         _startNormalUpload(_controller.stream, _length);
       } else {
         _startResumableUpload(_controller.stream, _length);
       }
     } else {
-      _state = _STATE_PROBING_LENGTH;
+      _state = _stateProbingLength;
       // If the length is not known in advance decide on the upload strategy
       // later. Start buffering until enough data has been read to decide.
       _subscription = _controller.stream
@@ -577,8 +577,8 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
   Future get done => _doneCompleter.future;
 
   void _onData(List<int> data) {
-    assert(_state != _STATE_LENGTH_KNOWN);
-    if (_state == _STATE_PROBING_LENGTH) {
+    assert(_state != _stateLengthKnown);
+    if (_state == _stateProbingLength) {
       buffer.add(data);
       _bufferLength += data.length;
       if (_bufferLength > _maxNormalUploadLength) {
@@ -587,16 +587,16 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
         _resumableController = StreamController<List<int>>(sync: true);
         buffer.forEach(_resumableController.add);
         _startResumableUpload(_resumableController.stream, _length);
-        _state = _STATE_DECIDED_RESUMABLE;
+        _state = _stateDecidedResumable;
       }
     } else {
-      assert(_state == _STATE_DECIDED_RESUMABLE);
+      assert(_state == _stateDecidedResumable);
       _resumableController.add(data);
     }
   }
 
   void _onDone() {
-    if (_state == _STATE_PROBING_LENGTH) {
+    if (_state == _stateProbingLength) {
       // As the data is already cached don't bother to wait on somebody
       // listening on the stream before adding the data.
       _startNormalUpload(Stream<List<int>>.fromIterable(buffer), _bufferLength);
@@ -608,7 +608,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
   void _onError(Object e, StackTrace s) {
     // If still deciding on the strategy complete with error. Otherwise
     // forward the error for default processing.
-    if (_state == _STATE_PROBING_LENGTH) {
+    if (_state == _stateProbingLength) {
       _completeError(e, s);
     } else {
       _resumableController.addError(e, s);
@@ -616,7 +616,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
   }
 
   void _completeError(Object e, StackTrace s) {
-    if (_state != _STATE_LENGTH_KNOWN) {
+    if (_state != _stateLengthKnown) {
       // Always cancel subscription on error.
       _subscription.cancel();
     }

@@ -15,20 +15,20 @@ import 'package:test/test.dart';
 import '../common.dart';
 import '../common_e2e.dart';
 
-const String HOSTNAME = 'storage.googleapis.com';
-const String ROOT_PATH = '/storage/v1/';
+const _hostName = 'storage.googleapis.com';
+const _rootPath = '/storage/v1/';
 
-MockClient mockClient() => MockClient(HOSTNAME, ROOT_PATH);
+MockClient mockClient() => MockClient(_hostName, _rootPath);
 
 void withMockClient(Function(MockClient client, Storage storage) function) {
   var mock = mockClient();
-  function(mock, Storage(mock, PROJECT));
+  function(mock, Storage(mock, testProject));
 }
 
 Future withMockClientAsync(
     Future Function(MockClient client, Storage storage) function) async {
   var mock = mockClient();
-  await function(mock, Storage(mock, PROJECT));
+  await function(mock, Storage(mock, testProject));
 }
 
 void main() {
@@ -202,7 +202,7 @@ void main() {
     test('delete', () {
       withMockClient((mock, api) {
         mock.register('DELETE', RegExp(r'b/[a-z/-]*$'), expectAsync1((request) {
-          expect(request.url.path, '${ROOT_PATH}b/$bucketName');
+          expect(request.url.path, '${_rootPath}b/$bucketName');
           expect(request.body.length, 0);
           return mock.respond(storage.Bucket()..name = bucketName);
         }));
@@ -219,7 +219,7 @@ void main() {
             'GET',
             RegExp(r'b/[a-z/-]*$'),
             expectAsync1((request) {
-              expect(request.url.path, '${ROOT_PATH}b/$bucketName');
+              expect(request.url.path, '${_rootPath}b/$bucketName');
               expect(request.body.length, 0);
               if (exists) {
                 return mock.respond(storage.Bucket()..name = bucketName);
@@ -239,7 +239,7 @@ void main() {
     test('stat', () {
       withMockClient((mock, api) {
         mock.register('GET', RegExp(r'b/[a-z/-]*$'), expectAsync1((request) {
-          expect(request.url.path, '${ROOT_PATH}b/$bucketName');
+          expect(request.url.path, '${_rootPath}b/$bucketName');
           expect(request.body.length, 0);
           return mock.respond(storage.Bucket()
             ..name = bucketName
@@ -261,8 +261,9 @@ void main() {
             return mock.respond(storage.Buckets());
           }));
 
-          api.listBucketNames().listen((_) => throw 'Unexpected',
-              onDone: expectAsync0(() => null));
+          api
+              .listBucketNames()
+              .listen((_) => throw 'Unexpected', onDone: expectAsync0(() {}));
         });
       });
 
@@ -318,8 +319,8 @@ void main() {
     var bytesNormalUpload = [1, 2, 3];
 
     // Generate a list just above the limit when changing to resumable upload.
-    const MB = 1024 * 1024;
-    const maxNormalUpload = 1 * MB;
+    const mb = 1024 * 1024;
+    const maxNormalUpload = 1 * mb;
     const minResumableUpload = maxNormalUpload + 1;
     var bytesResumableUpload =
         List.generate(minResumableUpload, (e) => e & 255);
@@ -351,15 +352,15 @@ void main() {
         var requestObject =
             storage.Object.fromJson(jsonDecode(request.body) as Map);
         expect(requestObject.name, objectName);
-        return mock.respondInitiateResumableUpload(PROJECT);
+        return mock.respondInitiateResumableUpload(testProject);
       }));
       mock.registerResumableUpload(
           'PUT',
-          'b/$PROJECT/o',
+          'b/$testProject/o',
           expectAsync1((request) {
             count++;
             if (count == 1) {
-              expect(request.bodyBytes.length, MB);
+              expect(request.bodyBytes.length, mb);
               return mock.respondContinueResumableUpload();
             } else {
               expect(request.bodyBytes.length, 1);
@@ -394,7 +395,9 @@ void main() {
     Future addToSink(StreamSink<List<int>> sink, List<List<int>> data) {
       sink.done.then(expectAsync1(checkResult));
       sink.done.catchError((e) => throw 'Unexpected $e');
-      data.forEach((bytes) => sink.add(bytes));
+      for (var bytes in data) {
+        sink.add(bytes);
+      }
       return sink
           .close()
           .then(expectAsync1(checkResult))
@@ -481,11 +484,11 @@ void main() {
           mock.clear();
           mock.registerResumableUpload('POST', 'b/$bucketName/o',
               expectAsync1((request) {
-            return mock.respondInitiateResumableUpload(PROJECT);
+            return mock.respondInitiateResumableUpload(testProject);
           }));
           mock.registerResumableUpload(
               'PUT',
-              'b/$PROJECT/o',
+              'b/$testProject/o',
               expectAsync1((request) {
                 return mock.respondError(502);
               }, count: 3)); // Default 3 retries in googleapis library.
@@ -509,9 +512,9 @@ void main() {
           mock.clear();
           mock.registerResumableUpload('POST', 'b/$bucketName/o',
               expectAsync1((request) {
-            return mock.respondInitiateResumableUpload(PROJECT);
+            return mock.respondInitiateResumableUpload(testProject);
           }));
-          mock.registerResumableUpload('PUT', 'b/$PROJECT/o',
+          mock.registerResumableUpload('PUT', 'b/$testProject/o',
               expectAsync1((request) {
             return mock.respondContinueResumableUpload();
           })); // Default 3 retries in googleapis library.
@@ -551,12 +554,12 @@ void main() {
       withMockClient((mock, api) {
         mock.registerResumableUpload('POST', 'b/$bucketName/o',
             expectAsync1((request) {
-          return mock.respondInitiateResumableUpload(PROJECT);
+          return mock.respondInitiateResumableUpload(testProject);
         }));
         // The resumable upload will buffer until either close or a full chunk,
         // so when we add an error the last byte is never sent. Therefore this
         // PUT is only called once.
-        mock.registerResumableUpload('PUT', 'b/$PROJECT/o',
+        mock.registerResumableUpload('PUT', 'b/$testProject/o',
             expectAsync1((request) {
           expect(request.bodyBytes.length, 1024 * 1024);
           return mock.respondContinueResumableUpload();
@@ -659,11 +662,11 @@ void main() {
               expect(object.contentLanguage, m.contentLanguage);
               expect(object.metadata, m.custom);
               countInitial++;
-              return mock.respondInitiateResumableUpload(PROJECT);
+              return mock.respondInitiateResumableUpload(testProject);
             }, count: metadata.length));
         mock.registerResumableUpload(
             'PUT',
-            'b/$PROJECT/o',
+            'b/$testProject/o',
             expectAsync1((request) {
               var m = metadata[countData % metadata.length];
               var contentType = m.contentType ?? 'application/octet-stream';
@@ -671,7 +674,7 @@ void main() {
               var firstPart = countData < metadata.length;
               countData++;
               if (firstPart) {
-                expect(request.bodyBytes.length, MB);
+                expect(request.bodyBytes.length, mb);
                 return mock.respondContinueResumableUpload();
               } else {
                 expect(request.bodyBytes.length, 1);
@@ -979,7 +982,7 @@ void main() {
             ..contentType = 'mime/type');
         }));
 
-        var api = Storage(mock, PROJECT);
+        var api = Storage(mock, testProject);
         var bucket = api.bucket(bucketName);
         bucket.info(objectName).then(expectAsync1((stat) {
           expect(stat.name, objectName);
@@ -1008,7 +1011,7 @@ void main() {
             ..acl = [acl1, acl2, acl3]);
         }));
 
-        var api = Storage(mock, PROJECT);
+        var api = Storage(mock, testProject);
         var bucket = api.bucket(bucketName);
         bucket.info(objectName).then(expectAsync1((ObjectInfo info) {
           expect(info.name, objectName);
@@ -1029,8 +1032,9 @@ void main() {
           }));
 
           var bucket = api.bucket(bucketName);
-          bucket.list().listen((_) => throw 'Unexpected',
-              onDone: expectAsync0(() => null));
+          bucket
+              .list()
+              .listen((_) => throw 'Unexpected', onDone: expectAsync0(() {}));
         });
       });
 

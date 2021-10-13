@@ -12,11 +12,11 @@ import 'package:http/http.dart' as http;
 
 import 'common.dart';
 
-const PROJECT = 'test-project';
+const testProject = 'test-project';
 
 // Environment variables for specifying the cloud project to use and the
 // location of the service account key for that project.
-const String PROJECT_ENV = 'GCLOUD_E2E_TEST_PROJECT';
+const projectEnv = 'GCLOUD_E2E_TEST_PROJECT';
 
 // Used for storage e2e tests:
 //
@@ -26,17 +26,17 @@ const String PROJECT_ENV = 'GCLOUD_E2E_TEST_PROJECT';
 //
 // So this can make tests flaky. The following delay is introduced as an
 // attempt to account for that.
-const STORAGE_LIST_DELAY = Duration(seconds: 5);
+const storageListDelay = Duration(seconds: 5);
 
 Future<T> withAuthClient<T>(
   List<String> scopes,
   Future<T> Function(String project, http.Client client) callback, {
   bool trace = false,
 }) async {
-  var project = Platform.environment[PROJECT_ENV];
+  var project = Platform.environment[projectEnv];
 
   if (project == null) {
-    throw StateError('Environment variables $PROJECT_ENV ');
+    throw StateError('Environment variables $projectEnv ');
   }
 
   http.Client client = await auth.clientViaApplicationDefaultCredentials(

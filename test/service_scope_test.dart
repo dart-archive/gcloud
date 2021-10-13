@@ -58,9 +58,9 @@ void main() {
     // their entries.
     var insertions = 0;
     return ss.fork(expectAsync0(() => Future.value(() {
-          var NUM = 10;
+          var num = 10;
 
-          for (var i = 0; i < NUM; i++) {
+          for (var i = 0; i < num; i++) {
             var key = i;
 
             insertions++;
@@ -71,7 +71,7 @@ void main() {
               return null;
             }));
 
-            for (var j = 0; j <= NUM; j++) {
+            for (var j = 0; j <= num; j++) {
               if (j <= i) {
                 expect(ss.lookup(key), 'value$i');
               } else {
