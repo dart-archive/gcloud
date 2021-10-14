@@ -49,9 +49,11 @@ class Kind {
 /// The type used for id's of an entity.
 class IdType {
   /// Use integer ids for identifying entities.
+  // ignore: constant_identifier_names
   static const IdType Integer = IdType('Integer');
 
   /// Use string ids for identifying entities.
+  // ignore: constant_identifier_names
   static const IdType String = IdType('String');
 
   final core.String _type;

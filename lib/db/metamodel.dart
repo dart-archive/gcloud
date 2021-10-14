@@ -8,6 +8,7 @@ import '../db.dart' as db;
 
 @db.Kind(name: '__namespace__')
 class Namespace extends db.ExpandoModel {
+  // ignore: constant_identifier_names
   static const int EmptyNamespaceId = 1;
 
   String? get name {

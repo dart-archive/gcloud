@@ -16,5 +16,6 @@ class A extends db.Model {
 class B extends A {
   @override
   @db.IntProperty(propertyName: 'bar')
+  // ignore: overridden_fields
   int? foo;
 }
