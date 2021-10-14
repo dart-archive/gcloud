@@ -243,13 +243,12 @@ void main() {
           expect(request.body.length, 0);
           return mock.respond(storage.Bucket()
             ..name = bucketName
-            ..timeCreated = DateTime(2014));
+            ..timeCreated = DateTime.utc(2014));
         }));
 
         return api.bucketInfo(bucketName).then(expectAsync1((result) {
           expect(result.bucketName, bucketName);
-          expect(result.created,
-              anyOf(DateTime(2014), DateTime.utc(2014, 1, 1, 8)));
+          expect(result.created, DateTime.utc(2014));
         }));
       });
     });
@@ -976,7 +975,7 @@ void main() {
           expect(request.url.queryParameters['alt'], 'json');
           return mock.respond(storage.Object()
             ..name = objectName
-            ..updated = DateTime(2014)
+            ..updated = DateTime.utc(2014)
             ..contentType = 'mime/type');
         }));
 
@@ -984,8 +983,7 @@ void main() {
         var bucket = api.bucket(bucketName);
         bucket.info(objectName).then(expectAsync1((stat) {
           expect(stat.name, objectName);
-          expect(
-              stat.updated, anyOf(DateTime(2014), DateTime.utc(2014, 1, 1, 8)));
+          expect(stat.updated, DateTime.utc(2014));
           expect(stat.metadata.contentType, 'mime/type');
         }));
       });
