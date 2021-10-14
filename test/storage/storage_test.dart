@@ -248,7 +248,7 @@ void main() {
 
         return api.bucketInfo(bucketName).then(expectAsync1((result) {
           expect(result.bucketName, bucketName);
-          expect(result.created, DateTime(2014));
+          expect(result.created, anyOf(DateTime(2014), DateTime.utc(2014, 1, 1, 8)));
         }));
       });
     });
@@ -983,7 +983,7 @@ void main() {
         var bucket = api.bucket(bucketName);
         bucket.info(objectName).then(expectAsync1((stat) {
           expect(stat.name, objectName);
-          expect(stat.updated, DateTime(2014));
+          expect(stat.updated, anyOf(DateTime(2014), DateTime.utc(2014, 1, 1, 8)));
           expect(stat.metadata.contentType, 'mime/type');
         }));
       });
