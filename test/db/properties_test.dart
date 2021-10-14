@@ -245,6 +245,7 @@ class KeyMock implements Key {
   @override
   Key<U> cast<U>() => Key<U>(parent, type, id as U);
   @override
+  // ignore: hash_and_equals
   int get hashCode => 1;
 }
 

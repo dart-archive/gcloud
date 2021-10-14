@@ -76,8 +76,7 @@ class _PubSubImpl implements PubSub {
   }
 
   Future _modifyPushConfig(String subscription, Uri? endpoint) {
-    var pushConfig = pubsub.PushConfig()
-      ..pushEndpoint = endpoint != null ? endpoint.toString() : null;
+    var pushConfig = pubsub.PushConfig()..pushEndpoint = endpoint?.toString();
     var request = pubsub.ModifyPushConfigRequest()..pushConfig = pushConfig;
     return _api.projects.subscriptions.modifyPushConfig(request, subscription);
   }
@@ -324,7 +323,7 @@ class _PullEventImpl implements PullEvent {
 ///
 /// decoded from JSON encoded push HTTP request body.
 class _PushEventImpl implements PushEvent {
-  static const PREFIX = '/subscriptions/';
+  static const _prefix = '/subscriptions/';
   final Message _message;
   final String _subscriptionName;
 
@@ -349,8 +348,8 @@ class _PushEventImpl implements PushEvent {
     var subscription = body['subscription'] as String;
     // TODO(#1): Remove this when the push event subscription name is prefixed
     // with '/subscriptions/'.
-    if (!subscription.startsWith(PREFIX)) {
-      subscription = PREFIX + subscription;
+    if (!subscription.startsWith(_prefix)) {
+      subscription = _prefix + subscription;
     }
     return _PushEventImpl(_PushMessage(data, labels), subscription);
   }

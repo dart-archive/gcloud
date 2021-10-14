@@ -29,7 +29,7 @@ typedef FirstPageProvider<T> = Future<Page<T>> Function(int pageSize);
 
 /// Helper class to turn a series of pages into a stream.
 class StreamFromPages<T> {
-  static const int _PAGE_SIZE = 50;
+  static const int _pageSize = 50;
   final FirstPageProvider<T> _firstPageProvider;
   bool _pendingRequest = false;
   bool _paused = false;
@@ -66,7 +66,7 @@ class StreamFromPages<T> {
   }
 
   void _onListen() {
-    var pageSize = _PAGE_SIZE;
+    var pageSize = _pageSize;
     _pendingRequest = true;
     _firstPageProvider(pageSize).then(_handlePage, onError: _handleError);
   }

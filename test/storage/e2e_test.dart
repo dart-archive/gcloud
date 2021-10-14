@@ -21,8 +21,8 @@ String generateBucketName() {
 bool testDetailedApiError(e) => e is storage_api.DetailedApiRequestError;
 
 // Generate a list just above the limit when changing to resumable upload.
-const int MB = 1024 * 1024;
-const int maxNormalUpload = 1 * MB;
+const int mb = 1024 * 1024;
+const int maxNormalUpload = 1 * mb;
 const int minResumableUpload = maxNormalUpload + 1;
 final bytesResumableUpload =
     List<int>.generate(minResumableUpload, (e) => e & 255);
@@ -55,7 +55,7 @@ void main() {
     }
     // Deleting a bucket relies on eventually consistent behaviour, hence
     // the delay in attempt to prevent test flakiness.
-    await Future.delayed(STORAGE_LIST_DELAY);
+    await Future.delayed(storageListDelay);
     await storage.deleteBucket(testBucketName);
   });
 

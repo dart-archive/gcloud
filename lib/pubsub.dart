@@ -9,12 +9,12 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:gcloud/src/common_utils.dart';
 import 'package:googleapis/pubsub/v1.dart' as pubsub;
 import 'package:http/http.dart' as http;
 
 import 'common.dart';
 import 'service_scope.dart' as ss;
+import 'src/common_utils.dart';
 
 export 'common.dart';
 
@@ -113,6 +113,7 @@ void registerPubSubService(PubSub pubsub) {
 ///
 abstract class PubSub {
   /// List of required OAuth2 scopes for Pub/Sub operation.
+  // ignore: constant_identifier_names
   static const SCOPES = [pubsub.PubsubApi.pubsubScope];
 
   /// Access Pub/Sub using an authenticated client.

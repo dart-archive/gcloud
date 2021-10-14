@@ -198,14 +198,14 @@ class ModelDBImpl implements ModelDB {
   }
 
   void _initialize(Iterable<mirrors.LibraryMirror> libraries) {
-    libraries.forEach((mirrors.LibraryMirror lm) {
+    for (var lm in libraries) {
       lm.declarations.values
           .whereType<mirrors.ClassMirror>()
           .where((d) => d.hasReflectedType)
           .forEach((declaration) {
         _tryLoadNewModelClass(declaration);
       });
-    });
+    }
 
     // Ask every [ModelDescription] to compute whatever global state it wants
     // to have.
