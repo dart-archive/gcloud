@@ -1,3 +1,7 @@
+## 0.8.5
+
+- Support the latest version 7.0.0 of the `googleapis` package.
+
 ## 0.8.4
 
 - Support the latest version 6.0.0 of the `googleapis` package.
