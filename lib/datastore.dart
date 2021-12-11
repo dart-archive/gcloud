@@ -1,7 +1,6 @@
 // Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-// @dart=2.9
 
 /// This library provides a low-level API for accessing Google's Cloud
 /// Datastore.
@@ -12,8 +11,11 @@ library gcloud.datastore;
 
 import 'dart:async';
 
+import 'package:http/http.dart' as http;
+
 import 'common.dart' show Page;
 import 'service_scope.dart' as ss;
+import 'src/datastore_impl.dart' show DatastoreImpl;
 
 const Symbol _datastoreKey = #gcloud.datastore;
 
@@ -49,11 +51,11 @@ class ApplicationError implements Exception {
 class DatastoreError implements Exception {
   final String message;
 
-  DatastoreError([String message])
+  DatastoreError([String? message])
       : message = (message ?? 'DatastoreError: An unknown error occured');
 
   @override
-  String toString() => '$message';
+  String toString() => message;
 }
 
 class UnknownDatastoreError extends DatastoreError {
@@ -107,10 +109,11 @@ class QuotaExceededError extends DatastoreError {
 /// relevant if the value is a list of primitive values).
 class Entity {
   final Key key;
-  final Map<String, Object> properties;
+  final Map<String, Object?> properties;
   final Set<String> unIndexedProperties;
 
-  Entity(this.key, this.properties, {this.unIndexedProperties});
+  Entity(this.key, this.properties,
+      {this.unIndexedProperties = const <String>{}});
 }
 
 /// A complete or partial key.
@@ -137,11 +140,10 @@ class Key {
   /// The path of `KeyElement`s.
   final List<KeyElement> elements;
 
-  Key(this.elements, {Partition partition})
-      : partition = (partition == null) ? Partition.DEFAULT : partition;
+  Key(this.elements, {this.partition = Partition.DEFAULT});
 
-  factory Key.fromParent(String kind, int id, {Key parent}) {
-    Partition partition;
+  factory Key.fromParent(String kind, int id, {Key? parent}) {
+    var partition = Partition.DEFAULT;
     var elements = <KeyElement>[];
     if (parent != null) {
       partition = parent.partition;
@@ -186,10 +188,13 @@ class Key {
 ///
 // TODO(Issue #6): Add dataset-id here.
 class Partition {
+  // ignore: constant_identifier_names
   static const Partition DEFAULT = Partition._default();
 
   /// The namespace of this partition.
-  final String namespace;
+  ///
+  /// The default namespace is `null`.
+  final String? namespace;
 
   Partition(this.namespace) {
     if (namespace == '') {
@@ -217,12 +222,9 @@ class KeyElement {
   /// This may be `null`, in which case it does not identify an Entity. It is
   /// possible to insert [Entity]s with incomplete keys and let Datastore
   /// automatically select a unused integer ID.
-  final id;
+  final dynamic id;
 
   KeyElement(this.kind, this.id) {
-    if (kind == null) {
-      throw ArgumentError("'kind' must not be null");
-    }
     if (id != null) {
       if (id is! int && id is! String) {
         throw ArgumentError("'id' must be either null, a String or an int");
@@ -243,10 +245,15 @@ class KeyElement {
 
 /// A relation used in query filters.
 class FilterRelation {
+  // ignore: constant_identifier_names
   static const FilterRelation LessThan = FilterRelation._('<');
+  // ignore: constant_identifier_names
   static const FilterRelation LessThanOrEqual = FilterRelation._('<=');
+  // ignore: constant_identifier_names
   static const FilterRelation GreatherThan = FilterRelation._('>');
+  // ignore: constant_identifier_names
   static const FilterRelation GreatherThanOrEqual = FilterRelation._('>=');
+  // ignore: constant_identifier_names
   static const FilterRelation Equal = FilterRelation._('==');
 
   final String name;
@@ -277,7 +284,9 @@ class Filter {
 /// 'Order' class.
 /// [i.e. so one can write Order.Ascending, Order.Descending].
 class OrderDirection {
+  // ignore: constant_identifier_names
   static const OrderDirection Ascending = OrderDirection._('Ascending');
+  // ignore: constant_identifier_names
   static const OrderDirection Decending = OrderDirection._('Decending');
 
   final String name;
@@ -309,30 +318,31 @@ class Order {
 ///     var query = new Query(ancestorKey: personKey, kind: 'Address')
 class Query {
   /// Restrict the result set to entities of this kind.
-  final String kind;
+  final String? kind;
 
   /// Restrict the result set to entities which have this  ancestorKey / parent.
-  final Key ancestorKey;
+  final Key? ancestorKey;
 
   /// Restrict the result set by a list of property [Filter]s.
-  final List<Filter> filters;
+  final List<Filter>? filters;
 
   /// Order the matching entities following the given property [Order]s.
-  final List<Order> orders;
+  final List<Order>? orders;
 
   /// Skip the first [offset] entities in the result set.
-  final int offset;
+  final int? offset;
 
   /// Limit the number of entities returned to [limit].
-  final int limit;
+  final int? limit;
 
-  Query(
-      {this.ancestorKey,
-      this.kind,
-      this.filters,
-      this.orders,
-      this.offset,
-      this.limit});
+  Query({
+    this.ancestorKey,
+    this.kind,
+    this.filters,
+    this.orders,
+    this.offset,
+    this.limit,
+  });
 }
 
 /// The result of a commit.
@@ -363,6 +373,24 @@ abstract class Transaction {}
 /// It can be used to insert/update/delete [Entity]s, lookup/query [Entity]s
 /// and allocate IDs from the auto ID allocation policy.
 abstract class Datastore {
+  /// List of required OAuth2 scopes for Datastore operation.
+  // ignore: constant_identifier_names
+  static const Scopes = DatastoreImpl.scopes;
+
+  /// Access Datastore using an authenticated client.
+  ///
+  /// The [client] is an authenticated HTTP client. This client must
+  /// provide access to at least the scopes in `Datastore.Scopes`.
+  ///
+  /// The [project] is the name of the Google Cloud project.
+  ///
+  /// Returs an object providing access to Datastore. The passed-in [client]
+  /// will not be closed automatically. The caller is responsible for closing
+  /// it.
+  factory Datastore(http.Client client, String project) {
+    return DatastoreImpl(client, project);
+  }
+
   /// Allocate integer IDs for the partially populated [keys] given as argument.
   ///
   /// The returned [Key]s will be fully populated with the allocated IDs.
@@ -408,7 +436,7 @@ abstract class Datastore {
   /// returned [Entity]s is the same as in [keys].
   ///
   /// If a [transaction] is given, the lookup will be within this transaction.
-  Future<List<Entity>> lookup(List<Key> keys, {Transaction transaction});
+  Future<List<Entity?>> lookup(List<Key> keys, {Transaction transaction});
 
   /// Runs a query on the dataset and returns a [Page] of matching [Entity]s.
   ///

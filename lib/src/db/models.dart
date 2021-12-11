@@ -1,7 +1,6 @@
 // Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-// @dart=2.9
 
 part of gcloud.db;
 
@@ -13,8 +12,8 @@ class Key<T> {
   // Either KeyImpl or PartitionImpl
   final Object _parent;
 
-  final Type type;
-  final T id;
+  final Type? type;
+  final T? id;
 
   Key(Key parent, this.type, this.id) : _parent = parent {
     if (type == null) {
@@ -31,7 +30,7 @@ class Key<T> {
         id = null;
 
   /// Parent of this [Key].
-  Key get parent {
+  Key? get parent {
     if (_parent is Key) {
       return _parent as Key;
     }
@@ -44,10 +43,10 @@ class Key<T> {
     while (obj is! Partition) {
       obj = (obj as Key)._parent;
     }
-    return obj as Partition;
+    return obj;
   }
 
-  Key<U> append<U>(Type modelType, {U id}) {
+  Key<U> append<U>(Type modelType, {U? id}) {
     return Key<U>(this, modelType, id);
   }
 
@@ -65,7 +64,7 @@ class Key<T> {
   int get hashCode => _parent.hashCode ^ type.hashCode ^ id.hashCode;
 
   /// Converts `Key<dynamic>` to `Key<U>`.
-  Key<U> cast<U>() => Key<U>(parent, type, id as U);
+  Key<U> cast<U>() => Key<U>(parent!, type, id as U?);
 }
 
 /// Represents a datastore partition.
@@ -73,7 +72,7 @@ class Key<T> {
 /// A datastore is partitioned into namespaces. The default namespace is
 /// `null`.
 class Partition {
-  final String namespace;
+  final String? namespace;
 
   Partition(this.namespace) {
     if (namespace == '') {
@@ -101,10 +100,10 @@ class Partition {
 /// Every model class has a [id] of type [T] which must be `int` or `String`, and
 /// a [parentKey]. The [key] getter is returning the key for the model object.
 abstract class Model<T> {
-  T id;
-  Key parentKey;
+  T? id;
+  Key? parentKey;
 
-  Key<T> get key => parentKey.append(runtimeType, id: id);
+  Key<T> get key => parentKey!.append(runtimeType, id: id);
 }
 
 /// Superclass for all expanded model classes.
@@ -113,10 +112,10 @@ abstract class Model<T> {
 /// set arbitrary fields on these models. The expanded values must be values
 /// accepted by the [RawDatastore] implementation.
 abstract class ExpandoModel<T> extends Model<T> {
-  final Map<String, Object> additionalProperties = {};
+  final Map<String, Object?> additionalProperties = {};
 
   @override
-  Object noSuchMethod(Invocation invocation) {
+  Object? noSuchMethod(Invocation invocation) {
     var name = mirrors.MirrorSystem.getName(invocation.memberName);
     if (name.endsWith('=')) name = name.substring(0, name.length - 1);
     if (invocation.isGetter) {

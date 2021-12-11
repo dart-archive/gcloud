@@ -1,7 +1,6 @@
 // Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-// @dart=2.9
 
 /// This library provides access to Google Cloud Storage.
 ///
@@ -88,17 +87,17 @@ void registerStorageService(Storage storage) {
 }
 
 int _jenkinsHash(List e) {
-  const _HASH_MASK = 0x3fffffff;
+  const _hashMask = 0x3fffffff;
   var hash = 0;
   for (var i = 0; i < e.length; i++) {
     var c = e[i].hashCode;
-    hash = (hash + c) & _HASH_MASK;
-    hash = (hash + (hash << 10)) & _HASH_MASK;
+    hash = (hash + c) & _hashMask;
+    hash = (hash + (hash << 10)) & _hashMask;
     hash ^= (hash >> 6);
   }
-  hash = (hash + (hash << 3)) & _HASH_MASK;
+  hash = (hash + (hash << 3)) & _hashMask;
   hash ^= (hash >> 11);
-  hash = (hash + (hash << 15)) & _HASH_MASK;
+  hash = (hash + (hash << 15)) & _hashMask;
   return hash;
 }
 
@@ -110,7 +109,6 @@ int _jenkinsHash(List e) {
 /// The access controls are described by [AclEntry] objects.
 class Acl {
   final List<AclEntry> _entries;
-  int _cachedHashCode;
 
   /// The entries in the ACL.
   List<AclEntry> get entries => UnmodifiableListView<AclEntry>(_entries);
@@ -119,28 +117,21 @@ class Acl {
   Acl(Iterable<AclEntry> entries) : _entries = List.from(entries);
 
   Acl._fromBucketAcl(storage_api.Bucket bucket)
-      : _entries =
-            List.filled(bucket.acl == null ? 0 : bucket.acl.length, null) {
-    if (bucket.acl != null) {
-      for (var i = 0; i < bucket.acl.length; i++) {
-        _entries[i] = AclEntry(_aclScopeFromEntity(bucket.acl[i].entity),
-            _aclPermissionFromRole(bucket.acl[i].role));
-      }
-    }
-  }
+      : _entries = [
+          for (final control
+              in bucket.acl ?? const <storage_api.BucketAccessControl>[])
+            AclEntry(_aclScopeFromEntity(control.entity!),
+                _aclPermissionFromRole(control.role))
+        ];
 
   Acl._fromObjectAcl(storage_api.Object object)
-      : _entries =
-            List.filled(object.acl == null ? 0 : object.acl.length, null) {
-    if (object.acl != null) {
-      for (var i = 0; i < object.acl.length; i++) {
-        _entries[i] = AclEntry(_aclScopeFromEntity(object.acl[i].entity),
-            _aclPermissionFromRole(object.acl[i].role));
-      }
-    }
-  }
+      : _entries = [
+          for (final entry in object.acl ?? <storage_api.ObjectAccessControl>[])
+            AclEntry(_aclScopeFromEntity(entry.entity!),
+                _aclPermissionFromRole(entry.role)),
+        ];
 
-  AclScope _aclScopeFromEntity(String entity) {
+  static AclScope _aclScopeFromEntity(String entity) {
     if (entity.startsWith('user-')) {
       var tmp = entity.substring(5);
       var at = tmp.indexOf('@');
@@ -167,7 +158,7 @@ class Acl {
     return OpaqueScope(entity);
   }
 
-  AclPermission _aclPermissionFromRole(String role) {
+  static AclPermission _aclPermissionFromRole(String? role) {
     if (role == 'READER') return AclPermission.READ;
     if (role == 'WRITER') return AclPermission.WRITE;
     if (role == 'OWNER') return AclPermission.FULL_CONTROL;
@@ -184,7 +175,7 @@ class Acl {
   }
 
   @override
-  int get hashCode => _cachedHashCode ??= _jenkinsHash(_entries);
+  late final int hashCode = _jenkinsHash(_entries);
 
   @override
   bool operator ==(Object other) {
@@ -211,7 +202,6 @@ class Acl {
 class AclEntry {
   final AclScope scope;
   final AclPermission permission;
-  int _cachedHashCode;
 
   AclEntry(this.scope, this.permission);
 
@@ -230,7 +220,7 @@ class AclEntry {
   }
 
   @override
-  int get hashCode => _cachedHashCode ??= _jenkinsHash([scope, permission]);
+  late final int hashCode = _jenkinsHash([scope, permission]);
 
   @override
   bool operator ==(Object other) {
@@ -256,31 +246,29 @@ class AclEntry {
 ///
 /// See https://cloud.google.com/storage/docs/accesscontrol for more details.
 abstract class AclScope {
-  int _cachedHashCode;
-
   /// ACL type for scope representing a Google Storage id.
-  static const int _TYPE_STORAGE_ID = 0;
+  static const int _typeStorageId = 0;
 
   /// ACL type for scope representing a project entity.
-  static const int _TYPE_PROJECT = 1;
+  static const int _typeProject = 1;
 
   /// ACL type for scope representing an account holder.
-  static const int _TYPE_ACCOUNT = 2;
+  static const int _typeAccount = 2;
 
   /// ACL type for scope representing a group.
-  static const int _TYPE_GROUP = 3;
+  static const int _typeGroup = 3;
 
   /// ACL type for scope representing a domain.
-  static const int _TYPE_DOMAIN = 4;
+  static const int _typeDomain = 4;
 
   /// ACL type for scope representing all authenticated users.
-  static const int _TYPE_ALL_AUTHENTICATED = 5;
+  static const int _typeAllAuthenticated = 5;
 
   /// ACL type for scope representing all users.
-  static const int _TYPE_ALL_USERS = 6;
+  static const int _typeAllUsers = 6;
 
   /// ACL type for scope representing an unsupported scope.
-  static const int _TYPE_OPAQUE = 7;
+  static const int _typeOpaque = 7;
 
   /// The id of the actual entity this ACL scope represents. The actual values
   /// are set in the different subclasses.
@@ -298,7 +286,7 @@ abstract class AclScope {
   AclScope._(this._type, this._id);
 
   @override
-  int get hashCode => _cachedHashCode ??= _jenkinsHash([_type, _id]);
+  late final int hashCode = _jenkinsHash([_type, _id]);
 
   @override
   bool operator ==(Object other) {
@@ -317,7 +305,7 @@ abstract class AclScope {
 /// specific Google account holder or a specific Google group.
 class StorageIdScope extends AclScope {
   StorageIdScope(String storageId)
-      : super._(AclScope._TYPE_STORAGE_ID, storageId);
+      : super._(AclScope._typeStorageId, storageId);
 
   /// Google Storage ID.
   String get storageId => _id;
@@ -328,7 +316,7 @@ class StorageIdScope extends AclScope {
 
 /// An ACL scope for an entity identified by an individual email address.
 class AccountScope extends AclScope {
-  AccountScope(String email) : super._(AclScope._TYPE_ACCOUNT, email);
+  AccountScope(String email) : super._(AclScope._typeAccount, email);
 
   /// Email address.
   String get email => _id;
@@ -339,7 +327,7 @@ class AccountScope extends AclScope {
 
 /// An ACL scope for an entity identified by an Google Groups email.
 class GroupScope extends AclScope {
-  GroupScope(String group) : super._(AclScope._TYPE_GROUP, group);
+  GroupScope(String group) : super._(AclScope._typeGroup, group);
 
   /// Group name.
   String get group => _id;
@@ -350,7 +338,7 @@ class GroupScope extends AclScope {
 
 /// An ACL scope for an entity identified by a domain name.
 class DomainScope extends AclScope {
-  DomainScope(String domain) : super._(AclScope._TYPE_DOMAIN, domain);
+  DomainScope(String domain) : super._(AclScope._typeDomain, domain);
 
   /// Domain name.
   String get domain => _id;
@@ -367,7 +355,7 @@ class ProjectScope extends AclScope {
   final String role;
 
   ProjectScope(String project, this.role)
-      : super._(AclScope._TYPE_PROJECT, project);
+      : super._(AclScope._typeProject, project);
 
   /// Project ID.
   String get project => _id;
@@ -378,7 +366,7 @@ class ProjectScope extends AclScope {
 
 /// An ACL scope for an unsupported scope.
 class OpaqueScope extends AclScope {
-  OpaqueScope(String id) : super._(AclScope._TYPE_OPAQUE, id);
+  OpaqueScope(String id) : super._(AclScope._typeOpaque, id);
 
   @override
   String get _storageEntity => _id;
@@ -386,7 +374,7 @@ class OpaqueScope extends AclScope {
 
 /// ACL scope for a all authenticated users.
 class AllAuthenticatedScope extends AclScope {
-  AllAuthenticatedScope() : super._(AclScope._TYPE_ALL_AUTHENTICATED, null);
+  AllAuthenticatedScope() : super._(AclScope._typeAllAuthenticated, 'invalid');
 
   @override
   String get _storageEntity => 'allAuthenticatedUsers';
@@ -394,7 +382,7 @@ class AllAuthenticatedScope extends AclScope {
 
 /// ACL scope for a all users.
 class AllUsersScope extends AclScope {
-  AllUsersScope() : super._(AclScope._TYPE_ALL_USERS, null);
+  AllUsersScope() : super._(AclScope._typeAllUsers, 'invalid');
 
   @override
   String get _storageEntity => 'allUsers';
@@ -403,16 +391,19 @@ class AllUsersScope extends AclScope {
 /// Permissions for individual scopes in an ACL.
 class AclPermission {
   /// Provide read access.
+  // ignore: constant_identifier_names
   static const READ = AclPermission._('READER');
 
   /// Provide write access.
   ///
   /// For objects this permission is the same as [FULL_CONTROL].
+  // ignore: constant_identifier_names
   static const WRITE = AclPermission._('WRITER');
 
   /// Provide full control.
   ///
   /// For objects this permission is the same as [WRITE].
+  // ignore: constant_identifier_names
   static const FULL_CONTROL = AclPermission._('OWNER');
 
   final String _id;
@@ -504,6 +495,7 @@ abstract class BucketInfo {
 /// Access to Cloud Storage
 abstract class Storage {
   /// List of required OAuth2 scopes for Cloud Storage operation.
+  // ignore: constant_identifier_names
   static const List<String> SCOPES = <String>[
     storage_api.StorageApi.devstorageFullControlScope
   ];
@@ -521,7 +513,7 @@ abstract class Storage {
   ///
   /// Returns a [Future] which completes when the bucket has been created.
   Future createBucket(String bucketName,
-      {PredefinedAcl predefinedAcl, Acl acl});
+      {PredefinedAcl? predefinedAcl, Acl? acl});
 
   /// Delete a cloud storage bucket.
   ///
@@ -549,7 +541,7 @@ abstract class Storage {
   ///
   /// Returns a `Bucket` instance.
   Bucket bucket(String bucketName,
-      {PredefinedAcl defaultPredefinedObjectAcl, Acl defaultObjectAcl});
+      {PredefinedAcl? defaultPredefinedObjectAcl, Acl? defaultObjectAcl});
 
   /// Check whether a cloud storage bucket exists.
   ///
@@ -639,48 +631,48 @@ class ObjectGeneration {
 /// Access to object metadata.
 abstract class ObjectMetadata {
   factory ObjectMetadata(
-      {Acl acl,
-      String contentType,
-      String contentEncoding,
-      String cacheControl,
-      String contentDisposition,
-      String contentLanguage,
-      Map<String, String> custom}) = _ObjectMetadata;
+      {Acl? acl,
+      String? contentType,
+      String? contentEncoding,
+      String? cacheControl,
+      String? contentDisposition,
+      String? contentLanguage,
+      Map<String, String>? custom}) = _ObjectMetadata;
 
   /// ACL.
-  Acl get acl;
+  Acl? get acl;
 
   /// `Content-Type` for this object.
-  String get contentType;
+  String? get contentType;
 
   /// `Content-Encoding` for this object.
-  String get contentEncoding;
+  String? get contentEncoding;
 
   /// `Cache-Control` for this object.
-  String get cacheControl;
+  String? get cacheControl;
 
   /// `Content-Disposition` for this object.
-  String get contentDisposition;
+  String? get contentDisposition;
 
   /// `Content-Language` for this object.
   ///
   /// The value of this field must confirm to RFC 3282.
-  String get contentLanguage;
+  String? get contentLanguage;
 
   /// Custom metadata.
-  Map<String, String> get custom;
+  Map<String, String>? get custom;
 
   /// Create a copy of this object with some values replaced.
   ///
   // TODO: This cannot be used to set values to null.
   ObjectMetadata replace(
-      {Acl acl,
-      String contentType,
-      String contentEncoding,
-      String cacheControl,
-      String contentDisposition,
-      String contentLanguage,
-      Map<String, String> custom});
+      {Acl? acl,
+      String? contentType,
+      String? contentEncoding,
+      String? cacheControl,
+      String? contentDisposition,
+      String? contentLanguage,
+      Map<String, String>? custom});
 }
 
 /// Result from List objects in a bucket.
@@ -740,11 +732,11 @@ abstract class Bucket {
   /// The object content has been written the `StreamSink` completes with
   /// an `ObjectInfo` instance with the information on the object created.
   StreamSink<List<int>> write(String objectName,
-      {int length,
-      ObjectMetadata metadata,
-      Acl acl,
-      PredefinedAcl predefinedAcl,
-      String contentType});
+      {int? length,
+      ObjectMetadata? metadata,
+      Acl? acl,
+      PredefinedAcl? predefinedAcl,
+      String? contentType});
 
   /// Create an new object in the bucket with specified content.
   ///
@@ -755,10 +747,10 @@ abstract class Bucket {
   /// Returns a `Future` which completes with an `ObjectInfo` instance when
   /// the object is written.
   Future<ObjectInfo> writeBytes(String name, List<int> bytes,
-      {ObjectMetadata metadata,
-      Acl acl,
-      PredefinedAcl predefinedAcl,
-      String contentType});
+      {ObjectMetadata? metadata,
+      Acl? acl,
+      PredefinedAcl? predefinedAcl,
+      String? contentType});
 
   /// Read object content as byte stream.
   ///
@@ -768,7 +760,7 @@ abstract class Bucket {
   ///
   /// If there is a problem accessing the file, a [DetailedApiRequestError] is
   /// thrown.
-  Stream<List<int>> read(String objectName, {int offset, int length});
+  Stream<List<int>> read(String objectName, {int? offset, int? length});
 
   /// Lookup object metadata.
   ///
@@ -797,7 +789,7 @@ abstract class Bucket {
   ///
   /// Returns a [Stream] of [BucketEntry]. Each element of the stream
   /// represents either an object or a directory component.
-  Stream<BucketEntry> list({String prefix, String delimiter});
+  Stream<BucketEntry> list({String? prefix, String? delimiter});
 
   /// Start paging through objects in the bucket.
   ///
@@ -808,5 +800,5 @@ abstract class Bucket {
   /// Returns a `Future` which completes with a `Page` object holding the
   /// first page. Use the `Page` object to move to the next page.
   Future<Page<BucketEntry>> page(
-      {String prefix, String delimiter, int pageSize = 50});
+      {String? prefix, String? delimiter, int pageSize = 50});
 }

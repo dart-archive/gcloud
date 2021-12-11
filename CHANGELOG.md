@@ -1,10 +1,31 @@
-## 0.8.0-dev
+## 0.8.5
+
+- Support the latest version 7.0.0 of the `googleapis` package.
+
+## 0.8.4
+
+- Support the latest version 6.0.0 of the `googleapis` package.
+
+## 0.8.3
+
+- Support the latest version of the `googleapis` package.
+
+## 0.8.2
+
+ * **BREAKING CHANGE:** `Page.next()` throws if `Page.isLast`, this change only
+   affects code not migrated to null-safety, when paging through results in
+   pub-sub and storage without checking `Page.isLast`.
+   Code fully migrated to null-safety will have experienced a runtime null check
+   error, and paging code for datastore already throw an `Error`.
+
+## 0.8.1
+
+ * `lookupOrNull` method in `DatastoreDB` and `Transaction`. 
+
+## 0.8.0
 
  * Require Dart 2.12 or later
- * Partial migration to null safety:
-   * `package:gcloud/common.dart`
-   * `package:gcloud/http.dart`
-   * `package:gcloud/service_scope.dart`
+ * Migration to null safety.
 
 ## 0.7.3
  * Fixed issue in reflection code affecting `Model<int>` and `Model<String>`,

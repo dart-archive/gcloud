@@ -1,7 +1,6 @@
 // Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-// @dart=2.9
 
 library gcloud.pubsub;
 
@@ -15,6 +14,7 @@ import 'package:http/http.dart' as http;
 
 import 'common.dart';
 import 'service_scope.dart' as ss;
+import 'src/common_utils.dart';
 
 export 'common.dart';
 
@@ -113,6 +113,7 @@ void registerPubSubService(PubSub pubsub) {
 ///
 abstract class PubSub {
   /// List of required OAuth2 scopes for Pub/Sub operation.
+  // ignore: constant_identifier_names
   static const SCOPES = [pubsub.PubsubApi.pubsubScope];
 
   /// Access Pub/Sub using an authenticated client.
@@ -311,7 +312,7 @@ abstract class Subscription {
   /// The URI for the push endpoint.
   ///
   /// If this is a pull subscription this is `null`.
-  Uri get endpoint;
+  Uri? get endpoint;
 
   /// Update the push configuration with a new endpoint.
   ///
@@ -338,7 +339,7 @@ abstract class Subscription {
   ///
   /// If [wait] is `false`, the method will complete the returned `Future`
   /// with `null` if it finds that there are no messages available.
-  Future<PullEvent> pull({bool wait = true});
+  Future<PullEvent?> pull({bool wait = true});
 }
 
 /// The content of a Pub/Sub message.

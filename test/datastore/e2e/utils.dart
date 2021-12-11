@@ -1,47 +1,55 @@
 // Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-// @dart=2.9
 
 library raw_datastore_test_utils;
 
 import 'package:gcloud/datastore.dart';
 
-const TEST_KIND = 'TestKind';
-const TEST_PROPERTY_KEY_PREFIX = 'test_property';
-const TEST_LIST_PROPERTY = 'listproperty';
-const TEST_LIST_VALUE = 'listvalue';
-const TEST_PROPERTY_VALUE_PREFIX = 'test_property';
+const _testKind = 'TestKind';
+const testPropertyKeyPrefix = 'test_property';
+const testListProperty = 'listproperty';
+const testListValue = 'listvalue';
+const testPropertyValuePrefix = 'test_property';
 
-const TEST_INDEXED_PROPERTY = 'indexedProp';
-const TEST_INDEXED_PROPERTY_VALUE_PREFIX = 'indexedValue';
-const TEST_UNINDEXED_PROPERTY = 'unindexedProp';
-const TEST_BLOB_INDEXED_PROPERTY = 'blobPropertyIndexed';
-final TEST_BLOB_INDEXED_VALUE = BlobValue([0xaa, 0xaa, 0xff, 0xff]);
+const testIndexedProperty = 'indexedProp';
+const testIndexedPropertyValuePrefix = 'indexedValue';
+const testUnindexedProperty = 'unindexedProp';
+const testBlobIndexedProperty = 'blobPropertyIndexed';
+final testBlobIndexedValue = BlobValue([0xaa, 0xaa, 0xff, 0xff]);
 
-Key buildKey(int i,
-    {Function idFunction, String kind = TEST_KIND, Partition p}) {
+Key buildKey(
+  int i, {
+  Object Function(int)? idFunction,
+  String kind = _testKind,
+  Partition? p,
+}) {
   var path = [KeyElement(kind, idFunction == null ? null : idFunction(i))];
-  return Key(path, partition: p);
+  return Key(path, partition: p ?? Partition.DEFAULT);
 }
 
 Map<String, Object> buildProperties(int i) {
   var listValues = [
     'foo',
-    '$TEST_LIST_VALUE$i',
+    '$testListValue$i',
   ];
 
   return {
-    TEST_PROPERTY_KEY_PREFIX: '$TEST_PROPERTY_VALUE_PREFIX$i',
-    TEST_LIST_PROPERTY: listValues,
-    TEST_INDEXED_PROPERTY: '$TEST_INDEXED_PROPERTY_VALUE_PREFIX$i',
-    TEST_UNINDEXED_PROPERTY: '$TEST_INDEXED_PROPERTY_VALUE_PREFIX$i',
-    TEST_BLOB_INDEXED_PROPERTY: TEST_BLOB_INDEXED_VALUE,
+    testPropertyKeyPrefix: '$testPropertyValuePrefix$i',
+    testListProperty: listValues,
+    testIndexedProperty: '$testIndexedPropertyValuePrefix$i',
+    testUnindexedProperty: '$testIndexedPropertyValuePrefix$i',
+    testBlobIndexedProperty: testBlobIndexedValue,
   };
 }
 
-List<Key> buildKeys(int from, int to,
-    {Function idFunction, String kind = TEST_KIND, Partition partition}) {
+List<Key> buildKeys(
+  int from,
+  int to, {
+  Object Function(int)? idFunction,
+  String kind = _testKind,
+  Partition? partition,
+}) {
   var keys = <Key>[];
   for (var i = from; i < to; i++) {
     keys.add(buildKey(i, idFunction: idFunction, kind: kind, p: partition));
@@ -49,14 +57,19 @@ List<Key> buildKeys(int from, int to,
   return keys;
 }
 
-List<Entity> buildEntities(int from, int to,
-    {Function idFunction, String kind = TEST_KIND, Partition partition}) {
+List<Entity> buildEntities(
+  int from,
+  int to, {
+  Object Function(int)? idFunction,
+  String kind = _testKind,
+  Partition? partition,
+}) {
   var entities = <Entity>[];
   var unIndexedProperties = <String>{};
   for (var i = from; i < to; i++) {
     var key = buildKey(i, idFunction: idFunction, kind: kind, p: partition);
     var properties = buildProperties(i);
-    unIndexedProperties.add(TEST_UNINDEXED_PROPERTY);
+    unIndexedProperties.add(testUnindexedProperty);
     entities
         .add(Entity(key, properties, unIndexedProperties: unIndexedProperties));
   }
@@ -64,7 +77,7 @@ List<Entity> buildEntities(int from, int to,
 }
 
 List<Entity> buildEntityWithAllProperties(int from, int to,
-    {String kind = TEST_KIND, Partition partition}) {
+    {String kind = _testKind, Partition? partition}) {
   var us42 = const Duration(microseconds: 42);
   var unIndexed = <String>{'blobProperty'};
 

@@ -77,7 +77,7 @@ library gcloud.service_scope;
 import 'dart:async';
 
 /// The Symbol used as index in the zone map for the service scope object.
-const Symbol _ServiceScopeKey = #gcloud.service_scope;
+const Symbol _serviceScopeKey = #gcloud.service_scope;
 
 /// An empty service scope.
 ///
@@ -87,7 +87,7 @@ final _ServiceScope _emptyServiceScope = _ServiceScope();
 
 /// Returns the current [_ServiceScope] object.
 _ServiceScope? get _serviceScope =>
-    Zone.current[_ServiceScopeKey] as _ServiceScope?;
+    Zone.current[_serviceScopeKey] as _ServiceScope?;
 
 /// Start a new zone with a new service scope and run [func] inside it.
 ///
@@ -160,7 +160,7 @@ class _ServiceScope {
   Object? lookup(Object serviceScope) {
     _ensureNotInDestroyingState();
     var entry = _key2Values[serviceScope];
-    return entry != null ? entry.value : null;
+    return entry?.value;
   }
 
   /// Inserts a new item to the service scope using [serviceScopeKey].
@@ -174,7 +174,7 @@ class _ServiceScope {
     var isParentCopy = _parentCopies.contains(serviceScopeKey);
     if (!isParentCopy && _key2Values.containsKey(serviceScopeKey)) {
       throw ArgumentError(
-          'Servie scope already contains key $serviceScopeKey.');
+          'Service scope already contains key $serviceScopeKey.');
     }
 
     var entry = _RegisteredEntry(serviceScopeKey, value, onScopeExit);
@@ -200,7 +200,7 @@ class _ServiceScope {
     _ensureNotInDestroyingState();
 
     var serviceScope = _copy();
-    var map = {_ServiceScopeKey: serviceScope};
+    var map = {_serviceScopeKey: serviceScope};
     return runZoned(() {
       var f = func();
       return f.whenComplete(serviceScope._runScopeExitHandlers);
