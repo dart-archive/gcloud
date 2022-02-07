@@ -518,7 +518,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
   final storage_api.Object _object;
   final String? _predefinedAcl;
   final int? _length;
-  final BytesBuilder buffer = BytesBuilder();
+  final BytesBuilder _buffer = BytesBuilder();
   final _controller = StreamController<List<int>>(sync: true);
   late StreamSubscription _subscription;
   late StreamController<List<int>> _resumableController;
@@ -576,12 +576,12 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
   void _onData(List<int> data) {
     assert(_state != _stateLengthKnown);
     if (_state == _stateProbingLength) {
-      buffer.add(data);
-      if (buffer.length > _maxNormalUploadLength) {
+      _buffer.add(data);
+      if (_buffer.length > _maxNormalUploadLength) {
         // Start resumable upload.
         // TODO: Avoid using another stream-controller.
         _resumableController = StreamController<List<int>>(sync: true);
-        _resumableController.add(buffer.takeBytes());
+        _resumableController.add(_buffer.takeBytes());
         _startResumableUpload(_resumableController.stream, _length);
         _state = _stateDecidedResumable;
 
@@ -604,7 +604,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
     if (_state == _stateProbingLength) {
       // As the data is already cached don't bother to wait on somebody
       // listening on the stream before adding the data.
-      _startNormalUpload(Stream.value(buffer.takeBytes()), buffer.length);
+      _startNormalUpload(Stream.value(_buffer.takeBytes()), _buffer.length);
     } else {
       _resumableController.close();
     }
