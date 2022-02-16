@@ -511,14 +511,13 @@ class _ObjectMetadata implements ObjectMetadata {
 /// It provides a StreamSink and logic which selects whether to use normal
 /// media upload (multipart mime) or resumable media upload.
 class _MediaUploadStreamSink implements StreamSink<List<int>> {
-  static const int _defaultMaxNormalUploadLength = 1024 * 1024;
+  static const _maxNormalUploadLength = 1024 * 1024;
   final storage_api.StorageApi _api;
   final String _bucketName;
   final String _objectName;
   final storage_api.Object _object;
   final String? _predefinedAcl;
   final int? _length;
-  final int _maxNormalUploadLength;
   int _bufferLength = 0;
   final List<List<int>> buffer = <List<int>>[];
   final _controller = StreamController<List<int>>(sync: true);
@@ -532,8 +531,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
   int? _state;
 
   _MediaUploadStreamSink(this._api, this._bucketName, this._objectName,
-      this._object, this._predefinedAcl, this._length,
-      [this._maxNormalUploadLength = _defaultMaxNormalUploadLength]) {
+      this._object, this._predefinedAcl, this._length) {
     if (_length != null) {
       // If the length is known in advance decide on the upload strategy
       // immediately
