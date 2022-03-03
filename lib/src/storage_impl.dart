@@ -518,8 +518,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
   final storage_api.Object _object;
   final String? _predefinedAcl;
   final int? _length;
-  int _bufferLength = 0;
-  final List<List<int>> buffer = <List<int>>[];
+  final BytesBuilder _buffer = BytesBuilder();
   final _controller = StreamController<List<int>>(sync: true);
   late StreamSubscription _subscription;
   late StreamController<List<int>> _resumableController;
@@ -577,15 +576,23 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
   void _onData(List<int> data) {
     assert(_state != _stateLengthKnown);
     if (_state == _stateProbingLength) {
-      buffer.add(data);
-      _bufferLength += data.length;
-      if (_bufferLength > _maxNormalUploadLength) {
+      _buffer.add(data);
+      if (_buffer.length > _maxNormalUploadLength) {
         // Start resumable upload.
         // TODO: Avoid using another stream-controller.
         _resumableController = StreamController<List<int>>(sync: true);
-        buffer.forEach(_resumableController.add);
+        _resumableController.add(_buffer.takeBytes());
         _startResumableUpload(_resumableController.stream, _length);
         _state = _stateDecidedResumable;
+
+        // At this point, we're forwarding events to the synchronous controller,
+        // so let's also forward pause and resume requests.
+        _resumableController
+          ..onPause = _subscription.pause
+          ..onResume = _subscription.resume;
+        // We don't have to handle `onCancel`: The upload will only cancel the
+        // stream in case of errors, which we already handle by closing the
+        // subscription.
       }
     } else {
       assert(_state == _stateDecidedResumable);
@@ -597,7 +604,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
     if (_state == _stateProbingLength) {
       // As the data is already cached don't bother to wait on somebody
       // listening on the stream before adding the data.
-      _startNormalUpload(Stream<List<int>>.fromIterable(buffer), _bufferLength);
+      _startNormalUpload(Stream.value(_buffer.takeBytes()), _buffer.length);
     } else {
       _resumableController.close();
     }
