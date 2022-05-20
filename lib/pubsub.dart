@@ -7,10 +7,10 @@ library gcloud.pubsub;
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:googleapis/pubsub/v1.dart' as pubsub;
 import 'package:http/http.dart' as http;
+import 'package:universal_io/io.dart' as uni;
 
 import 'common.dart';
 import 'service_scope.dart' as ss;
@@ -126,7 +126,7 @@ abstract class PubSub {
   /// Returs an object providing access to Pub/Sub. The passed-in [client] will
   /// not be closed automatically. The caller is responsible for closing it.
   factory PubSub(http.Client client, String project) {
-    var emulator = Platform.environment['PUBSUB_EMULATOR_HOST'];
+    var emulator = uni.Platform.environment['PUBSUB_EMULATOR_HOST'];
     return emulator == null
         ? _PubSubImpl(client, project)
         : _PubSubImpl.rootUrl(client, project, 'http://$emulator/');

@@ -12,6 +12,8 @@ dependencies:
   googleapis: '>=3.0.0 <8.0.0'
   http: ^0.13.0
   meta: ^1.3.0
+  universal_io: ^2.0.4
+
 
 dev_dependencies:
   googleapis_auth: ^1.1.0
