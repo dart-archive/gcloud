@@ -270,7 +270,7 @@ void runTests(Datastore datastore, String? namespace) {
         // Maybe it should not be a [DataStoreError] here?
         // FIXME/TODO: This was adapted
         expect(
-            datastore.commit(inserts: named20000), throwsA(isSocketException));
+            datastore.commit(inserts: named20000), throwsA(isApplicationError));
       });
 
       // TODO: test invalid inserts (like entities without key, ...)
@@ -590,7 +590,7 @@ void runTests(Datastore datastore, String? namespace) {
             changedEntities[i] = Entity(entity.key, newProperties);
           }
           return datastore.commit(
-              inserts: changedEntities as List<Entity>,
+              inserts: changedEntities.cast<Entity>(),
               transaction: transaction);
         }
 
@@ -608,7 +608,7 @@ void runTests(Datastore datastore, String? namespace) {
           return Future.wait(transactions)
               .then((List<Transaction> transactions) {
             // Do a lookup for the entities in every transaction
-            List<Future<List<Entity?>>> lookups = <Future<List<Entity>>>[];
+            List<Future<List<Entity?>>> lookups = <Future<List<Entity?>>>[];
             for (var transaction in transactions) {
               lookups.add(datastore.lookup(keys, transaction: transaction));
             }
@@ -803,109 +803,95 @@ void runTests(Datastore datastore, String? namespace) {
 
       var orders = [Order(OrderDirection.Decending, queryKey)];
 
-      test('query', () {
-        return insert(stringNamedEntities, <Entity>[]).then((keys) {
-          return waitUntilEntitiesReady(datastore, stringNamedKeys, partition)
-              .then((_) {
-            var tests = [
-              // EntityKind query
-              () => testQueryAndCompare(testQueryKind, stringNamedEntities,
-                  transactional: false, correctOrder: false),
-              () => testQueryAndCompare(testQueryKind, stringNamedEntities,
-                  transactional: true, correctOrder: false),
-              () => testQueryAndCompare(testQueryKind, stringNamedEntities,
-                  transactional: true, correctOrder: false, xg: true),
+      test('query', () async {
+        await insert(stringNamedEntities, <Entity>[]);
+        await waitUntilEntitiesReady(datastore, stringNamedKeys, partition);
 
-              // EntityKind query with order
-              () => testQueryAndCompare(testQueryKind, sorted,
-                  transactional: false, orders: orders),
-              () => testQueryAndCompare(testQueryKind, sorted,
-                  transactional: true, orders: orders),
-              () => testQueryAndCompare(testQueryKind, sorted,
-                  transactional: false, xg: true, orders: orders),
+        // EntityKind query
+        await testQueryAndCompare(testQueryKind, stringNamedEntities,
+            transactional: false, correctOrder: false);
+        await testQueryAndCompare(testQueryKind, stringNamedEntities,
+            transactional: true, correctOrder: false);
+        await testQueryAndCompare(testQueryKind, stringNamedEntities,
+            transactional: true, correctOrder: false, xg: true);
 
-              // EntityKind query with filter
-              () => testQueryAndCompare(testQueryKind, filtered,
-                  transactional: false, filters: filters),
-              () => testQueryAndCompare(testQueryKind, filtered,
-                  transactional: true, filters: filters),
-              () => testQueryAndCompare(testQueryKind, filtered,
-                  transactional: false, xg: true, filters: filters),
+        // EntityKind query with order
+        await testQueryAndCompare(testQueryKind, sorted,
+            transactional: false, orders: orders);
+        await testQueryAndCompare(testQueryKind, sorted,
+            transactional: true, orders: orders);
+        await testQueryAndCompare(testQueryKind, sorted,
+            transactional: false, xg: true, orders: orders);
 
-              // EntityKind query with filter + order
-              () => testQueryAndCompare(testQueryKind, sortedAndFiltered,
-                  transactional: false, filters: filters, orders: orders),
-              () => testQueryAndCompare(testQueryKind, sortedAndFiltered,
-                  transactional: true, filters: filters, orders: orders),
-              () => testQueryAndCompare(testQueryKind, sortedAndFiltered,
-                  transactional: false,
-                  xg: true,
-                  filters: filters,
-                  orders: orders),
+        // EntityKind query with filter
+        await testQueryAndCompare(testQueryKind, filtered,
+            transactional: false, filters: filters);
+        await testQueryAndCompare(testQueryKind, filtered,
+            transactional: true, filters: filters);
+        await testQueryAndCompare(testQueryKind, filtered,
+            transactional: false, xg: true, filters: filters);
 
-              // EntityKind query with IN filter + order
-              () => testQueryAndCompare(testQueryKind, sortedAndListFiltered,
-                  transactional: false, filters: listFilters, orders: orders),
-              () => testQueryAndCompare(testQueryKind, sortedAndListFiltered,
-                  transactional: true, filters: listFilters, orders: orders),
-              () => testQueryAndCompare(testQueryKind, sortedAndListFiltered,
-                  transactional: false,
-                  xg: true,
-                  filters: listFilters,
-                  orders: orders),
+        // EntityKind query with filter + order
+        await testQueryAndCompare(testQueryKind, sortedAndFiltered,
+            transactional: false, filters: filters, orders: orders);
+        await testQueryAndCompare(testQueryKind, sortedAndFiltered,
+            transactional: true, filters: filters, orders: orders);
+        await testQueryAndCompare(testQueryKind, sortedAndFiltered,
+            transactional: false, xg: true, filters: filters, orders: orders);
 
-              // Limit & Offset test
-              () => testOffsetLimitQuery(testQueryKind, sorted,
-                  transactional: false, orders: orders),
-              () => testOffsetLimitQuery(testQueryKind, sorted,
-                  transactional: true, orders: orders),
-              () => testOffsetLimitQuery(testQueryKind, sorted,
-                  transactional: false, xg: true, orders: orders),
+        // EntityKind query with IN filter + order
+        await testQueryAndCompare(testQueryKind, sortedAndListFiltered,
+            transactional: false, filters: listFilters, orders: orders);
+        await testQueryAndCompare(testQueryKind, sortedAndListFiltered,
+            transactional: true, filters: listFilters, orders: orders);
+        await testQueryAndCompare(testQueryKind, sortedAndListFiltered,
+            transactional: false,
+            xg: true,
+            filters: listFilters,
+            orders: orders);
 
-              // Query for indexed property
-              () => testQueryAndCompare(testQueryKind, indexedEntity,
-                  transactional: false, filters: indexedPropertyFilter),
-              () => testQueryAndCompare(testQueryKind, indexedEntity,
-                  transactional: true, filters: indexedPropertyFilter),
-              () => testQueryAndCompare(testQueryKind, indexedEntity,
-                  transactional: false,
-                  xg: true,
-                  filters: indexedPropertyFilter),
+        // Limit & Offset test
+        await testOffsetLimitQuery(testQueryKind, sorted,
+            transactional: false, orders: orders);
+        await testOffsetLimitQuery(testQueryKind, sorted,
+            transactional: true, orders: orders);
+        await testOffsetLimitQuery(testQueryKind, sorted,
+            transactional: false, xg: true, orders: orders);
 
-              // Query for un-indexed property
-              () => testQueryAndCompare(testQueryKind, [],
-                  transactional: false, filters: unIndexedPropertyFilter),
-              () => testQueryAndCompare(testQueryKind, [],
-                  transactional: true, filters: unIndexedPropertyFilter),
-              () => testQueryAndCompare(testQueryKind, [],
-                  transactional: false,
-                  xg: true,
-                  filters: unIndexedPropertyFilter),
+        // Query for indexed property
+        await testQueryAndCompare(testQueryKind, indexedEntity,
+            transactional: false, filters: indexedPropertyFilter);
+        await testQueryAndCompare(testQueryKind, indexedEntity,
+            transactional: true, filters: indexedPropertyFilter);
+        await testQueryAndCompare(testQueryKind, indexedEntity,
+            transactional: false, xg: true, filters: indexedPropertyFilter);
 
-              // Delete results
-              () => delete(stringNamedKeys, transactional: true),
+        // Query for un-indexed property
+        await testQueryAndCompare(testQueryKind, [],
+            transactional: false, filters: unIndexedPropertyFilter);
+        await testQueryAndCompare(testQueryKind, [],
+            transactional: true, filters: unIndexedPropertyFilter);
+        await testQueryAndCompare(testQueryKind, [],
+            transactional: false, xg: true, filters: unIndexedPropertyFilter);
 
-              // Wait until the entity deletes are reflected in the indices.
-              () =>
-                  waitUntilEntitiesGone(datastore, stringNamedKeys, partition),
+        // Delete results
+        await delete(stringNamedKeys, transactional: true);
 
-              // Make sure queries don't return results
-              () =>
-                  testQueryAndCompare(testQueryKind, [], transactional: false),
-              () => testQueryAndCompare(testQueryKind, [], transactional: true),
-              () => testQueryAndCompare(testQueryKind, [],
-                  transactional: true, xg: true),
-              () => testQueryAndCompare(testQueryKind, [],
-                  transactional: false, filters: filters, orders: orders),
-            ];
-            return Future.forEach(tests, (dynamic f) => f());
-          });
-        });
+        // Wait until the entity deletes are reflected in the indices.
+        await waitUntilEntitiesGone(datastore, stringNamedKeys, partition);
+
+        // Make sure queries don't return results
+        await testQueryAndCompare(testQueryKind, [], transactional: false);
+        await testQueryAndCompare(testQueryKind, [], transactional: true);
+        await testQueryAndCompare(testQueryKind, [],
+            transactional: true, xg: true);
+        await testQueryAndCompare(testQueryKind, [],
+            transactional: false, filters: filters, orders: orders);
 
         // TODO: query by multiple keys, multiple sort orders, ...
       });
 
-      test('ancestor_query', () {
+      test('ancestor_query', () async {
         /*
          * This test creates an
          * RootKind:1 -- This defines the entity group (no entity with that key)
@@ -924,141 +910,136 @@ void runTests(Datastore datastore, String? namespace) {
 
         var orders = [Order(OrderDirection.Ascending, '__key__')];
 
-        return datastore.commit(inserts: [entity, entity2]).then((_) {
-          var futures = [
-            // FIXME/TODO: Ancestor queries should be strongly consistent.
-            // We should not need to wait for them.
-            () {
-              return waitUntilEntitiesReady(
-                  datastore, [subSubKey, subSubKey2], partition);
-            },
-            // Test that lookup only returns inserted entities.
-            () {
-              return datastore
-                  .lookup([rootKey, subKey, subSubKey, subSubKey2]).then(
-                      (List<Entity?> entities) {
-                expect(entities.length, 4);
-                expect(entities[0], isNull);
-                expect(entities[1], isNull);
-                expect(entities[2], isNotNull);
-                expect(entities[3], isNotNull);
-                expect(compareEntity(entity, entities[2]!), isTrue);
-                expect(compareEntity(entity2, entities[3]!), isTrue);
-              });
-            },
+        await datastore.commit(inserts: [entity, entity2]);
 
-            // Query by ancestor.
-            // - by [rootKey]
-            () {
-              var ancestorQuery = Query(ancestorKey: rootKey, orders: orders);
-              return consumePages((_) =>
-                      datastore.query(ancestorQuery, partition: partition))
-                  .then((results) {
-                expect(results.length, 2);
-                expect(compareEntity(entity, results[0]), isTrue);
-                expect(compareEntity(entity2, results[1]), isTrue);
-              });
-            },
-            // - by [subKey]
-            () {
-              var ancestorQuery = Query(ancestorKey: subKey, orders: orders);
-              return consumePages((_) =>
-                      datastore.query(ancestorQuery, partition: partition))
-                  .then((results) {
-                expect(results.length, 2);
-                expect(compareEntity(entity, results[0]), isTrue);
-                expect(compareEntity(entity2, results[1]), isTrue);
-              });
-            },
-            // - by [subSubKey]
-            () {
-              var ancestorQuery = Query(ancestorKey: subSubKey);
-              return consumePages((_) =>
-                      datastore.query(ancestorQuery, partition: partition))
-                  .then((results) {
-                expect(results.length, 1);
-                expect(compareEntity(entity, results[0]), isTrue);
-              });
-            },
-            // - by [subSubKey2]
-            () {
-              var ancestorQuery = Query(ancestorKey: subSubKey2);
-              return consumePages((_) =>
-                      datastore.query(ancestorQuery, partition: partition))
-                  .then((results) {
-                expect(results.length, 1);
-                expect(compareEntity(entity2, results[0]), isTrue);
-              });
-            },
+        // FIXME/TODO: Ancestor queries should be strongly consistent.
+        // We should not need to wait for them.
+        await waitUntilEntitiesReady(
+            datastore, [subSubKey, subSubKey2], partition);
 
-            // Query by ancestor and kind.
-            // - by [rootKey] + 'SubSubKind'
-            () {
-              var query = Query(ancestorKey: rootKey, kind: 'SubSubKind');
-              return consumePages(
-                      (_) => datastore.query(query, partition: partition))
-                  .then((List<Entity> results) {
-                expect(results.length, 1);
-                expect(compareEntity(entity, results[0]), isTrue);
-              });
-            },
-            // - by [rootKey] + 'SubSubKind2'
-            () {
-              var query = Query(ancestorKey: rootKey, kind: 'SubSubKind2');
-              return consumePages(
-                      (_) => datastore.query(query, partition: partition))
-                  .then((List<Entity> results) {
-                expect(results.length, 1);
-                expect(compareEntity(entity2, results[0]), isTrue);
-              });
-            },
-            // - by [subSubKey] + 'SubSubKind'
-            () {
-              var query = Query(ancestorKey: subSubKey, kind: 'SubSubKind');
-              return consumePages(
-                      (_) => datastore.query(query, partition: partition))
-                  .then((List<Entity> results) {
-                expect(results.length, 1);
-                expect(compareEntity(entity, results[0]), isTrue);
-              });
-            },
-            // - by [subSubKey2] + 'SubSubKind2'
-            () {
-              var query = Query(ancestorKey: subSubKey2, kind: 'SubSubKind2');
-              return consumePages(
-                      (_) => datastore.query(query, partition: partition))
-                  .then((List<Entity> results) {
-                expect(results.length, 1);
-                expect(compareEntity(entity2, results[0]), isTrue);
-              });
-            },
-            // - by [subSubKey] + 'SubSubKind2'
-            () {
-              var query = Query(ancestorKey: subSubKey, kind: 'SubSubKind2');
-              return consumePages(
-                      (_) => datastore.query(query, partition: partition))
-                  .then((List<Entity> results) {
-                expect(results.length, 0);
-              });
-            },
-            // - by [subSubKey2] + 'SubSubKind'
-            () {
-              var query = Query(ancestorKey: subSubKey2, kind: 'SubSubKind');
-              return consumePages(
-                      (_) => datastore.query(query, partition: partition))
-                  .then((List<Entity> results) {
-                expect(results.length, 0);
-              });
-            },
-
-            // Cleanup
-            () {
-              return datastore.commit(deletes: [subSubKey, subSubKey2]);
-            }
-          ];
-          return Future.forEach(futures, (dynamic f) => f())
-              .then(expectAsync1((_) {}));
+        // Test that lookup only returns inserted entities.
+        await datastore.lookup([rootKey, subKey, subSubKey, subSubKey2]).then(
+            (List<Entity?> entities) {
+          expect(entities.length, 4);
+          expect(entities[0], isNull);
+          expect(entities[1], isNull);
+          expect(entities[2], isNotNull);
+          expect(entities[3], isNotNull);
+          expect(compareEntity(entity, entities[2]!), isTrue);
+          expect(compareEntity(entity2, entities[3]!), isTrue);
         });
+
+        // Query by ancestor.
+        // - by [rootKey]
+        {
+          var ancestorQuery = Query(ancestorKey: rootKey, orders: orders);
+          await consumePages(
+                  (_) => datastore.query(ancestorQuery, partition: partition))
+              .then((results) {
+            expect(results.length, 2);
+            expect(compareEntity(entity, results[0]), isTrue);
+            expect(compareEntity(entity2, results[1]), isTrue);
+          });
+        }
+
+        // - by [subKey]
+        {
+          var ancestorQuery = Query(ancestorKey: subKey, orders: orders);
+          await consumePages(
+                  (_) => datastore.query(ancestorQuery, partition: partition))
+              .then((results) {
+            expect(results.length, 2);
+            expect(compareEntity(entity, results[0]), isTrue);
+            expect(compareEntity(entity2, results[1]), isTrue);
+          });
+        }
+
+        // - by [subSubKey]
+        {
+          var ancestorQuery = Query(ancestorKey: subSubKey);
+          await consumePages(
+                  (_) => datastore.query(ancestorQuery, partition: partition))
+              .then((results) {
+            expect(results.length, 1);
+            expect(compareEntity(entity, results[0]), isTrue);
+          });
+        }
+
+        // - by [subSubKey2]
+        {
+          var ancestorQuery = Query(ancestorKey: subSubKey2);
+          await consumePages(
+                  (_) => datastore.query(ancestorQuery, partition: partition))
+              .then((results) {
+            expect(results.length, 1);
+            expect(compareEntity(entity2, results[0]), isTrue);
+          });
+        }
+
+        // Query by ancestor and kind.
+        // - by [rootKey] + 'SubSubKind'
+        {
+          var query = Query(ancestorKey: rootKey, kind: 'SubSubKind');
+          await consumePages(
+                  (_) => datastore.query(query, partition: partition))
+              .then((List<Entity> results) {
+            expect(results.length, 1);
+            expect(compareEntity(entity, results[0]), isTrue);
+          });
+        }
+        // - by [rootKey] + 'SubSubKind2'
+        {
+          var query = Query(ancestorKey: rootKey, kind: 'SubSubKind2');
+          await consumePages(
+                  (_) => datastore.query(query, partition: partition))
+              .then((List<Entity> results) {
+            expect(results.length, 1);
+            expect(compareEntity(entity2, results[0]), isTrue);
+          });
+        }
+        // - by [subSubKey] + 'SubSubKind'
+        {
+          var query = Query(ancestorKey: subSubKey, kind: 'SubSubKind');
+          await consumePages(
+                  (_) => datastore.query(query, partition: partition))
+              .then((List<Entity> results) {
+            expect(results.length, 1);
+            expect(compareEntity(entity, results[0]), isTrue);
+          });
+        }
+        // - by [subSubKey2] + 'SubSubKind2'
+        {
+          var query = Query(ancestorKey: subSubKey2, kind: 'SubSubKind2');
+          await consumePages(
+                  (_) => datastore.query(query, partition: partition))
+              .then((List<Entity> results) {
+            expect(results.length, 1);
+            expect(compareEntity(entity2, results[0]), isTrue);
+          });
+        }
+        // - by [subSubKey] + 'SubSubKind2'
+        {
+          var query = Query(ancestorKey: subSubKey, kind: 'SubSubKind2');
+          await consumePages(
+                  (_) => datastore.query(query, partition: partition))
+              .then((List<Entity> results) {
+            expect(results.length, 0);
+          });
+        }
+        // - by [subSubKey2] + 'SubSubKind'
+        {
+          var query = Query(ancestorKey: subSubKey2, kind: 'SubSubKind');
+          await consumePages(
+                  (_) => datastore.query(query, partition: partition))
+              .then((List<Entity> results) {
+            expect(results.length, 0);
+          });
+        }
+
+        // Cleanup
+        {
+          await datastore.commit(deletes: [subSubKey, subSubKey2]);
+        }
       });
     });
   });
