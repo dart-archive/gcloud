@@ -8,6 +8,23 @@ following services are supported:
   * Cloud Storage
   * Cloud Pub/Sub
 
+## Status: Experimental
+
+**NOTE**: This package is currently experimental and published under the
+[labs.dart.dev](https://dart.dev/dart-team-packages) pub publisher in order to
+solicit feedback. 
+
+For packages in the labs.dart.dev publisher we generally plan to either graduate
+the package into a supported publisher (dart.dev, tools.dart.dev) after a period
+of feedback and iteration, or discontinue the package. These packages have a
+much higher expected rate of API and breaking changes.
+
+Your feedback is valuable and will help us evolve this package. For general
+feedback, suggestions, and comments, please file an issue in the 
+[bug tracker](https://github.com/dart-lang/http/issues).
+
+## API details
+
 The APIs in this package are all based on the generic generated APIs in the
 [googleapis] and [googleapis_beta][googleapisbeta] packages.
 
