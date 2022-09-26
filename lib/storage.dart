@@ -51,6 +51,7 @@ library gcloud.storage;
 import 'dart:async';
 import 'dart:collection' show UnmodifiableListView, UnmodifiableMapView;
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:_discoveryapis_commons/_discoveryapis_commons.dart' as commons;
 import 'package:googleapis/storage/v1.dart' as storage_api;

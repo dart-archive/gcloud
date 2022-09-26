@@ -1,3 +1,9 @@
+## 0.8.6
+
+- Throttle streams piped into `Bucket.write` when the size is not known
+  beforehand.
+- Support the latest version 9.0.0 of the `googleapis` package.
+
 ## 0.8.5
 
 - Support the latest version 7.0.0 of the `googleapis` package.
