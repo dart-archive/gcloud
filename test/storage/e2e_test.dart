@@ -113,32 +113,58 @@ void main() {
   group('object', () {
     // Run all object tests in the same bucket to try to avoid the rate-limit
     // for creating and deleting buckets while testing.
-    Future withTestBucket(Future Function(Bucket bucket) function) {
-      return function(testBucket).whenComplete(() {
+    Future<T> withTestBucket<T>(Future<T> Function(Bucket bucket) fn) async {
+      try {
+        return await fn(testBucket);
+      } finally {
         // TODO: Clean the bucket.
+      }
+    }
+
+    void testWithBucket(
+      String name,
+      FutureOr<void> Function(Bucket bucket) fn,
+    ) {
+      test(name, () async {
+        try {
+          await fn(testBucket);
+        } finally {
+          // TODO: Clean the bucket.
+        }
       });
     }
 
-    test('create-read-delete', () {
-      Future test(name, List<int> bytes) {
-        return withTestBucket((Bucket bucket) {
-          return bucket.writeBytes('test', bytes).then(expectAsync1((info) {
-            expect(info, isNotNull);
-            return bucket.read('test').fold<List<int>>(
-                [], (p, e) => p..addAll(e)).then(expectAsync1((result) {
-              expect(result, bytes);
-              return bucket.delete('test').then(expectAsync1((result) {
-                expect(result, isNull);
-              }));
-            }));
-          }));
+    group('create-read-delete', () {
+      void testCreateReadDelete(String name, List<int> bytes) {
+        testWithBucket(name, (bucket) async {
+          final info = await bucket.writeBytes('test', bytes);
+          expect(info, isNotNull);
+          final result = await bucket
+              .read('test')
+              .fold<List<int>>([], (p, e) => p..addAll(e));
+          expect(result, bytes);
+          await bucket.delete('test');
         });
       }
 
-      return Future.forEach([
-        () => test('test-1', [1, 2, 3]),
-        () => test('test-2', bytesResumableUpload)
-      ], (Function f) => f().then(expectAsync1((_) {})));
+      testCreateReadDelete('test-1', [1, 2, 3]);
+      testCreateReadDelete('test-2', bytesResumableUpload);
+    });
+
+    group('create-read-delete-streaming', () {
+      void testCreateReadDelete(String name, List<int> bytes) {
+        testWithBucket(name, (bucket) async {
+          await Stream.value(bytes).pipe(bucket.write('test'));
+          final result = await bucket
+              .read('test')
+              .fold<List<int>>([], (p, e) => p..addAll(e));
+          expect(result, bytes);
+          await bucket.delete('test');
+        });
+      }
+
+      testCreateReadDelete('test-1', [1, 2, 3, 5, 6, 7, 8, 9]);
+      testCreateReadDelete('test-2', bytesResumableUpload);
     });
 
     test('create-with-predefined-acl-delete', () {

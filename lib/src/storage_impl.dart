@@ -604,7 +604,8 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
     if (_state == _stateProbingLength) {
       // As the data is already cached don't bother to wait on somebody
       // listening on the stream before adding the data.
-      _startNormalUpload(Stream.value(_buffer.takeBytes()), _buffer.length);
+      final length = _buffer.length;
+      _startNormalUpload(Stream.value(_buffer.takeBytes()), length);
     } else {
       _resumableController.close();
     }
@@ -628,18 +629,22 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
     _doneCompleter.completeError(e, s);
   }
 
-  void _startNormalUpload(Stream<List<int>> stream, int? length) {
+  void _startNormalUpload(Stream<List<int>> stream, int? length) async {
     var contentType = _object.contentType ?? 'application/octet-stream';
     var media = storage_api.Media(stream, length, contentType: contentType);
-    _api.objects
-        .insert(_object, _bucketName,
-            name: _objectName,
-            predefinedAcl: _predefinedAcl,
-            uploadMedia: media,
-            uploadOptions: storage_api.UploadOptions.defaultOptions)
-        .then((response) {
+    try {
+      final response = await _api.objects.insert(
+        _object,
+        _bucketName,
+        name: _objectName,
+        predefinedAcl: _predefinedAcl,
+        uploadMedia: media,
+        uploadOptions: storage_api.UploadOptions.defaultOptions,
+      );
       _doneCompleter.complete(_ObjectInfoImpl(response));
-    }, onError: _completeError);
+    } catch (e, st) {
+      _completeError(e, st);
+    }
   }
 
   void _startResumableUpload(Stream<List<int>> stream, int? length) {

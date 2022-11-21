@@ -1,3 +1,7 @@
+## 0.8.7
+
+- Fix `Bucket.write` when size is below 1MB.
+
 ## 0.8.6
 
 - Throttle streams piped into `Bucket.write` when the size is not known
