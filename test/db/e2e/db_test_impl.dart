@@ -47,7 +47,6 @@ import 'dart:async';
 
 import 'package:gcloud/db.dart' as db;
 import 'package:gcloud/src/datastore_impl.dart' as datastore_impl;
-import 'package:http/http.dart';
 import 'package:test/test.dart';
 
 import '../../common_e2e.dart';
