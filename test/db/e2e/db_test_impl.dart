@@ -733,7 +733,6 @@ Future<void> waitUntilEntitiesHelper<T extends db.Model>(
 
 Future main() async {
   late db.DatastoreDB store;
-  BaseClient? client;
 
   var scopes = datastore_impl.DatastoreImpl.scopes;
   await withAuthClient(scopes, (String project, httpClient) {
@@ -741,10 +740,6 @@ Future main() async {
     return datastore_test.cleanupDB(datastore, null).then((_) {
       store = db.DatastoreDB(datastore);
     });
-  });
-
-  tearDownAll(() {
-    client?.close();
   });
 
   runTests(store, null);
