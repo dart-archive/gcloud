@@ -400,6 +400,9 @@ class DatastoreDB {
   /// direct lookups will see the effect but non-ancestor queries will see the
   /// change in an eventual consistent way.
   ///
+  /// The inserts are done as upserts unless the provided model does not have an
+  /// id, in which case an autoId will be generated.
+  ///
   /// For transactions, please use `beginTransaction` and it's returned
   /// [Transaction] object.
   Future commit({List<Model>? inserts, List<Key>? deletes}) {
