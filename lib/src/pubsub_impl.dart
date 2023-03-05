@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-part of gcloud.pubsub;
+part of '../pubsub.dart';
 
 class _PubSubImpl implements PubSub {
   @override
@@ -337,14 +337,14 @@ class _PushEventImpl implements PushEvent {
 
   factory _PushEventImpl.fromJson(String json) {
     Map body = jsonDecode(json) as Map<String, dynamic>;
-    var data = body['message']['data'] as String;
+    var data = (body['message'] as Map)['data'] as String;
     Map<String, String> labels = HashMap();
-    body['message']['labels'].forEach((label) {
-      var key = label['key'] as String;
-      var value = label['strValue'];
-      value ??= label['numValue'];
+    for (var label in (body['message'] as Map)['labels'] as List) {
+      final l = label as Map;
+      var key = l['key'] as String;
+      var value = l['strValue'] ?? l['numValue'];
       labels[key] = value.toString();
-    });
+    }
     var subscription = body['subscription'] as String;
     // TODO(#1): Remove this when the push event subscription name is prefixed
     // with '/subscriptions/'.

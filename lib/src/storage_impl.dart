@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-part of gcloud.storage;
+part of '../storage.dart';
 
 const String _absolutePrefix = 'gs://';
 const String _directoryDelimiter = '/';
@@ -85,7 +85,7 @@ class _StorageImpl implements Storage {
   Future<BucketInfo> bucketInfo(String bucketName) {
     return _api.buckets
         .get(bucketName, projection: 'full')
-        .then((bucket) => _BucketInfoImpl(bucket));
+        .then(_BucketInfoImpl.new);
   }
 
   @override
@@ -555,7 +555,7 @@ class _MediaUploadStreamSink implements StreamSink<List<int>> {
   }
 
   @override
-  void addError(errorEvent, [StackTrace? stackTrace]) {
+  void addError(Object errorEvent, [StackTrace? stackTrace]) {
     _controller.addError(errorEvent, stackTrace);
   }
 

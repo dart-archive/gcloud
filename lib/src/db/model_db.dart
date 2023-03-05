@@ -2,11 +2,12 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-part of gcloud.db;
+part of '../../db.dart';
 
 /// A database of all registered models.
 ///
-/// Responsible for converting between dart model objects and datastore entities.
+/// Responsible for converting between dart model objects and datastore
+/// entities.
 abstract class ModelDB {
   /// Converts a [ds.Key] to a [Key].
   Key fromDatastoreKey(ds.Key datastoreKey);

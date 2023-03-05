@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library db_test;
+// ignore_for_file: avoid_dynamic_calls
 
 /// NOTE: In order to run these tests, the following datastore indices must
 /// exist:
@@ -43,6 +43,8 @@ library db_test;
 /// $ gcloud datastore create-indexes index.yaml
 ///
 /// Now, wait for indexing done
+library;
+
 import 'dart:async';
 
 import 'package:gcloud/db.dart' as db;

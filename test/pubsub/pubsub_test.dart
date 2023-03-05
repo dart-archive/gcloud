@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+// ignore_for_file: only_throw_errors
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -308,7 +310,7 @@ void main() {
               var count = 0;
               late StreamSubscription subscription;
               subscription = api.listTopics().listen(
-                    expectAsync1(((_) {
+                    expectAsync1((_) {
                       count++;
                       if (count == 50) {
                         if (withPause) {
@@ -322,7 +324,7 @@ void main() {
                         }));
                       }
                       return;
-                    }), count: 50),
+                    }, count: 50),
                     onDone: expectAsync0(() {}),
                     onError: expectAsync1(
                         (e) => e is pubsub.DetailedApiRequestError),
@@ -391,9 +393,7 @@ void main() {
                 expect(page.items.length,
                     page.isLast ? n - (totalPages - 1) * pageSize : pageSize);
                 if (!page.isLast) {
-                  page.next().then(expectAsync1((page) {
-                    handlePage(page);
-                  }));
+                  page.next().then(expectAsync1(handlePage));
                 } else {
                   expect(() => page.next(), throwsStateError);
                   expect(pageCount, totalPages);
@@ -716,7 +716,7 @@ void main() {
               var count = 0;
               late StreamSubscription subscription;
               subscription = api.listSubscriptions().listen(
-                    expectAsync1(((_) {
+                    expectAsync1((_) {
                       count++;
                       if (count == 50) {
                         if (withPause) {
@@ -731,7 +731,7 @@ void main() {
                         }));
                       }
                       return;
-                    }), count: 50),
+                    }, count: 50),
                     onDone: expectAsync0(() {}),
                     onError: expectAsync1(
                         (e) => e is pubsub.DetailedApiRequestError),
@@ -821,9 +821,7 @@ void main() {
               expect(page.items.length,
                   page.isLast ? n - (totalPages - 1) * pageSize : pageSize);
               if (!page.isLast) {
-                page.next().then((page) {
-                  handlingPage(page);
-                });
+                page.next().then(handlingPage);
               } else {
                 expect(() => page.next(), throwsStateError);
                 expect(pageCount, totalPages);
@@ -904,12 +902,12 @@ void main() {
       var api = PubSub(mock, testProject);
       return api.lookupTopic(name).then(expectAsync1((topic) {
         mock.clear();
-        registerPublish(mock, 4, ((request) {
+        registerPublish(mock, 4, (request) {
           expect(request.messages!.length, 1);
           expect(request.messages![0].data, messageBase64);
           expect(request.messages![0].attributes, isNull);
           return mock.respond(pubsub.PublishResponse()..messageIds = ['0']);
-        }));
+        });
 
         return topic.publishString(message).then(expectAsync1((result) {
           expect(result, isNull);
@@ -937,14 +935,14 @@ void main() {
       var api = PubSub(mock, testProject);
       return api.lookupTopic(name).then(expectAsync1((topic) {
         mock.clear();
-        registerPublish(mock, 4, ((request) {
+        registerPublish(mock, 4, (request) {
           expect(request.messages!.length, 1);
           expect(request.messages![0].data, messageBase64);
           expect(request.messages![0].attributes, isNotNull);
           expect(request.messages![0].attributes!.length, attributes.length);
           expect(request.messages![0].attributes, attributes);
           return mock.respond(pubsub.PublishResponse()..messageIds = ['0']);
-        }));
+        });
 
         return topic
             .publishString(message, attributes: attributes)

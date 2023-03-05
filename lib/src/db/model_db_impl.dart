@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-part of gcloud.db;
+part of '../../db.dart';
 
 /// An implementation of [ModelDB] based on model class annotations.
 ///
@@ -202,9 +202,7 @@ class ModelDBImpl implements ModelDB {
       lm.declarations.values
           .whereType<mirrors.ClassMirror>()
           .where((d) => d.hasReflectedType)
-          .forEach((declaration) {
-        _tryLoadNewModelClass(declaration);
-      });
+          .forEach(_tryLoadNewModelClass);
     }
 
     // Ask every [ModelDescription] to compute whatever global state it wants
@@ -228,7 +226,7 @@ class ModelDBImpl implements ModelDB {
   void _tryLoadNewModelClass(mirrors.ClassMirror classMirror) {
     Kind? kindAnnotation;
     for (var instance in classMirror.metadata) {
-      if (instance.reflectee.runtimeType == Kind) {
+      if ((instance.reflectee as Object).runtimeType == Kind) {
         if (kindAnnotation != null) {
           throw StateError(
               'Cannot have more than one ModelMetadata() annotation '
@@ -461,8 +459,9 @@ class _ModelDescription<T extends Model> {
     var mirror = classMirror.newInstance(const Symbol(''), []);
 
     // Set the id and the parent key
-    mirror.reflectee.id = key.id;
-    mirror.reflectee.parentKey = key.parent;
+    final model = mirror.reflectee as Model;
+    model.id = key.id;
+    model.parentKey = key.parent;
 
     db._propertiesForModel(this).forEach((String fieldName, Property prop) {
       _decodeProperty(db, entity, mirror, fieldName, prop);
@@ -485,9 +484,12 @@ class _ModelDescription<T extends Model> {
 
     try {
       mirror.setField(mirrors.MirrorSystem.getSymbol(fieldName), value);
+      // ignore: avoid_catching_errors
     } on TypeError catch (error) {
-      throw StateError('Error trying to set property "${prop.propertyName}" '
-          'to $value for field "$fieldName": $error');
+      throw StateError(
+        'Error trying to set property "${prop.propertyName}" '
+        'to $value for field "$fieldName": $error',
+      );
     }
   }
 
