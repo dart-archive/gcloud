@@ -72,7 +72,7 @@
 /// and instead depend only on the services needed (e.g.
 /// `package:gcloud/storage.dart`) by using getters in the service library (e.g.
 /// the `storageService`) which are implemented with service scope lookups.
-library gcloud.service_scope;
+library;
 
 import 'dart:async';
 

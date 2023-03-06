@@ -7,7 +7,7 @@
 ///
 /// For more information on Cloud Datastore, please refer to the following
 /// developers page: https://cloud.google.com/datastore/docs
-library gcloud.datastore;
+library;
 
 import 'dart:async';
 
@@ -52,7 +52,7 @@ class DatastoreError implements Exception {
   final String message;
 
   DatastoreError([String? message])
-      : message = (message ?? 'DatastoreError: An unknown error occured');
+      : message = message ?? 'DatastoreError: An unknown error occured';
 
   @override
   String toString() => message;

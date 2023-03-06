@@ -46,7 +46,7 @@
 /// For most of the APIs in ths library which take instances of other classes
 /// from this library it is the assumption that the actual implementations
 /// provided here are used.
-library gcloud.storage;
+library;
 
 import 'dart:async';
 import 'dart:collection' show UnmodifiableListView, UnmodifiableMapView;
@@ -85,21 +85,6 @@ Storage get storageService => ss.lookup(_storageKey) as Storage;
 /// allowed.
 void registerStorageService(Storage storage) {
   ss.register(_storageKey, storage);
-}
-
-int _jenkinsHash(List e) {
-  const _hashMask = 0x3fffffff;
-  var hash = 0;
-  for (var i = 0; i < e.length; i++) {
-    var c = e[i].hashCode;
-    hash = (hash + c) & _hashMask;
-    hash = (hash + (hash << 10)) & _hashMask;
-    hash ^= (hash >> 6);
-  }
-  hash = (hash + (hash << 3)) & _hashMask;
-  hash ^= (hash >> 11);
-  hash = (hash + (hash << 15)) & _hashMask;
-  return hash;
 }
 
 /// An ACL (Access Control List) describes access rights to buckets and
@@ -176,7 +161,7 @@ class Acl {
   }
 
   @override
-  late final int hashCode = _jenkinsHash(_entries);
+  late final int hashCode = Object.hashAll(_entries);
 
   @override
   bool operator ==(Object other) {
@@ -221,7 +206,7 @@ class AclEntry {
   }
 
   @override
-  late final int hashCode = _jenkinsHash([scope, permission]);
+  late final int hashCode = Object.hash(scope, permission);
 
   @override
   bool operator ==(Object other) {
@@ -287,7 +272,7 @@ abstract class AclScope {
   AclScope._(this._type, this._id);
 
   @override
-  late final int hashCode = _jenkinsHash([_type, _id]);
+  late final int hashCode = Object.hash(_type, _id);
 
   @override
   bool operator ==(Object other) {

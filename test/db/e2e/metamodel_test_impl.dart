@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library metamodel_test;
+// ignore_for_file: avoid_dynamic_calls
 
 import 'dart:async';
 
@@ -43,7 +43,7 @@ Future sleep(Duration duration) {
   return completer.future;
 }
 
-void runTests(datastore, db.DatastoreDB store) {
+void runTests(Datastore datastore, db.DatastoreDB store) {
   // Shorten this name, so we don't have to break lines at 80 chars.
   final cond = predicate;
 

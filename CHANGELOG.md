@@ -1,3 +1,7 @@
+## 0.8.8-dev
+
+- Require Dart 2.19
+
 ## 0.8.7
 
 - Fix `Bucket.write` when size is below 1MB.

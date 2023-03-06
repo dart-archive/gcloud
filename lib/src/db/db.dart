@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-part of gcloud.db;
+part of '../../db.dart';
 
 /// A function definition for transactional functions.
 ///
@@ -205,8 +205,9 @@ class Query<T extends Model> {
 
   /// Adds an order to this [Query].
   ///
-  /// [orderString] has the form "-name" where 'name' is a fieldName of the model
-  /// and the optional '-' says whether the order is descending or ascending.
+  /// [orderString] has the form "-name" where 'name' is a fieldName of the
+  /// model and the optional '-' says whether the order is descending or
+  /// ascending.
   void order(String orderString) {
     // TODO: validate [orderString] (e.g. is name valid)
     if (orderString.startsWith('-')) {

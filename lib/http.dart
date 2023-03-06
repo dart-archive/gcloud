@@ -4,7 +4,7 @@
 
 /// Provides access to an authenticated HTTP client which can be used to access
 /// Google APIs.
-library gcloud.http;
+library;
 
 import 'package:http/http.dart' as http;
 

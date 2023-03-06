@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library datastore_test;
-
 /// NOTE: In order to run these tests, the following datastore indices must
 /// exist:
 /// $ cat index.yaml
@@ -25,6 +23,8 @@ library datastore_test;
 /// $ gcloud datastore create-indexes index.yaml
 ///
 /// Now, wait for indexing done
+library;
+
 import 'dart:async';
 
 import 'package:gcloud/common.dart';
@@ -36,12 +36,6 @@ import 'package:test/test.dart';
 import '../../common_e2e.dart';
 import '../error_matchers.dart';
 import 'utils.dart';
-
-Future sleep(Duration duration) {
-  var completer = Completer();
-  Timer(duration, completer.complete);
-  return completer.future;
-}
 
 Future<List<Entity>> consumePages(FirstPageProvider<Entity> provider) {
   return StreamFromPages<Entity>(provider).stream.toList();
@@ -608,7 +602,7 @@ void runTests(Datastore datastore, String? namespace) {
           return Future.wait(transactions)
               .then((List<Transaction> transactions) {
             // Do a lookup for the entities in every transaction
-            List<Future<List<Entity?>>> lookups = <Future<List<Entity?>>>[];
+            var lookups = <Future<List<Entity?>>>[];
             for (var transaction in transactions) {
               lookups.add(datastore.lookup(keys, transaction: transaction));
             }
@@ -714,7 +708,7 @@ void runTests(Datastore datastore, String? namespace) {
           {List<Order>? orders, bool transactional = false, bool xg = false}) {
         // We query for all subsets of expectedEntities
         // NOTE: This is O(0.5 * n^2) queries, but n is currently only 6.
-        var queryTests = <Function>[];
+        var queryTests = <Future Function()>[];
         for (var start = 0; start < expectedEntities.length; start++) {
           for (var end = start; end < expectedEntities.length; end++) {
             var offset = start;
@@ -740,7 +734,7 @@ void runTests(Datastore datastore, String? namespace) {
               limit: expectedEntities.length * 10);
         });
 
-        return Future.forEach(queryTests, (dynamic f) => f());
+        return Future.forEach(queryTests, (f) => f());
       }
 
       const testQueryKind = 'TestQueryKind';
@@ -756,25 +750,25 @@ void runTests(Datastore datastore, String? namespace) {
       var queryListEntry = '${testListValue}2';
       var queryIndexValue = '${testIndexedPropertyValuePrefix}1';
 
-      reverseOrderFunction(Entity a, Entity b) {
+      int reverseOrderFunction(Entity a, Entity b) {
         // Reverse the order
         return -1 *
             (a.properties[queryKey] as String)
                 .compareTo(b.properties[queryKey].toString());
       }
 
-      filterFunction(Entity entity) {
+      bool filterFunction(Entity entity) {
         var value = entity.properties[queryKey] as String;
         return value.compareTo(queryUpperbound) == -1 &&
             value.compareTo(queryLowerBound) == 1;
       }
 
-      listFilterFunction(Entity entity) {
+      bool listFilterFunction(Entity entity) {
         var values = entity.properties[testListProperty] as List;
         return values.contains(queryListEntry);
       }
 
-      indexFilterMatches(Entity entity) {
+      bool indexFilterMatches(Entity entity) {
         return entity.properties[testIndexedProperty] == queryIndexValue;
       }
 

@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library gcloud.db.properties_test;
+// ignore_for_file: only_throw_errors
 
 import 'dart:typed_data';
 
@@ -195,7 +195,7 @@ class Custom {
   int get hashCode => customValue.hashCode;
 
   @override
-  bool operator ==(other) {
+  bool operator ==(Object other) {
     return other is Custom && other.customValue == customValue;
   }
 }
@@ -270,7 +270,6 @@ class ModelDBMock implements ModelDB {
     return _datastoreKey;
   }
 
-  Map<String, Property>? propertiesForModel(modelDescription) => null;
   @override
   T? fromDatastoreEntity<T extends Model>(datastore.Entity? entity) => null;
   @override

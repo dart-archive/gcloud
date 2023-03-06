@@ -2,7 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library gcloud.storage;
+// ignore_for_file: only_throw_errors, avoid_catching_errors,
+// ignore_for_file: avoid_dynamic_calls
 
 import 'dart:async';
 import 'dart:convert';
@@ -887,13 +888,16 @@ void main() {
         await withMockClientAsync((MockClient mock, Storage api) async {
           var bucket = api.bucket(bucketName);
 
-          try {
-            await bucket.read(objectName, offset: 1).toList();
-            fail('An exception should be thrown');
-          } on ArgumentError catch (e) {
-            expect(
-                e.message, 'length must have a value if offset is non-zero.');
-          }
+          await expectLater(
+            bucket.read(objectName, offset: 1).toList(),
+            throwsA(
+              isA<ArgumentError>().having(
+                (p0) => p0.message,
+                'message',
+                'length must have a value if offset is non-zero.',
+              ),
+            ),
+          );
         });
       });
 

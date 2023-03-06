@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+// ignore_for_file: only_throw_errors
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -87,16 +89,16 @@ class MockClient extends http.BaseClient {
     return client.send(request);
   }
 
-  Future<http.Response> respond(response) {
-    return Future.value(http.Response(jsonEncode(response.toJson()), 200,
-        headers: _responseHeaders));
+  Future<http.Response> respond(dynamic response) {
+    return Future.value(
+        http.Response(jsonEncode(response), 200, headers: _responseHeaders));
   }
 
   Future<http.Response> respondEmpty() {
     return Future.value(http.Response('{}', 200, headers: _responseHeaders));
   }
 
-  Future<http.Response> respondInitiateResumableUpload(project) {
+  Future<http.Response> respondInitiateResumableUpload(String project) {
     final headers = Map<String, String>.from(_responseHeaders);
     headers['location'] = 'https://$hostname/resumable/upload$rootPath'
         'b/$project/o?uploadType=resumable&alt=json&'
@@ -153,7 +155,7 @@ class MockClient extends http.BaseClient {
       [13, 10]
     ])
         .transform(mime.MimeMultipartTransformer(boundary!))
-        .listen(((mime.MimeMultipart mimeMultipart) {
+        .listen((mime.MimeMultipart mimeMultipart) {
       var contentType = mimeMultipart.headers['content-type']!;
       partCount++;
       if (partCount == 1) {
@@ -176,7 +178,7 @@ class MockClient extends http.BaseClient {
         // Exactly two parts expected.
         throw 'Unexpected part count';
       }
-    }));
+    });
 
     return completer.future;
   }

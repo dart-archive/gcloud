@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library gcloud.test.service_scope_test;
+// ignore_for_file: only_throw_errors
 
 import 'dart:async';
 
@@ -139,12 +139,14 @@ void main() {
   test('service-scope-destroyed-after-callback-completes', () {
     // Ensure that once the closure passed to fork() completes, the service
     // scope is destroyed.
-    return ss.fork(expectAsync0(() => Future.sync(() {
+    return ss.fork(
+      expectAsync0(
+        () => Future.sync(() {
           var key = 1;
           ss.register(key, 'firstValue');
           ss.registerScopeExitCallback(Zone.current.bindCallback(() {
-            // Spawn an async task which will be run after the cleanups to ensure
-            // the service scope got destroyed.
+            // Spawn an async task which will be run after the cleanups to
+            // ensure the service scope got destroyed.
             Timer.run(expectAsync0(() {
               expect(() => ss.lookup(key), throwsA(isStateError));
               expect(() => ss.register(2, 'value'), throwsA(isStateError));
@@ -154,7 +156,9 @@ void main() {
             return null;
           }));
           expect(ss.lookup(key), equals('firstValue'));
-        })));
+        }),
+      ),
+    );
   });
 
   test('override-parent-value', () {

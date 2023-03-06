@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-part of gcloud.db;
+part of '../../db.dart';
 
 /// Represents a unique identifier for a [Model] stored in a datastore.
 ///
@@ -97,8 +97,9 @@ class Partition {
 
 /// Superclass for all model classes.
 ///
-/// Every model class has a [id] of type [T] which must be `int` or `String`, and
-/// a [parentKey]. The [key] getter is returning the key for the model object.
+/// Every model class has a [id] of type [T] which must be `int` or `String`,
+/// and a [parentKey]. The [key] getter is returning the key for the model
+/// object.
 abstract class Model<T> {
   T? id;
   Key? parentKey;
