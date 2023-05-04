@@ -1,6 +1,7 @@
-## 0.8.8-dev
+## 0.8.8
 
 - Require Dart 2.19
+- Add topics in `pubspec.yaml`.
 
 ## 0.8.7
 
