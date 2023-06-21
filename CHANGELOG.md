@@ -1,3 +1,8 @@
+## 0.8.9
+
+- Support the latest version 1.0.0 of the `http` package.
+- Support the latest version 12.0.0 of the `googleapis` package.
+
 ## 0.8.8
 
 - Require Dart 2.19
