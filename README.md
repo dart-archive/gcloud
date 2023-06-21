@@ -1,8 +1,13 @@
+[![Dart CI](https://github.com/dart-lang/gcloud/actions/workflows/test-package.yml/badge.svg)](https://github.com/dart-lang/gcloud/actions/workflows/test-package.yml)
+[![pub package](https://img.shields.io/pub/v/gcloud.svg)](https://pub.dev/packages/gcloud)
+[![package publisher](https://img.shields.io/pub/publisher/gcloud.svg)](https://pub.dev/packages/gcloud/publisher)
+
+The `gcloud` package provides a high level idiomatic Dart interface to some of
+the most widely used Google Cloud Platform services.
+
 ## Google Cloud Platform support package (gcloud)
 
-The `gcloud` package provides a high level "idiomatic Dart" interface to
-some of the most widely used Google Cloud Platform services. Currently the
-following services are supported:
+Currently the following services are supported:
 
   * Cloud Datastore
   * Cloud Storage
@@ -40,6 +45,7 @@ the following imports are present:
 
 ```dart
 import 'dart:io';
+
 import 'package:googleapis_auth/auth_io.dart' as auth;
 import 'package:http/http.dart' as http;
 import 'package:gcloud/db.dart';

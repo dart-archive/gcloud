@@ -1,3 +1,7 @@
+## 0.8.10-wip
+
+- Widen the SDK constraint to support Dart 3.0
+
 ## 0.8.9
 
 - Support the latest version 1.0.0 of the `http` package.
