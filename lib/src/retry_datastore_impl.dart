@@ -148,4 +148,12 @@ class _RetryPage<K> implements Page<K> {
   }
 }
 
-bool _retryIf(Exception e) => e is! datastore.TransactionAbortedError;
+bool _retryIf(Exception e) {
+  if (e is datastore.TransactionAbortedError ||
+      e is datastore.NeedIndexError ||
+      e is datastore.QuotaExceededError ||
+      e is datastore.PermissionDeniedError) {
+    return false;
+  }
+  return true;
+}
