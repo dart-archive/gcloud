@@ -398,15 +398,14 @@ abstract class Datastore {
   /// The [delegate] is the configured [Datastore] implementation that will be
   /// used.
   ///
-  /// The default [retryOptions] will use maximum 3 attempts to complete an
-  /// operation.
+  /// The operations will be retried at maximum of [maxAttempts].
   factory Datastore.withRetry(
     Datastore delegate, {
-    RetryOptions? retryOptions,
+    int? maxAttempts,
   }) {
     return RetryDatastoreImpl(
       delegate,
-      retryOptions ?? RetryOptions(maxAttempts: 3),
+      RetryOptions(maxAttempts: maxAttempts ?? 3),
     );
   }
 
