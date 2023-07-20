@@ -12,10 +12,12 @@ library;
 import 'dart:async';
 
 import 'package:http/http.dart' as http;
+import 'package:retry/retry.dart';
 
 import 'common.dart' show Page;
 import 'service_scope.dart' as ss;
 import 'src/datastore_impl.dart' show DatastoreImpl;
+import 'src/retry_datastore_impl.dart';
 
 const Symbol _datastoreKey = #gcloud.datastore;
 
@@ -389,6 +391,23 @@ abstract class Datastore {
   /// it.
   factory Datastore(http.Client client, String project) {
     return DatastoreImpl(client, project);
+  }
+
+  /// Retry Datastore operations where the issue seems to be transient.
+  ///
+  /// The [delegate] is the configured [Datastore] implementation that will be
+  /// used.
+  ///
+  /// The default [retryOptions] will use maximum 3 attempts to complete an
+  /// operation.
+  factory Datastore.withRetry(
+    Datastore delegate, {
+    RetryOptions? retryOptions,
+  }) {
+    return RetryDatastoreImpl(
+      delegate,
+      retryOptions ?? RetryOptions(maxAttempts: 3),
+    );
   }
 
   /// Allocate integer IDs for the partially populated [keys] given as argument.

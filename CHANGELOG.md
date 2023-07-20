@@ -1,6 +1,7 @@
-## 0.8.10-wip
+## 0.8.10
 
 - Widen the SDK constraint to support Dart 3.0
+- Support retrying Datastore operations.
 
 ## 0.8.9
 
