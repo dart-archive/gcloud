@@ -10,6 +10,7 @@ library gcloud.test.db_all_test;
 import 'dart:async';
 import 'dart:io';
 
+import 'package:gcloud/datastore.dart';
 import 'package:gcloud/db.dart' as db;
 import 'package:gcloud/src/datastore_impl.dart' as datastore_impl;
 import 'package:http/http.dart';
@@ -25,12 +26,13 @@ Future main() async {
   var now = DateTime.now().millisecondsSinceEpoch;
   var namespace = '${Platform.operatingSystem}$now';
 
-  late datastore_impl.DatastoreImpl datastore;
+  late Datastore datastore;
   late db.DatastoreDB datastoreDB;
   Client? client;
 
   await withAuthClient(scopes, (String project, httpClient) async {
-    datastore = datastore_impl.DatastoreImpl(httpClient, project);
+    datastore =
+        Datastore.withRetry(datastore_impl.DatastoreImpl(httpClient, project));
     datastoreDB = db.DatastoreDB(datastore);
     client = httpClient;
   });
