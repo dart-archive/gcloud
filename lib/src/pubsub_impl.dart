@@ -97,6 +97,7 @@ class _PubSubImpl implements PubSub {
       String subscription, bool returnImmediately) {
     var request = pubsub.PullRequest()
       ..maxMessages = 1
+      // ignore: deprecated_member_use
       ..returnImmediately = returnImmediately;
     return _api.projects.subscriptions.pull(request, subscription);
   }
