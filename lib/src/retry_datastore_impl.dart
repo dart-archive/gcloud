@@ -135,7 +135,7 @@ class _RetryPage<K> implements Page<K> {
 
   @override
   Future<Page<K>> next({int? pageSize}) async {
-    return await _retryOptions.retry(
+    final nextPage = await _retryOptions.retry(
       () async {
         if (pageSize == null) {
           return await _delegate.next();
@@ -145,6 +145,7 @@ class _RetryPage<K> implements Page<K> {
       },
       retryIf: _retryIf,
     );
+    return _RetryPage(nextPage, _retryOptions);
   }
 }
 
