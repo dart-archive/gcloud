@@ -1,3 +1,10 @@
+## 0.8.11
+- After the first `Page` created by `Datastore.withRetry()` retries were not
+  happening. This is now fixed, ensuring that `Page.next()` will always retry
+  when `Datastore` is wrapped with `Datastore.withRetry()`.
+- Calling with `wait: false` in `Subscription.pull(wait: false)` for `PubSub`
+  have been deprecated.
+
 ## 0.8.10
 
 - Widen the SDK constraint to support Dart 3.0

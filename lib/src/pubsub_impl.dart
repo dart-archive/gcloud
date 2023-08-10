@@ -97,6 +97,7 @@ class _PubSubImpl implements PubSub {
       String subscription, bool returnImmediately) {
     var request = pubsub.PullRequest()
       ..maxMessages = 1
+      // ignore: deprecated_member_use
       ..returnImmediately = returnImmediately;
     return _api.projects.subscriptions.pull(request, subscription);
   }
@@ -428,7 +429,10 @@ class _SubscriptionImpl implements Subscription {
   Future delete() => _api._deleteSubscription(_subscription.name!);
 
   @override
-  Future<PullEvent?> pull({bool wait = true}) {
+  Future<PullEvent?> pull({
+    @Deprecated('returnImmediately has been deprecated from pubsub')
+    bool wait = true,
+  }) {
     return _api._pull(_subscription.name!, !wait).then((response) {
       // The documentation says 'Returns an empty list if there are no
       // messages available in the backlog'. However the receivedMessages
