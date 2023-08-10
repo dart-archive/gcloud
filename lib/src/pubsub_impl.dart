@@ -429,7 +429,10 @@ class _SubscriptionImpl implements Subscription {
   Future delete() => _api._deleteSubscription(_subscription.name!);
 
   @override
-  Future<PullEvent?> pull({bool wait = true}) {
+  Future<PullEvent?> pull({
+    @Deprecated('returnImmediately has been deprecated from pubsub')
+    bool wait = true,
+  }) {
     return _api._pull(_subscription.name!, !wait).then((response) {
       // The documentation says 'Returns an empty list if there are no
       // messages available in the backlog'. However the receivedMessages
