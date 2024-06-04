@@ -32,7 +32,7 @@ void main() {
     }));
   });
 
-  test('non-existent-key', () {
+  test('nonexistent-key', () {
     return ss.fork(expectAsync0(() {
       expect(ss.lookup(1), isNull);
       return Future.value();
