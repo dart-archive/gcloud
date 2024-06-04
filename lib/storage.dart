@@ -260,7 +260,7 @@ abstract class AclScope {
   /// are set in the different subclasses.
   final String _id;
 
-  /// The type of this acope this ACL scope represents.
+  /// The type of this scope this ACL scope represents.
   final int _type;
 
   /// ACL scope for all authenticated users.
