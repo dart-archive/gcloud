@@ -54,14 +54,14 @@ class DatastoreError implements Exception {
   final String message;
 
   DatastoreError([String? message])
-      : message = message ?? 'DatastoreError: An unknown error occured';
+      : message = message ?? 'DatastoreError: An unknown error occurred';
 
   @override
   String toString() => message;
 }
 
 class UnknownDatastoreError extends DatastoreError {
-  UnknownDatastoreError(error) : super('An unknown error occured ($error).');
+  UnknownDatastoreError(error) : super('An unknown error occurred ($error).');
 }
 
 class TransactionAbortedError extends DatastoreError {

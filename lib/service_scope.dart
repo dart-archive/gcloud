@@ -261,7 +261,7 @@ class _ServiceScope {
       _destroyed = true;
       if (errors.isNotEmpty) {
         throw Exception(
-            'The following errors occured while running scope exit handlers'
+            'The following errors occurred while running scope exit handlers'
             ': $errors');
       }
     });

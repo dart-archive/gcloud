@@ -277,7 +277,7 @@ class DatastoreImpl implements datastore.Datastore {
       if (error.status == 400) {
         return Future.error(
           datastore.ApplicationError(
-            error.message ?? 'An unknown error occured',
+            error.message ?? 'An unknown error occurred',
           ),
           stack,
         );
