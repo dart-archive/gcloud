@@ -155,7 +155,7 @@
 
 * Remove support for `FilterRelation.In` and "propertyname IN" for queries:
   This is not supported by the newer APIs and was originally part of fat-client
-  libraries which performed multiple queries for each iten in the list.
+  libraries which performed multiple queries for each item in the list.
 
 * Adds optional `forComparison` named argument to `Property.encodeValue` which
   will be set to `true` when encoding a value for comparison in queries.
