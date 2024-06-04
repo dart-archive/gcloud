@@ -123,7 +123,7 @@ class Entity {
 /// A key can uniquely identify a datastore `Entity`s. It consists of a
 /// partition and path. The path consists of one or more `KeyElement`s.
 ///
-/// A key may be incomplete. This is usesful when inserting `Entity`s which IDs
+/// A key may be incomplete. This is useful when inserting `Entity`s which IDs
 /// should be automatically allocated.
 ///
 /// Example of a fully populated [Key]:
