@@ -157,7 +157,7 @@
   This is not supported by the newer APIs and was originally part of fat-client
   libraries which performed multiple queries for each iten in the list.
 
-* Adds optional `forComparision` named argument to `Property.encodeValue` which
+* Adds optional `forComparison` named argument to `Property.encodeValue` which
   will be set to `true` when encoding a value for comparison in queries.
 
 * Upgrade to newer versions of `package:googleapis` and `package:googleapis_beta`
