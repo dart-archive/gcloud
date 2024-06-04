@@ -386,7 +386,7 @@ abstract class Datastore {
   ///
   /// The [project] is the name of the Google Cloud project.
   ///
-  /// Returs an object providing access to Datastore. The passed-in [client]
+  /// Returns an object providing access to Datastore. The passed-in [client]
   /// will not be closed automatically. The caller is responsible for closing
   /// it.
   factory Datastore(http.Client client, String project) {
