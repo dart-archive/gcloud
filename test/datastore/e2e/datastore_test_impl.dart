@@ -441,7 +441,7 @@ void runTests(Datastore datastore, String? namespace) {
         });
       });
 
-      // This should not work with [unamedEntities20], but is working!
+      // This should not work with [unnamedEntities20], but is working!
       // FIXME TODO FIXME : look into this.
       test('delete_transactional', () {
         return insert([], unnamedEntities99, transactional: false).then((keys) {
