@@ -31,7 +31,7 @@ PubSub get pubsubService => ss.lookup(_pubsubKey) as PubSub;
 
 /// Registers the [pubsub] object within the current service scope.
 ///
-/// The provided `pubsub` object will be avilable via the top-level
+/// The provided `pubsub` object will be available via the top-level
 /// `pubsubService` getter.
 ///
 /// Calling this function outside of a service scope will result in an error.
