@@ -232,7 +232,7 @@
 
 ## 0.1.3+1
 
-* Change the service scope keys keys to non-private symbols.
+* Change the service scope keys to non-private symbols.
 
 ## 0.1.3
 
