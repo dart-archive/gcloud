@@ -1,3 +1,6 @@
+## 0.8.13
+- Support the latest version `^13.0.0` of the `googleapis` package.
+
 ## 0.8.12
 - Support the latest version 12.0.0 of the `googleapis` package.
 
