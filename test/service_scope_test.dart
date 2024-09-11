@@ -32,7 +32,7 @@ void main() {
     }));
   });
 
-  test('non-existent-key', () {
+  test('nonexistent-key', () {
     return ss.fork(expectAsync0(() {
       expect(ss.lookup(1), isNull);
       return Future.value();
@@ -188,7 +188,7 @@ void main() {
   });
 
   test('nested-fork-and-insert', () {
-    // Ensure that independently fork()ed serice scopes can insert keys
+    // Ensure that independently fork()ed service scopes can insert keys
     // independently and they cannot see each others values but can see parent
     // service scope values.
     var rootKey = 1;

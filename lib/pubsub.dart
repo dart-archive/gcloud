@@ -31,7 +31,7 @@ PubSub get pubsubService => ss.lookup(_pubsubKey) as PubSub;
 
 /// Registers the [pubsub] object within the current service scope.
 ///
-/// The provided `pubsub` object will be avilable via the top-level
+/// The provided `pubsub` object will be available via the top-level
 /// `pubsubService` getter.
 ///
 /// Calling this function outside of a service scope will result in an error.
@@ -121,7 +121,7 @@ abstract class PubSub {
   ///
   /// The [project] is the name of the Google Cloud project.
   ///
-  /// Returs an object providing access to Pub/Sub. The passed-in [client] will
+  /// Returns an object providing access to Pub/Sub. The passed-in [client] will
   /// not be closed automatically. The caller is responsible for closing it.
   factory PubSub(http.Client client, String project) {
     var emulator = Platform.environment['PUBSUB_EMULATOR_HOST'];

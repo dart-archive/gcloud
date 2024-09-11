@@ -425,7 +425,7 @@ Future _commitHelper(DatastoreDB db,
 
     for (var model in inserts) {
       // If parent was not explicitly set, we assume this model will map to
-      // it's own entity group.
+      // its own entity group.
       model.parentKey ??= db.defaultPartition.emptyKey;
       if (model.id == null) {
         autoIdModelInserts.add(model);

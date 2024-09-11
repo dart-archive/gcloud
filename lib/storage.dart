@@ -43,7 +43,7 @@
 /// In most cases relative names are used. Absolute names are typically
 /// only used for operations involving objects in different buckets.
 ///
-/// For most of the APIs in ths library which take instances of other classes
+/// For most of the APIs in this library which take instances of other classes
 /// from this library it is the assumption that the actual implementations
 /// provided here are used.
 library;
@@ -260,7 +260,7 @@ abstract class AclScope {
   /// are set in the different subclasses.
   final String _id;
 
-  /// The type of this acope this ACL scope represents.
+  /// The type of this scope this ACL scope represents.
   final int _type;
 
   /// ACL scope for all authenticated users.
