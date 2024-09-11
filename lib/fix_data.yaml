@@ -1,0 +1,29 @@
+version: 1
+transforms:
+  - title: 'Rename to Descending'
+    date: 2024-09-11
+    element:
+      uris: ['datastore.dart']
+      field: 'Decending'
+      inClass: 'OrderDirection'
+    changes:
+      - kind: 'rename'
+        newName: 'Descending'
+  - title: 'Rename to GreaterThan'
+    date: 2024-09-11
+    element:
+      uris: ['datastore.dart']
+      field: 'GreatherThan'
+      inClass: 'FilterRelation'
+    changes:
+      - kind: 'rename'
+        newName: 'GreaterThan'
+  - title: 'Rename to GreaterThanOrEqual'
+    date: 2024-09-11
+    element:
+      uris: ['datastore.dart']
+      field: 'GreatherThanOrEqual'
+      inClass: 'FilterRelation'
+    changes:
+      - kind: 'rename'
+        newName: 'GreaterThanOrEqual'
