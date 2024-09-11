@@ -143,8 +143,8 @@ class Query<T extends Model> {
   final _relationMapping = const <String, ds.FilterRelation>{
     '<': ds.FilterRelation.LessThan,
     '<=': ds.FilterRelation.LessThanOrEqual,
-    '>': ds.FilterRelation.GreatherThan,
-    '>=': ds.FilterRelation.GreatherThanOrEqual,
+    '>': ds.FilterRelation.GreaterThan,
+    '>=': ds.FilterRelation.GreaterThanOrEqual,
     '=': ds.FilterRelation.Equal,
   };
 

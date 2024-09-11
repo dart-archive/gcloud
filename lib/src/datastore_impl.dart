@@ -205,8 +205,8 @@ class DatastoreImpl implements datastore.Datastore {
     datastore.FilterRelation.LessThan: 'LESS_THAN',
     datastore.FilterRelation.LessThanOrEqual: 'LESS_THAN_OR_EQUAL',
     datastore.FilterRelation.Equal: 'EQUAL',
-    datastore.FilterRelation.GreatherThan: 'GREATER_THAN',
-    datastore.FilterRelation.GreatherThanOrEqual: 'GREATER_THAN_OR_EQUAL',
+    datastore.FilterRelation.GreaterThan: 'GREATER_THAN',
+    datastore.FilterRelation.GreaterThanOrEqual: 'GREATER_THAN_OR_EQUAL',
   };
 
   api.Filter _convertDatastore2ApiFilter(datastore.Filter filter) {

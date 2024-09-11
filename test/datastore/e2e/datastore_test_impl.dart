@@ -780,7 +780,7 @@ void runTests(Datastore datastore, String? namespace) {
       assert(indexedEntity.length == 1);
 
       var filters = [
-        Filter(FilterRelation.GreatherThan, queryKey, queryLowerBound),
+        Filter(FilterRelation.GreaterThan, queryKey, queryLowerBound),
         Filter(FilterRelation.LessThan, queryKey, queryUpperbound),
       ];
       var listFilters = [
