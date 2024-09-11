@@ -211,7 +211,7 @@ class Query<T extends Model> {
   void order(String orderString) {
     // TODO: validate [orderString] (e.g. is name valid)
     if (orderString.startsWith('-')) {
-      _orders.add(ds.Order(ds.OrderDirection.Decending,
+      _orders.add(ds.Order(ds.OrderDirection.Descending,
           _convertToDatastoreName(orderString.substring(1))));
     } else {
       _orders.add(ds.Order(

@@ -795,7 +795,7 @@ void runTests(Datastore datastore, String? namespace) {
         Filter(FilterRelation.Equal, testUnindexedProperty, queryIndexValue)
       ];
 
-      var orders = [Order(OrderDirection.Decending, queryKey)];
+      var orders = [Order(OrderDirection.Descending, queryKey)];
 
       test('query', () async {
         await insert(stringNamedEntities, <Entity>[]);
