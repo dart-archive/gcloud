@@ -153,6 +153,52 @@ void main() {
       testCreateReadDelete('test-2', bytesResumableUpload);
     });
 
+    testWithBucket('create-copy-read-delete', (bucket) async {
+      final bytes = [1, 2, 3];
+      final info = await bucket.writeBytes('test-for-copy', bytes);
+      expect(info, isNotNull);
+
+      await storage.copyObject(
+        bucket.absoluteObjectName('test-for-copy'),
+        bucket.absoluteObjectName('test'),
+      );
+
+      final result =
+          await bucket.read('test').fold<List<int>>([], (p, e) => p..addAll(e));
+      expect(result, bytes);
+
+      await bucket.delete('test');
+      await bucket.delete('test-for-copy');
+    });
+
+    testWithBucket('create-copy-metadata-read-delete', (bucket) async {
+      final bytes = [1, 2, 3];
+      final info = await bucket.writeBytes(
+        'test-for-copy',
+        bytes,
+        metadata: ObjectMetadata(contentType: 'text/plain'),
+      );
+      expect(info, isNotNull);
+
+      await storage.copyObject(
+        bucket.absoluteObjectName('test-for-copy'),
+        bucket.absoluteObjectName('test'),
+        metadata: ObjectMetadata(contentType: 'application/octet'),
+      );
+
+      final r1 = await bucket.info('test-for-copy');
+      expect(r1.metadata.contentType, 'text/plain');
+      final r2 = await bucket.info('test');
+      expect(r2.metadata.contentType, 'application/octet');
+
+      final result =
+          await bucket.read('test').fold<List<int>>([], (p, e) => p..addAll(e));
+      expect(result, bytes);
+
+      await bucket.delete('test');
+      await bucket.delete('test-for-copy');
+    });
+
     group('create-read-delete-streaming', () {
       void testCreateReadDelete(String name, List<int> bytes) {
         testWithBucket(name, (bucket) async {
