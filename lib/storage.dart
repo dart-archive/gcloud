@@ -561,7 +561,9 @@ abstract class Storage {
   /// Copy object [src] to object [dest].
   ///
   /// The names of [src] and [dest] must be absolute.
-  Future copyObject(String src, String dest);
+  ///
+  /// [metadata] can be used to overwrite metadata properties.
+  Future copyObject(String src, String dest, {ObjectMetadata? metadata});
 }
 
 /// Information on a specific object.

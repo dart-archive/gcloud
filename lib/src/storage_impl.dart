@@ -106,11 +106,14 @@ class _StorageImpl implements Storage {
   }
 
   @override
-  Future copyObject(String src, String dest) {
+  Future copyObject(String src, String dest, {ObjectMetadata? metadata}) {
     var srcName = _AbsoluteName.parse(src);
     var destName = _AbsoluteName.parse(dest);
+    metadata ??= _ObjectMetadata();
+    var objectMetadata = metadata as _ObjectMetadata;
+    final object = objectMetadata._object;
     return _api.objects
-        .copy(storage_api.Object(), srcName.bucketName, srcName.objectName,
+        .copy(object, srcName.bucketName, srcName.objectName,
             destName.bucketName, destName.objectName)
         .then((_) => null);
   }
