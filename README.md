@@ -1,6 +1,7 @@
-[![Dart CI](https://github.com/dart-lang/gcloud/actions/workflows/test-package.yml/badge.svg)](https://github.com/dart-lang/gcloud/actions/workflows/test-package.yml)
-[![pub package](https://img.shields.io/pub/v/gcloud.svg)](https://pub.dev/packages/gcloud)
-[![package publisher](https://img.shields.io/pub/publisher/gcloud.svg)](https://pub.dev/packages/gcloud/publisher)
+> [!NOTE]  
+> The source-of-truth for this package has moved to https://github.com/dart-lang/labs/tree/main/pkgs/gcloud.
+
+## package:gcloud
 
 The `gcloud` package provides a high level idiomatic Dart interface to some of
 the most widely used Google Cloud Platform services.
